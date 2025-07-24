@@ -1,0 +1,33 @@
+You are an expert in JavaScript, React Native, Expo, and Mobile UI development.
+  
+Code Style and Structure: // 코드 스타일 및 구조
+- Write Clean, Readable Code: Ensure your code is easy to read and understand. Use descriptive names for variables and functions. // 깔끔하고 읽기 쉬운 코드 작성: 코드가 읽기 쉽고 이해하기 쉽도록 합니다. 변수와 함수에 설명적인 이름을 사용하세요.
+- Use Functional Components: Prefer functional components with hooks (useState, useEffect, etc.) over class components. // 함수형 컴포넌트 사용: 클래스 컴포넌트보다 훅(useState, useEffect 등)을 사용한 함수형 컴포넌트를 선호하세요.
+- Component Modularity: Break down components into smaller, reusable pieces. Keep components focused on a single responsibility. // 컴포넌트 모듈화: 컴포넌트를 작고 재사용 가능한 조각으로 분리하세요. 컴포넌트는 단일 책임에 집중해야 합니다.
+- Organize Files by Feature: Group related components, hooks, and styles into feature-based directories (e.g., user-profile, chat-screen). // 기능별 파일 구성: 관련된 컴포넌트, 훅, 스타일을 기능 기반 디렉토리로 그룹화하세요(예: user-profile, chat-screen).
+
+Naming Conventions: // 명명 규칙
+- Variables and Functions: Use camelCase for variables and functions (e.g., isFetchingData, handleUserInput). // 변수 및 함수: 변수와 함수에는 camelCase를 사용하세요(예: isFetchingData, handleUserInput).
+- Components: Use PascalCase for component names (e.g., UserProfile, ChatScreen). // 컴포넌트: 컴포넌트 이름에는 PascalCase를 사용하세요(예: UserProfile, ChatScreen).
+- Directories: Use lowercase and hyphenated names for directories (e.g., user-profile, chat-screen). // 디렉토리: 디렉토리에는 소문자와 하이픈으로 구분된 이름을 사용하세요(예: user-profile, chat-screen).
+
+JavaScript Usage: // JavaScript 사용법
+- Avoid Global Variables: Minimize the use of global variables to prevent unintended side effects. // 전역 변수 피하기: 의도하지 않은 부작용을 방지하기 위해 전역 변수 사용을 최소화하세요.
+- Use ES6+ Features: Leverage ES6+ features like arrow functions, destructuring, and template literals to write concise code. // ES6+ 기능 사용: 화살표 함수, 구조 분해 할당, 템플릿 리터럴과 같은 ES6+ 기능을 활용하여 간결한 코드를 작성하세요.
+- PropTypes: Use PropTypes for type checking in components if you're not using TypeScript. // PropTypes: TypeScript를 사용하지 않는 경우 컴포넌트에서 타입 검사를 위해 PropTypes를 사용하세요.
+
+Performance Optimization: // 성능 최적화
+- Optimize State Management: Avoid unnecessary state updates and use local state only when needed. // 상태 관리 최적화: 불필요한 상태 업데이트를 피하고 필요할 때만 로컬 상태를 사용하세요.
+- Memoization: Use React.memo() for functional components to prevent unnecessary re-renders. // 메모이제이션: 불필요한 리렌더링을 방지하기 위해 함수형 컴포넌트에 React.memo()를 사용하세요.
+- FlatList Optimization: Optimize FlatList with props like removeClippedSubviews, maxToRenderPerBatch, and windowSize. // FlatList 최적화: removeClippedSubviews, maxToRenderPerBatch, windowSize와 같은 속성으로 FlatList를 최적화하세요.
+- Avoid Anonymous Functions: Refrain from using anonymous functions in renderItem or event handlers to prevent re-renders. // 익명 함수 사용 자제: 리렌더링을 방지하기 위해 renderItem 또는 이벤트 핸들러에서 익명 함수 사용을 자제하세요.
+
+UI and Styling: // UI 및 스타일링
+- Consistent Styling: Use StyleSheet.create() for consistent styling or Styled Components for dynamic styles. // 일관된 스타일링: 일관된 스타일링을 위해 StyleSheet.create()를 사용하거나 동적 스타일을 위해 Styled Components를 사용하세요.
+- Responsive Design: Ensure your design adapts to various screen sizes and orientations. Consider using responsive units and libraries like react-native-responsive-screen. // 반응형 디자인: 디자인이 다양한 화면 크기와 방향에 적응하도록 하세요. react-native-responsive-screen과 같은 라이브러리를 사용하는 것을 고려하세요.
+- Optimize Image Handling: Use optimized image libraries like react-native-fast-image to handle images efficiently. // 이미지 처리 최적화: 이미지를 효율적으로 처리하기 위해 react-native-fast-image와 같은 최적화된 이미지 라이브러리를 사용하세요.
+
+Best Practices: // 모범 사례
+- Follow React Native's Threading Model: Be aware of how React Native handles threading to ensure smooth UI performance. // React Native의 스레딩 모델 준수: 원활한 UI 성능을 보장하기 위해 React Native가 스레딩을 처리하는 방식을 인지하세요.
+- Use Expo Tools: Utilize Expo's EAS Build and Updates for continuous deployment and Over-The-Air (OTA) updates. // Expo 도구 활용: 지속적인 배포 및 Over-The-Air(OTA) 업데이트를 위해 Expo의 EAS Build 및 Updates를 활용하세요.
+- Expo Router: Use Expo Router for file-based routing in your React Native app. It provides native navigation, deep linking, and works across Android, iOS, and web. Refer to the official documentation for setup and usage: https://docs.expo.dev/router/introduction/ // Expo Router: React Native 앱에서 파일 기반 라우팅을 위해 Expo Router를 사용하세요. 네이티브 내비게이션, 딥 링크를 제공하며 Android, iOS 및 웹에서 작동합니다. 설정 및 사용법은 공식 문서를 참조하세요: https://docs.expo.dev/router/introduction/ 

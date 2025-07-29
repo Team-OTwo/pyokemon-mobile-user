@@ -76,6 +76,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
   const handleLogin = async () => {
     if (!validateForm()) return;
+    navigation.navigate("Home");
   };
 
   return (

@@ -8,7 +8,7 @@ import { RootStackParamList } from "@/types/navigation";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Constants from "expo-constants";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Dimensions,
   KeyboardAvoidingView,
@@ -62,15 +62,6 @@ export default function SignupPage({ navigation }: SignupScreenProps) {
       return 40;
     }
   };
-
-  useEffect(() => {
-    // const getDeviceId = async () => {
-    //   const deviceId = Device.osInternalBuildId || "";
-    //   console.log(deviceId);
-    //   setDeviceId(deviceId);
-    // };
-    // getDeviceId();
-  }, []);
 
   const validateForm = (): boolean => {
     const newErrors: {

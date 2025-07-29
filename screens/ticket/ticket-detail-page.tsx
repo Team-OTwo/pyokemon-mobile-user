@@ -25,6 +25,7 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
 
   const handleGenerateQR = () => {
     console.log("QR 생성");
+    navigation.navigate("TicketQR", { ticketId });
   };
 
   if (!ticket) {

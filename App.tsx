@@ -2,6 +2,7 @@ import Home from "@/screens/home/home-page";
 import Login from "@/screens/login/login-page";
 import Notification from "@/screens/notification/notification-page";
 import Profile from "@/screens/profile/profile-page";
+import Signup from "@/screens/signup/signup-page";
 import SplashScreen from "@/screens/splash/splash-page";
 import TicketDetail from "@/screens/ticket/ticket-detail-page";
 import { NavigationContainer } from "@react-navigation/native";
@@ -12,6 +13,7 @@ import { StatusBar } from "expo-status-bar";
 import { RootStackParamList } from "@/types/navigation";
 import React, { useEffect, useState } from "react";
 import { View } from "react-native";
+import TicketQRPage from "./screens/ticket-qr/ticket-qr-page";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -50,12 +52,14 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}>
+      <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="Signup" component={Signup} />
         <Stack.Screen name="Profile" component={Profile} />
         <Stack.Screen name="Notification" component={Notification} />
         <Stack.Screen name="TicketDetail" component={TicketDetail} />
+        <Stack.Screen name="TicketQR" component={TicketQRPage} />
       </Stack.Navigator>
     </NavigationContainer>
   );

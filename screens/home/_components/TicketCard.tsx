@@ -115,11 +115,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   typeTag: {
-    borderRadius: 20,
     paddingHorizontal: 12,
+    borderRadius: 20,
   },
   statusTag: {
-    paddingHorizontal: 15,
+    paddingHorizontal: 12,
     borderRadius: 20,
   },
   typeText: {
@@ -128,7 +128,6 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 12,
-    paddingHorizontal: 5,
     fontWeight: "600",
   },
   title: {

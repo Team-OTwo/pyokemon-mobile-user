@@ -1,6 +1,7 @@
 import Home from "@/screens/home/home-page";
 import Login from "@/screens/login/login-page";
 import SplashScreen from "@/screens/splash/splash-page";
+import TicketDetail from "@/screens/ticket/ticket-detail-page";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useFonts } from "expo-font";
@@ -50,6 +51,7 @@ export default function App() {
       <Stack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="TicketDetail" component={TicketDetail} />
       </Stack.Navigator>
     </NavigationContainer>
   );

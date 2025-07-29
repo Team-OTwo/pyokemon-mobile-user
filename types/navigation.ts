@@ -3,6 +3,9 @@ export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;
   Home: undefined;
+  Profile: undefined;
+  Notification: undefined;
+  QrScan: undefined;
   TicketDetail: { ticketId: string };
   TicketQR: { ticketId: string };
 };

@@ -1,5 +1,7 @@
 import Home from "@/screens/home/home-page";
 import Login from "@/screens/login/login-page";
+import Notification from "@/screens/notification/notification-page";
+import Profile from "@/screens/profile/profile-page";
 import SplashScreen from "@/screens/splash/splash-page";
 import TicketDetail from "@/screens/ticket/ticket-detail-page";
 import { NavigationContainer } from "@react-navigation/native";
@@ -51,6 +53,8 @@ export default function App() {
       <Stack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="Profile" component={Profile} />
+        <Stack.Screen name="Notification" component={Notification} />
         <Stack.Screen name="TicketDetail" component={TicketDetail} />
       </Stack.Navigator>
     </NavigationContainer>

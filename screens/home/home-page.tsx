@@ -46,8 +46,22 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           <View style={styles.titleContainer}>
             <SvgLogo width={70} height={70} />
             <View style={styles.userIcon}>
-              <Feather name="bell" size={20} color="black" onPress={() => {}} />
-              <Feather name="user" size={20} color="black" onPress={() => {}} />
+              <Feather
+                name="bell"
+                size={20}
+                color="black"
+                onPress={() => {
+                  navigation.navigate("Notification");
+                }}
+              />
+              <Feather
+                name="user"
+                size={20}
+                color="black"
+                onPress={() => {
+                  navigation.navigate("Profile");
+                }}
+              />
             </View>
           </View>
           <View style={styles.userContainer}>

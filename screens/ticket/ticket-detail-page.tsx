@@ -1,6 +1,5 @@
-import { AuthButton } from "@/components/auth_button";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { AuthButton } from "@/components/auth";
+import { ThemedText, ThemedView } from "@/components/common";
 import { SAMPLE_TICKETS } from "@/data/ticket";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { RootStackParamList } from "@/types/navigation";

@@ -1,5 +1,4 @@
-import { SvgLogo } from "@/components/SvgLogo";
-import { ThemedText } from "@/components/ThemedText";
+import { SvgLogo, ThemedText } from "@/components/common";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import React, { useEffect } from "react";
 import { Animated, Dimensions, Easing, Platform, SafeAreaView, StyleSheet, View } from "react-native";

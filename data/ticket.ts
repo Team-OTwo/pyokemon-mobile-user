@@ -18,7 +18,7 @@ export const SAMPLE_TICKETS: Ticket[] = [
     location: "서울월드컵경기장",
     seat: "동측 2층 24구역 5열 12번",
     issuer: "대한축구협회",
-    status: "active",
+    status: "expired",
     type: "sports",
   },
   {
@@ -28,7 +28,7 @@ export const SAMPLE_TICKETS: Ticket[] = [
     location: "국립현대미술관",
     seat: "일반 입장권",
     issuer: "국립현대미술관",
-    status: "expired",
+    status: "used",
     type: "exhibition",
   },
   {

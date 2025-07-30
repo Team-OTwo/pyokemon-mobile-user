@@ -5,6 +5,6 @@ export type Ticket = {
   location: string;
   seat: string;
   issuer: string;
-  status: "active" | "used" | "expired";
+  status: "active" | "used" | "expired" | "pending" | "cancelled";
   type: string;
 };

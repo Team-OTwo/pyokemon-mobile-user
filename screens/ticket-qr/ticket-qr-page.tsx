@@ -1,6 +1,5 @@
-import { AuthButton } from "@/components/auth_button";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { AuthButton } from "@/components/auth";
+import { ThemedText, ThemedView } from "@/components/common";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { RootStackParamList } from "@/types/navigation";
 import { RouteProp } from "@react-navigation/native";
@@ -16,8 +15,8 @@ import QRScanner from "./_components/qr-scanner";
 import TestButton from "./_components/test-button";
 
 // Hooks
-import { useCameraPermission } from "./hooks/use-camera-permission";
-import { QRStep, useQRProcess } from "./hooks/use-qr-process";
+import { useCameraPermission } from "./hooks/useCameraPermission";
+import { QRStep, useQRProcess } from "./hooks/useQRProcess";
 
 type TicketQRScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "TicketQR">;

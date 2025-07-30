@@ -1,6 +1,5 @@
-import { AuthButton } from "@/components/auth_button";
-import { AuthInput } from "@/components/auth_Input";
-import { SvgLogo } from "@/components/SvgLogo";
+import { AuthButton, AuthInput } from "@/components/auth";
+import { SvgLogo, ThemedText, ThemedView } from "@/components/common";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { RootStackParamList } from "@/types/navigation";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -17,8 +16,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { ThemedText } from "../../components/ThemedText";
-import { ThemedView } from "../../components/ThemedView";
 
 type LoginScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "Login">;

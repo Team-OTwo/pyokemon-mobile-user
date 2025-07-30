@@ -8,7 +8,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { Platform, SafeAreaView, StyleSheet, View } from "react-native";
-import { TicketList } from "./_components/TicketList";
+import { TicketList } from "./_components/ticket-list";
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "Home">;

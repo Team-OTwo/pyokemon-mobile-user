@@ -2,7 +2,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
-import { ThemedText } from "./ThemedText";
+import { ThemedText } from "../common";
 
 interface AuthInputProps {
   label?: string;

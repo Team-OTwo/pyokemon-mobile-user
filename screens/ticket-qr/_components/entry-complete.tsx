@@ -1,5 +1,5 @@
-import { AuthButton } from "@/components/auth_button";
-import { ThemedText } from "@/components/ThemedText";
+import { AuthButton } from "@/components/auth";
+import { ThemedText } from "@/components/common";
 import { Ticket } from "@/types/ticket";
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";

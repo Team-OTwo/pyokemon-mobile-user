@@ -1,10 +1,10 @@
-import { ThemedText } from "@/components/ThemedText";
+import { ThemedText } from "@/components/common";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Ticket } from "@/types/ticket";
 import { getStatusColor, getStatusText, getTicketFilters, getTypeColor } from "@/utils/ticket.utils";
 import React, { useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { RequestVCButton } from "./RequestVCButton";
+import { RequestVCButton } from "./request-vc-button";
 
 interface TicketCardProps {
   ticket: Ticket;

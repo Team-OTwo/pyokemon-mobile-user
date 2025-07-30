@@ -1,4 +1,4 @@
-import { ThemedText } from "@/components/ThemedText";
+import { ThemedText } from "@/components/common";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { BarcodeScanningResult, CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import { useEffect, useState } from "react";

@@ -1,7 +1,7 @@
-import { ThemedText } from "@/components/ThemedText";
+import { ThemedText } from "@/components/common";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useTicketFilters } from "@/hooks/useTicketFilters";
-import { TicketCard } from "@/screens/home/_components/TicketCard";
+import { TicketCard } from "@/screens/home/_components/ticket-card";
 import { Ticket } from "@/types/ticket";
 import React, { useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, TouchableOpacity, View } from "react-native";

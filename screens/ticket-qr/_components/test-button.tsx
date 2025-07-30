@@ -1,4 +1,4 @@
-import { ThemedText } from "@/components/ThemedText";
+import { ThemedText } from "@/components/common";
 import { Platform, SafeAreaView, StyleSheet, TouchableOpacity } from "react-native";
 
 interface TestButtonProps {

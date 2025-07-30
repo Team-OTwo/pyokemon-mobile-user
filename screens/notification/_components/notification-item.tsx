@@ -1,4 +1,4 @@
-import { ThemedText } from "@/components/ThemedText";
+import { ThemedText } from "@/components/common";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const NotificationItem = ({ notification }: { notification: any }) => {

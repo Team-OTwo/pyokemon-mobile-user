@@ -1,6 +1,4 @@
-import { SvgLogo } from "@/components/SvgLogo";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { SvgLogo, ThemedText, ThemedView } from "@/components/common";
 import { SAMPLE_TICKETS } from "@/data/ticket";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { RootStackParamList } from "@/types/navigation";

@@ -1,4 +1,4 @@
-import { ThemedText } from "@/components/ThemedText";
+import { ThemedText } from "@/components/common";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Ticket } from "@/types/ticket";
 import React, { useState } from "react";

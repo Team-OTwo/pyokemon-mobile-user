@@ -1,8 +1,5 @@
-import { AuthButton } from "@/components/auth_button";
-import { AuthInput } from "@/components/auth_Input";
-import { SvgLogo } from "@/components/SvgLogo";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { AuthButton, AuthInput } from "@/components/auth";
+import { SvgLogo, ThemedText, ThemedView } from "@/components/common";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { RootStackParamList } from "@/types/navigation";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";

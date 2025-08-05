@@ -53,32 +53,24 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       <StatusBar barStyle="default" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <View style={styles.titleContainer}>
-            <SvgLogo width={70} height={70} />
-            <View style={styles.userIcon}>
-              <Feather
-                name="bell"
-                size={20}
-                color={textColor}
-                onPress={() => {
-                  navigation.navigate('Notification');
-                }}
-              />
-              <Feather
-                name="user"
-                size={20}
-                color={textColor}
-                onPress={() => {
-                  navigation.navigate('Profile');
-                }}
-              />
-            </View>
-          </View>
-          <View style={styles.userContainer}>
-            <ThemedText style={styles.welcomeText}>티켓 관리</ThemedText>
-            <ThemedText style={styles.welcomeText}>
-              안녕하세요, {user.name}님!
-            </ThemedText>
+          <ThemedText style={styles.welcomeText}>내 티켓</ThemedText>
+          <View style={styles.userIcon}>
+            <Feather
+              name="bell"
+              size={25}
+              color={textColor}
+              onPress={() => {
+                navigation.navigate('Notification');
+              }}
+            />
+            <Feather
+              name="user"
+              size={25}
+              color={textColor}
+              onPress={() => {
+                navigation.navigate('Profile');
+              }}
+            />
           </View>
         </View>
 
@@ -107,6 +99,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 16,
   },
@@ -116,8 +112,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   welcomeText: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 24,
+    fontWeight: 'bold',
     marginBottom: 4,
   },
   subtitle: {
@@ -135,24 +131,9 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: Platform.OS === 'android' ? 50 : 16,
   },
-  titleContainer: {
-    marginTop: 10,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  userContainer: {
-    position: 'relative',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   userIcon: {
-    position: 'absolute',
     display: 'flex',
     flexDirection: 'row',
     gap: 10,
-    right: 0,
-    top: 23,
   },
 });

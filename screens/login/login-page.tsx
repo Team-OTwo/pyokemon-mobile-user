@@ -172,7 +172,6 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: Platform.OS === 'ios' ? 24 : 32,
-    paddingTop: 10,
     alignItems: 'center',
   },
   title: {

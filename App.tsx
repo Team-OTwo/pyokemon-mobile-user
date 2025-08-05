@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar, useColorScheme } from 'react-native';
@@ -11,15 +11,21 @@ import ProfileScreen from './screens/profile/profile-page';
 import NotificationScreen from './screens/notification/notification-page';
 import TicketDetailScreen from './screens/ticket/ticket-detail-page';
 import TicketQRScreen from './screens/ticket-qr/ticket-qr-page';
+import SplashScreen from './screens/splash/splash-page';
 import { RootStackParamList } from './types/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
+  const [isSplashVisible, setIsSplashVisible] = useState<boolean>(true);
+
+  if (isSplashVisible) {
+    return <SplashScreen onFinish={() => setIsSplashVisible(false)} />;
+  }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView>
       <NavigationContainer>
         <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
         <Stack.Navigator

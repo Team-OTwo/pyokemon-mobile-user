@@ -5,7 +5,6 @@ export type RootStackParamList = {
   Home: undefined;
   Profile: undefined;
   Notification: undefined;
-  QrScan: undefined;
   TicketDetail: { ticketId: string };
   TicketQR: { ticketId: string };
 };

@@ -1,71 +1,90 @@
-import { ThemedText } from "@/components/common";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { BarcodeScanningResult, CameraType, CameraView, useCameraPermissions } from "expo-camera";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { useEffect, useState } from 'react';
+import {
+  PermissionsAndroid,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import QRCodeScanner from 'react-native-qrcode-scanner';
 
 interface QRScannerProps {
   onQRScanned: (data: string) => void;
   title: string;
   description: string;
-  isActive?: boolean;
 }
 
-export default function QRScanner({ onQRScanned, title, description, isActive = true }: QRScannerProps) {
-  const [hasPermission, setHasPermission] = useState(false);
-  const [facing, setFacing] = useState<CameraType>("back");
-  const [cameraActive, setCameraActive] = useState(true);
-  const [isScanning, setIsScanning] = useState(false);
-
-  const [permission, requestPermission] = useCameraPermissions();
-  const tintColor = useThemeColor({ light: "#2E5BFF", dark: "#2E5BFF" }, "tint");
+export default function QRScanner({
+  onQRScanned,
+  title,
+  description,
+}: QRScannerProps) {
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const requestCameraPermission = async () => {
-      const { status } = await requestPermission();
-      setHasPermission(status === "granted");
-    };
     requestCameraPermission();
   }, []);
 
-  const handleBarcodeScanned = (event: BarcodeScanningResult) => {
-    if (isScanning || !isActive) return;
-
-    console.log("QR scanned:", event.data);
-    setIsScanning(true);
-    setCameraActive(false);
-    onQRScanned(event.data);
+  const requestCameraPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: '카메라 권한',
+            message: 'QR 코드를 스캔하기 위해 카메라 권한이 필요합니다.',
+            buttonNeutral: '나중에',
+            buttonNegative: '거부',
+            buttonPositive: '허용',
+          },
+        );
+        setHasPermission(granted === PermissionsAndroid.RESULTS.GRANTED);
+      } catch (err) {
+        console.warn(err);
+        setHasPermission(false);
+      }
+    } else {
+      setHasPermission(true);
+    }
   };
 
-  if (!hasPermission) {
+  const handleBarCodeRead = (event: any) => {
+    const { data } = event;
+    if (data) {
+      onQRScanned(data);
+    }
+  };
+
+  if (hasPermission === null) {
     return (
-      <View style={styles.permissionContainer}>
-        <ActivityIndicator size="large" color={tintColor} />
-        <ThemedText style={styles.permissionText}>카메라 접근 권한이 필요합니다.</ThemedText>
+      <View style={styles.container}>
+        <Text style={styles.text}>카메라 권한을 요청 중...</Text>
+      </View>
+    );
+  }
+
+  if (hasPermission === false) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.text}>카메라 접근 권한이 없습니다.</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <ThemedText style={styles.title}>{title}</ThemedText>
-
-      <View style={styles.scanner}>
-        <CameraView
-          style={styles.camera}
-          facing={facing}
-          onBarcodeScanned={handleBarcodeScanned}
-          barcodeScannerSettings={{
-            barcodeTypes: ["qr"],
-          }}
-          active={cameraActive && isActive}
-        />
-        <View style={styles.scannerOverlay}>
-          <View style={styles.scannerTarget} />
-        </View>
+      <View style={styles.header}>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.description}>{description}</Text>
       </View>
 
-      <ThemedText style={styles.description}>{description}</ThemedText>
+      <View style={styles.cameraContainer}>
+        <QRCodeScanner
+          onRead={handleBarCodeRead}
+          topContent={<Text style={styles.title}>{title}</Text>}
+          bottomContent={<Text style={styles.description}>{description}</Text>}
+        />
+      </View>
     </View>
   );
 }
@@ -73,58 +92,33 @@ export default function QRScanner({ onQRScanned, title, description, isActive = 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+  },
+  header: {
     padding: 20,
+    alignItems: 'center',
   },
   title: {
     fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 24,
-    textAlign: "center",
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
-  scanner: {
-    width: 280,
-    height: 280,
-    overflow: "hidden",
-    borderRadius: 16,
-    marginBottom: 24,
-    position: "relative",
+  description: {
+    fontSize: 14,
+    textAlign: 'center',
+    color: '#666',
+  },
+  cameraContainer: {
+    flex: 1,
+    margin: 20,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   camera: {
     flex: 1,
   },
-  scannerOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  scannerTarget: {
-    width: 200,
-    height: 200,
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-    borderRadius: 16,
-  },
-  description: {
-    fontSize: 14,
-    textAlign: "center",
-    opacity: 0.8,
-    lineHeight: 20,
-  },
-  permissionContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  permissionText: {
+  text: {
+    textAlign: 'center',
     fontSize: 16,
-    marginTop: 16,
-    opacity: 0.7,
+    margin: 20,
   },
 });

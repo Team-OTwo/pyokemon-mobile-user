@@ -1,52 +1,52 @@
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
-import { StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
-import { ThemedText } from "../common";
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { useState } from 'react';
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { Eye, EyeOff } from 'lucide-react-native';
 
-interface AuthInputProps {
-  label?: string;
+export interface AuthInputProps {
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
   secureTextEntry?: boolean;
-  keyboardType?: "default" | "email-address" | "numeric" | "phone-pad";
-  autoCapitalize?: "none" | "sentences" | "words" | "characters";
+  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
   error?: string;
 }
 
 export function AuthInput({
-  label,
   value,
   onChangeText,
   placeholder,
   secureTextEntry = false,
-  keyboardType = "default",
-  autoCapitalize = "none",
+  keyboardType = 'default',
   error,
 }: AuthInputProps) {
-  const [isFocused, setIsFocused] = useState(false);
-  const [isPasswordVisible, setIsPasswordVisible] = useState(!secureTextEntry);
-
-  const backgroundColor = useThemeColor({ light: "#EDECEC", dark: "#1C1E2A" }, "background");
-  const textColor = useThemeColor({ light: "#1A1E2E", dark: "#FFFFFF" }, "text");
-  const placeholderColor = useThemeColor({ light: "#8F9BB3", dark: "#6C7086" }, "tabIconDefault");
-  const tintColor = useThemeColor({ light: "#2E5BFF", dark: "#2E5BFF" }, "tint");
-  const borderColorDefault = useThemeColor({ light: "#E4E8F0", dark: "#2A2D3A" }, "background");
-
-  // 테두리 색상 계산
-  const borderColor = isFocused ? tintColor : error ? "#FF3B30" : borderColorDefault;
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  // const backgroundColor = useThemeColor(
+  //   { light: '#F8F9FA', dark: '#2A2A2A' },
+  //   'background',
+  // );
+  const textColor = useThemeColor(
+    { light: '#11181C', dark: '#ECEDEE' },
+    'text',
+  );
+  const borderColor = useThemeColor(
+    { light: '#E1E3E5', dark: '#404040' },
+    'background',
+  );
+  const errorColor = '#FF3B30';
 
   return (
     <View style={styles.container}>
-      {label && <ThemedText style={styles.label}>{label}</ThemedText>}
       <View
         style={[
           styles.inputContainer,
-          {
-            backgroundColor,
-            borderColor,
-          },
+          { borderColor: error ? errorColor : borderColor },
         ]}
       >
         <TextInput
@@ -54,22 +54,42 @@ export function AuthInput({
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={placeholderColor}
+          placeholderTextColor={useThemeColor(
+            { light: '#6C757D', dark: '#ADB5BD' },
+            'text',
+          )}
           secureTextEntry={secureTextEntry && !isPasswordVisible}
           keyboardType={keyboardType}
-          autoCapitalize={autoCapitalize}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          autoCapitalize="none"
+          autoCorrect={false}
         />
-
         {secureTextEntry && (
-          <TouchableOpacity style={styles.eyeIcon} onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
-            <Ionicons name={isPasswordVisible ? "eye-off" : "eye"} size={20} color={placeholderColor} />
+          <TouchableOpacity
+            onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+          >
+            {isPasswordVisible ? (
+              <EyeOff
+                size={20}
+                color={useThemeColor(
+                  { light: '#6C757D', dark: '#ADB5BD' },
+                  'text',
+                )}
+              />
+            ) : (
+              <Eye
+                size={20}
+                color={useThemeColor(
+                  { light: '#6C757D', dark: '#ADB5BD' },
+                  'text',
+                )}
+              />
+            )}
           </TouchableOpacity>
         )}
       </View>
-
-      {error ? <ThemedText style={[styles.errorText, { color: "#FF3B30" }]}>{error}</ThemedText> : null}
+      {error && (
+        <Text style={[styles.errorText, { color: errorColor }]}>{error}</Text>
+      )}
     </View>
   );
 }
@@ -78,29 +98,22 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 16,
   },
-  label: {
-    fontSize: 14,
-    marginBottom: 8,
-    fontWeight: "500",
-  },
   inputContainer: {
-    height: 56,
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
-    flexDirection: "row",
-    alignItems: "center",
+    borderRadius: 12,
     paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   input: {
     flex: 1,
-    height: "100%",
     fontSize: 16,
-  },
-  eyeIcon: {
-    padding: 4,
+    paddingVertical: 0,
   },
   errorText: {
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 4,
+    marginLeft: 4,
   },
 });

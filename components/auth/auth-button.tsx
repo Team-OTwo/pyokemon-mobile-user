@@ -1,6 +1,12 @@
-import { useThemeColor } from "@/hooks/useThemeColor";
-import React from "react";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, TouchableOpacityProps } from "react-native";
+import { useThemeColor } from '@/hooks/useThemeColor';
+import React from 'react';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableOpacityProps,
+} from 'react-native';
 
 export interface AuthButtonProps extends TouchableOpacityProps {
   title: string;
@@ -18,14 +24,28 @@ export function AuthButton({
   disabled = false,
   ...props
 }: AuthButtonProps) {
-  const tintColor = useThemeColor({ light: "#FFCF36", dark: "#2E5BFF" }, "tint");
-  const textColor = useThemeColor({ light: "#222222", dark: "#FFFFFF" }, "text");
-  const secondaryBgColor = useThemeColor({ light: "#F5F7FA", dark: "#2C3235" }, "background");
-  const secondaryTextColor = useThemeColor({ light: "#2E5BFF", dark: "#2E5BFF" }, "text");
+  const tintColor = useThemeColor(
+    { light: '#75B8FF', dark: '#2E5BFF' },
+    'tint',
+  );
+  const textColor = useThemeColor(
+    { light: '#FFFFFF', dark: '#FFFFFF' },
+    'text',
+  );
+  const secondaryBgColor = useThemeColor(
+    { light: '#F5F7FA', dark: '#2C3235' },
+    'background',
+  );
+  const secondaryTextColor = useThemeColor(
+    { light: '#2E5BFF', dark: '#2E5BFF' },
+    'text',
+  );
 
   const buttonStyle = [
     styles.button,
-    isPrimary ? { backgroundColor: tintColor } : { backgroundColor: secondaryBgColor },
+    isPrimary
+      ? { backgroundColor: tintColor }
+      : { backgroundColor: secondaryBgColor },
     disabled && styles.disabledButton,
   ];
 
@@ -56,14 +76,14 @@ const styles = StyleSheet.create({
   button: {
     height: 56,
     borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 16,
-    width: "100%",
+    width: '100%',
   },
   text: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   disabledButton: {
     opacity: 0.6,

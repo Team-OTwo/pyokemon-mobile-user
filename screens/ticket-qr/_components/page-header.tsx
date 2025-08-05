@@ -1,6 +1,6 @@
-import { ThemedText } from "@/components/common";
-import { Ionicons } from "@expo/vector-icons";
-import { Platform, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ThemedText } from '@/components/common';
+import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 interface PageHeaderProps {
   title: string;
@@ -21,20 +21,20 @@ export default function PageHeader({ title, onBackPress }: PageHeaderProps) {
 
 const styles = StyleSheet.create({
   header: {
-    marginTop: Platform.OS === "ios" ? 0 : 30,
-    flexDirection: "row",
+    marginTop: Platform.OS === 'ios' ? 0 : 30,
+    flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    alignItems: "center",
+    alignItems: 'center',
   },
   backButton: {
     padding: 4,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: '600',
     flex: 1,
-    textAlign: "center",
+    textAlign: 'center',
   },
   placeholder: {
     width: 32,

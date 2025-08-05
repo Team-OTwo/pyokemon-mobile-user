@@ -2,10 +2,9 @@ import { ThemedText, ThemedView } from "@/components/common";
 import { SAMPLE_NOTIFICATIONS } from "@/data/notification";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { RootStackParamList } from "@/types/navigation";
-import { Ionicons } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { StatusBar } from "expo-status-bar";
-import { FlatList, Platform, SafeAreaView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { FlatList, Platform, SafeAreaView, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
 import NotificationItem from "./_components/notification-item";
 
 type NotificationProps = {
@@ -20,7 +19,7 @@ export default function Notification({ navigation }: NotificationProps) {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
-      <StatusBar style="auto" />
+      <StatusBar barStyle="default" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>

@@ -1,26 +1,31 @@
-import { SvgLogo, ThemedText, ThemedView } from "@/components/common";
-import { SAMPLE_TICKETS } from "@/data/ticket";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { RootStackParamList } from "@/types/navigation";
-import { Ticket } from "@/types/ticket";
-import { Feather } from "@expo/vector-icons";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
-import { Platform, SafeAreaView, StyleSheet, View } from "react-native";
-import { TicketList } from "./_components/ticket-list";
+import { SvgLogo, ThemedText, ThemedView } from '@/components/common';
+import { SAMPLE_TICKETS } from '@/data/ticket';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { RootStackParamList } from '@/types/navigation';
+import { Ticket } from '@/types/ticket';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useState } from 'react';
+import {
+  Platform,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  View,
+} from 'react-native';
+import Feather from 'react-native-vector-icons/Feather';
+import { TicketList } from './_components/ticket-list';
 
 type HomeScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, "Home">;
+  navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
 };
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
-  const [user, setUser] = useState<{ name: string }>({ name: "사용자" });
+  const [user, setUser] = useState<{ name: string }>({ name: '사용자' });
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
   const handleTicketPress = (ticket: Ticket) => {
-    navigation.navigate("TicketDetail", { ticketId: ticket.id });
+    navigation.navigate('TicketDetail', { ticketId: ticket.id });
   };
 
   const handleRefresh = () => {
@@ -30,15 +35,22 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     }, 1000);
   };
 
-  const backgroundColor = useThemeColor({ light: "#FFFFFF", dark: "#151718" }, "background");
+  const backgroundColor = useThemeColor(
+    { light: '#FFFFFF', dark: '#151718' },
+    'background',
+  );
+  const textColor = useThemeColor(
+    { light: '#11181C', dark: '#ECEDEE' },
+    'text',
+  );
 
   const handleLogout = () => {
-    navigation.navigate("Login");
+    navigation.navigate('Login');
   };
 
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
-      <StatusBar style="auto" />
+      <StatusBar barStyle="default" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.titleContainer}>
@@ -47,24 +59,26 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               <Feather
                 name="bell"
                 size={20}
-                color="black"
+                color={textColor}
                 onPress={() => {
-                  navigation.navigate("Notification");
+                  navigation.navigate('Notification');
                 }}
               />
               <Feather
                 name="user"
                 size={20}
-                color="black"
+                color={textColor}
                 onPress={() => {
-                  navigation.navigate("Profile");
+                  navigation.navigate('Profile');
                 }}
               />
             </View>
           </View>
           <View style={styles.userContainer}>
             <ThemedText style={styles.welcomeText}>티켓 관리</ThemedText>
-            <ThemedText style={styles.welcomeText}>안녕하세요, {user.name}님!</ThemedText>
+            <ThemedText style={styles.welcomeText}>
+              안녕하세요, {user.name}님!
+            </ThemedText>
           </View>
         </View>
 
@@ -98,12 +112,12 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginBottom: 4,
   },
   welcomeText: {
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: '500',
     marginBottom: 4,
   },
   subtitle: {
@@ -115,28 +129,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bottomSafeArea: {
-    backgroundColor: "transparent",
+    backgroundColor: 'transparent',
   },
   footer: {
     padding: 16,
-    paddingBottom: Platform.OS === "android" ? 50 : 16,
+    paddingBottom: Platform.OS === 'android' ? 50 : 16,
   },
   titleContainer: {
     marginTop: 10,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   userContainer: {
-    position: "relative",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   userIcon: {
-    position: "absolute",
-    display: "flex",
-    flexDirection: "row",
+    position: 'absolute',
+    display: 'flex',
+    flexDirection: 'row',
     gap: 10,
     right: 0,
     top: 23,

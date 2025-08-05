@@ -1,4 +1,4 @@
-import * as SecureStore from "expo-secure-store";
+import * as Keychain from "react-native-keychain";
 /**
  * SecureStore 래퍼 서비스
  * 앱의 로컬 데이터 저장을 관리
@@ -11,18 +11,40 @@ import * as SecureStore from "expo-secure-store";
 export interface StorageItem<T = any> {
   key: string;
   value: T;
-  timestamp?: number;
+  timestamp: number;
 }
 
 export const getStorageItem = async <T = any>(key: string): Promise<StorageItem<T> | null> => {
-  const item = await SecureStore.getItemAsync(key);
-  return item ? JSON.parse(item) : null;
+  try {
+    const result = await Keychain.getInternetCredentials(key);
+    if (result && result.password) {
+      const data = JSON.parse(result.password);
+      return data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting storage item:", error);
+    return null;
+  }
 };
 
 export const setStorageItem = async <T = any>(key: string, value: T): Promise<void> => {
-  await SecureStore.setItemAsync(key, JSON.stringify(value));
+  try {
+    const item: StorageItem<T> = {
+      key,
+      value,
+      timestamp: Date.now(),
+    };
+    await Keychain.setInternetCredentials(key, key, JSON.stringify(item));
+  } catch (error) {
+    console.error("Error setting storage item:", error);
+  }
 };
 
 export const removeStorageItem = async (key: string): Promise<void> => {
-  await SecureStore.deleteItemAsync(key);
+  try {
+    await Keychain.resetInternetCredentials(key);
+  } catch (error) {
+    console.error("Error removing storage item:", error);
+  }
 };

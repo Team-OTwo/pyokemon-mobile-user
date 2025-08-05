@@ -1,9 +1,10 @@
-import { AuthButton } from "@/components/auth";
-import { ThemedText } from "@/components/common";
-import { Ticket } from "@/types/ticket";
-import { Ionicons } from "@expo/vector-icons";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { SafeAreaView, StyleSheet, View } from "react-native";
+import { AuthButton } from '@/components/auth';
+import { ThemedText } from '@/components/common';
+import { Ticket } from '@/types/ticket';
+
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { SafeAreaView, StyleSheet, View } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 interface EntryCompleteProps {
   ticket: Ticket;
@@ -11,14 +12,20 @@ interface EntryCompleteProps {
   navigation: NativeStackNavigationProp<any>;
 }
 
-export default function EntryComplete({ ticket, onReset, navigation }: EntryCompleteProps) {
+export default function EntryComplete({
+  ticket,
+  onReset,
+  navigation,
+}: EntryCompleteProps) {
   return (
     <View style={styles.container}>
       <View style={styles.successIcon}>
         <Ionicons name="checkmark-circle" size={80} color="#4CAF50" />
       </View>
 
-      <ThemedText style={styles.completeTitle}>입장이 완료되었습니다!</ThemedText>
+      <ThemedText style={styles.completeTitle}>
+        입장이 완료되었습니다!
+      </ThemedText>
 
       <View style={styles.ticketInfoContainer}>
         <ThemedText style={styles.ticketInfoTitle}>티켓 정보</ThemedText>
@@ -32,7 +39,9 @@ export default function EntryComplete({ ticket, onReset, navigation }: EntryComp
         </View>
         <View style={styles.ticketInfoRow}>
           <ThemedText style={styles.ticketInfoLabel}>장소:</ThemedText>
-          <ThemedText style={styles.ticketInfoValue}>{ticket.location}</ThemedText>
+          <ThemedText style={styles.ticketInfoValue}>
+            {ticket.location}
+          </ThemedText>
         </View>
         <View style={styles.ticketInfoRow}>
           <ThemedText style={styles.ticketInfoLabel}>좌석:</ThemedText>
@@ -42,7 +51,10 @@ export default function EntryComplete({ ticket, onReset, navigation }: EntryComp
 
       <SafeAreaView style={styles.bottomSafeArea}>
         <View style={styles.buttonContainer}>
-          <AuthButton title="홈으로 돌아가기" onPress={() => navigation.navigate("Home")} />
+          <AuthButton
+            title="홈으로 돌아가기"
+            onPress={() => navigation.navigate('Home')}
+          />
         </View>
       </SafeAreaView>
     </View>
@@ -52,8 +64,8 @@ export default function EntryComplete({ ticket, onReset, navigation }: EntryComp
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 40,
   },
   successIcon: {
@@ -61,56 +73,56 @@ const styles = StyleSheet.create({
   },
   completeTitle: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginBottom: 32,
-    textAlign: "center",
-    color: "#4CAF50",
+    textAlign: 'center',
+    color: '#4CAF50',
   },
   ticketInfoContainer: {
-    width: "100%",
+    width: '100%',
     padding: 20,
     borderRadius: 12,
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
     marginBottom: 32,
   },
   ticketInfoTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: '600',
     marginBottom: 16,
-    textAlign: "center",
+    textAlign: 'center',
   },
   ticketInfoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 8,
   },
   ticketInfoLabel: {
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: '500',
     opacity: 0.7,
   },
   ticketInfoValue: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   buttonContainer: {
-    width: "100%",
+    width: '100%',
     gap: 12,
   },
   secondaryButton: {
     padding: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.1)",
-    alignItems: "center",
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    alignItems: 'center',
   },
   secondaryButtonText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     opacity: 0.7,
   },
   bottomSafeArea: {
-    backgroundColor: "transparent",
-    width: "100%",
+    backgroundColor: 'transparent',
+    width: '100%',
   },
 });

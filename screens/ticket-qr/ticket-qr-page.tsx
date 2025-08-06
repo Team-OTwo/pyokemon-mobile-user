@@ -4,8 +4,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { RootStackParamList } from "@/types/navigation";
 import { RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { StatusBar } from "expo-status-bar";
-import { Platform, SafeAreaView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Platform, SafeAreaView, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
 
 // Components
 import EntryComplete from "./_components/entry-complete";
@@ -52,7 +51,7 @@ export default function TicketQRPage({ navigation, route }: TicketQRScreenProps)
   if (loading) {
     return (
       <ThemedView style={[styles.container, { backgroundColor }]}>
-        <StatusBar style="auto" />
+        <StatusBar barStyle="default" />
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.loadingContainer}>
             <ThemedText style={styles.loadingText}>티켓 정보를 불러오는 중...</ThemedText>
@@ -66,7 +65,7 @@ export default function TicketQRPage({ navigation, route }: TicketQRScreenProps)
   if (!ticket) {
     return (
       <ThemedView style={[styles.container, { backgroundColor }]}>
-        <StatusBar style="auto" />
+        <StatusBar barStyle="default" />
         <SafeAreaView style={styles.safeArea}>
           <PageHeader title="입장 QR" onBackPress={() => navigation.goBack()} />
           <View style={styles.notFoundContainer}>
@@ -82,7 +81,7 @@ export default function TicketQRPage({ navigation, route }: TicketQRScreenProps)
   if (!hasPermission) {
     return (
       <ThemedView style={[styles.container, { backgroundColor }]}>
-        <StatusBar style="auto" />
+        <StatusBar barStyle="default" />
         <SafeAreaView style={styles.safeArea}>
           <PageHeader title="입장 QR" onBackPress={() => navigation.goBack()} />
           <View style={styles.notFoundContainer}>
@@ -96,7 +95,7 @@ export default function TicketQRPage({ navigation, route }: TicketQRScreenProps)
 
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
-      <StatusBar style="auto" />
+      <StatusBar barStyle="default" />
       <SafeAreaView style={styles.safeArea}>
         {currentStep === QRStep.SCAN_VENUE_QR && (
           <>

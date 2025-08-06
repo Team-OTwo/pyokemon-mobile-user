@@ -1,10 +1,9 @@
 import { ThemedText, ThemedView } from "@/components/common";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { RootStackParamList } from "@/types/navigation";
-import { Ionicons } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { StatusBar } from "expo-status-bar";
-import { Platform, SafeAreaView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Platform, SafeAreaView, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 type ProfileProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "Profile">;
@@ -17,7 +16,7 @@ export default function Profile({ navigation }: ProfileProps) {
   const borderColor = useThemeColor({ light: "#E5E9F0", dark: "#2C3235" }, "text");
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
-      <StatusBar style="auto" />
+      <StatusBar barStyle="default" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>

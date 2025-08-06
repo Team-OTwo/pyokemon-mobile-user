@@ -4,11 +4,10 @@ import { SAMPLE_TICKETS } from "@/data/ticket";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { RootStackParamList } from "@/types/navigation";
 import { getStatusColor, getStatusText, getTypeColor } from "@/utils/ticket.utils";
-import { Ionicons } from "@expo/vector-icons";
 import { RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { StatusBar } from "expo-status-bar";
-import { Platform, SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 type TicketDetailProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, "TicketDetail">;
@@ -30,7 +29,7 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
   if (!ticket) {
     return (
       <ThemedView style={[styles.container, { backgroundColor }]}>
-        <StatusBar style="auto" />
+        <StatusBar barStyle="default" />
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -53,7 +52,7 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
-      <StatusBar style="auto" />
+      <StatusBar barStyle="default" />
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>

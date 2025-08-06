@@ -1,29 +1,53 @@
-import { ThemedText, ThemedView } from "@/components/common";
-import { SAMPLE_NOTIFICATIONS } from "@/data/notification";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { RootStackParamList } from "@/types/navigation";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { FlatList, Platform, SafeAreaView, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import NotificationItem from "./_components/notification-item";
+import { ThemedText, ThemedView } from '@/components/common';
+import { SAMPLE_NOTIFICATIONS } from '@/data/notification';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { RootStackParamList } from '@/types/navigation';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {
+  FlatList,
+  Platform,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import NotificationItem from './_components/notification-item';
+import { ChevronLeft } from 'lucide-react-native';
 
 type NotificationProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, "Notification">;
+  navigation: NativeStackNavigationProp<RootStackParamList, 'Notification'>;
 };
 
 export default function Notification({ navigation }: NotificationProps) {
-  const backgroundColor = useThemeColor({ light: "#FFFFFF", dark: "#151718" }, "background");
-  const tintColor = useThemeColor({ light: "#2E5BFF", dark: "#2E5BFF" }, "tint");
-  const textColor = useThemeColor({ light: "#11181C", dark: "#ECEDEE" }, "text");
-  const borderColor = useThemeColor({ light: "#E5E9F0", dark: "#2C3235" }, "text");
+  const backgroundColor = useThemeColor(
+    { light: '#FFFFFF', dark: '#151718' },
+    'background',
+  );
+  const tintColor = useThemeColor(
+    { light: '#2E5BFF', dark: '#2E5BFF' },
+    'tint',
+  );
+  const textColor = useThemeColor(
+    { light: '#11181C', dark: '#ECEDEE' },
+    'text',
+  );
+  const borderColor = useThemeColor(
+    { light: '#E5E9F0', dark: '#2C3235' },
+    'text',
+  );
 
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
       <StatusBar barStyle="default" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color={textColor} />
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <ChevronLeft size={24} color={textColor} />
           </TouchableOpacity>
           <ThemedText style={styles.headerTitle}>알림</ThemedText>
           <View style={styles.placeholder} />
@@ -32,7 +56,7 @@ export default function Notification({ navigation }: NotificationProps) {
           <FlatList
             data={SAMPLE_NOTIFICATIONS}
             renderItem={({ item }) => <NotificationItem notification={item} />}
-            keyExtractor={(item) => item.id}
+            keyExtractor={item => item.id}
             style={styles.list}
           />
         </View>
@@ -52,19 +76,19 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    marginTop: Platform.OS === "ios" ? 10 : 30,
+    marginTop: Platform.OS === 'ios' ? 10 : 30,
   },
   backButton: {
     padding: 4,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   placeholder: {
     width: 32,
@@ -73,7 +97,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: "white",
+    backgroundColor: 'white',
   },
   list: {
     flex: 1,

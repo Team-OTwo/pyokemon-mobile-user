@@ -9,7 +9,7 @@ import {
 } from '@/utils/ticket.utils';
 import React, { useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Calendar, MapPin } from 'lucide-react-native';
+import { Calendar, CheckCircle, CircleX, MapPin } from 'lucide-react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
@@ -51,15 +51,13 @@ export function TicketCard({
             {getStatusText(ticket.status)}
           </ThemedText>
           {ticket.status === 'active' && (
-            <Ionicons
-              name="checkmark-circle"
+            <CheckCircle
               size={18}
               color={getStatusColor(ticket.status).textColor}
             />
           )}
           {(ticket.status === 'expired' || ticket.status === 'cancelled') && (
-            <MaterialIcons
-              name="cancel"
+            <CircleX
               size={18}
               color={getStatusColor(ticket.status).textColor}
             />

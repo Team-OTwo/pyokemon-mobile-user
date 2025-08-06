@@ -1,5 +1,5 @@
-import { ThemedText } from "@/components/common";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ThemedText } from '@/components/common';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const NotificationItem = ({ notification }: { notification: any }) => {
   return (
@@ -16,7 +16,7 @@ const NotificationItem = ({ notification }: { notification: any }) => {
         </ThemedText>
       </View>
       <View>
-        <Text style={styles.dot}>{notification.isRead ? "" : "●"}</Text>
+        <Text style={styles.dot}>{notification.isRead ? '' : '●'}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -28,26 +28,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: "white",
+    backgroundColor: 'white',
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E9F0",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    borderBottomColor: '#E5E9F0',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   title: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
   body: {
     fontSize: 14,
   },
   date: {
     fontSize: 12,
-    color: "gray",
+    color: 'gray',
   },
   dot: {
     fontSize: 12,
-    color: "#FFCF36",
+    color: '#2E5BFF',
   },
 });

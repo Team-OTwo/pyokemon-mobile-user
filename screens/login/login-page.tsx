@@ -80,7 +80,15 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
   const handleLogin = async () => {
     if (!validateForm()) return;
-    navigation.navigate('Home');
+
+    // 최초 로그인인지 확인 (실제로는 서버에서 확인해야 함)
+    const isFirstLogin = true; // 임시로 true로 설정
+
+    if (isFirstLogin) {
+      navigation.navigate('Verification');
+    } else {
+      navigation.navigate('Home');
+    }
   };
 
   return (

@@ -12,8 +12,8 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import Feather from 'react-native-vector-icons/Feather';
 import { TicketList } from './_components/ticket-list';
+import { Bell, User } from 'lucide-react-native';
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
@@ -55,16 +55,14 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         <View style={styles.header}>
           <ThemedText style={styles.welcomeText}>내 티켓</ThemedText>
           <View style={styles.userIcon}>
-            <Feather
-              name="bell"
-              size={25}
+            <Bell
+              size={23}
               color={textColor}
               onPress={() => {
                 navigation.navigate('Notification');
               }}
             />
-            <Feather
-              name="user"
+            <User
               size={25}
               color={textColor}
               onPress={() => {

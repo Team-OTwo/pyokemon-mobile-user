@@ -1,26 +1,49 @@
-import { ThemedText, ThemedView } from "@/components/common";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { RootStackParamList } from "@/types/navigation";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Platform, SafeAreaView, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
+import { ThemedText, ThemedView } from '@/components/common';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { RootStackParamList } from '@/types/navigation';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ArrowLeft } from 'lucide-react-native';
+import {
+  Platform,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 type ProfileProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, "Profile">;
+  navigation: NativeStackNavigationProp<RootStackParamList, 'Profile'>;
 };
 
 export default function Profile({ navigation }: ProfileProps) {
-  const backgroundColor = useThemeColor({ light: "#FFFFFF", dark: "#151718" }, "background");
-  const tintColor = useThemeColor({ light: "#2E5BFF", dark: "#2E5BFF" }, "tint");
-  const textColor = useThemeColor({ light: "#11181C", dark: "#ECEDEE" }, "text");
-  const borderColor = useThemeColor({ light: "#E5E9F0", dark: "#2C3235" }, "text");
+  const backgroundColor = useThemeColor(
+    { light: '#FFFFFF', dark: '#151718' },
+    'background',
+  );
+  const tintColor = useThemeColor(
+    { light: '#2E5BFF', dark: '#2E5BFF' },
+    'tint',
+  );
+  const textColor = useThemeColor(
+    { light: '#11181C', dark: '#ECEDEE' },
+    'text',
+  );
+  const borderColor = useThemeColor(
+    { light: '#E5E9F0', dark: '#2C3235' },
+    'text',
+  );
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
       <StatusBar barStyle="default" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color={textColor} />
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <ArrowLeft size={24} color={textColor} />
           </TouchableOpacity>
           <ThemedText style={styles.headerTitle}>마이페이지</ThemedText>
           <View style={styles.placeholder} />
@@ -28,7 +51,9 @@ export default function Profile({ navigation }: ProfileProps) {
         <View style={styles.content}>
           <ThemedText style={styles.title}>알림설정</ThemedText>
           <ThemedText style={styles.title}>로그아웃</ThemedText>
-          <ThemedText style={[styles.title, { color: "red" }]}>회원탈퇴</ThemedText>
+          <ThemedText style={[styles.title, { color: 'red' }]}>
+            회원탈퇴
+          </ThemedText>
         </View>
       </SafeAreaView>
     </ThemedView>
@@ -47,19 +72,19 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    marginTop: Platform.OS === "ios" ? 10 : 30,
+    marginTop: Platform.OS === 'ios' ? 10 : 30,
   },
   backButton: {
     padding: 4,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   placeholder: {
     width: 32,
@@ -71,6 +96,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
   },
 });

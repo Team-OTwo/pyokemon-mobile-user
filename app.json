@@ -1,4 +1,18 @@
 {
   "name": "pyokemon",
-  "displayName": "pyokemon"
+  "displayName": "pyokemon",
+  "expo": {
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "splash": {
+        "image": "./assets/images/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff"
+      }
+    }
+  }
 }

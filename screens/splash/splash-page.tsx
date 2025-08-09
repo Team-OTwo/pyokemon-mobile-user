@@ -92,8 +92,6 @@ export default function SplashPage({ onFinish }: SplashScreenProps) {
             easing: Easing.out(Easing.back(1.8)),
           }),
         ]),
-
-        Animated.delay(1200),
         // 로고 바운스 효과
         Animated.sequence([
           Animated.timing(logoScale, {
@@ -117,9 +115,6 @@ export default function SplashPage({ onFinish }: SplashScreenProps) {
           useNativeDriver: true,
           easing: Easing.out(Easing.ease),
         }),
-
-        // 최종 대기 시간
-        Animated.delay(500),
       ]).start(() => {
         onFinish();
       });
@@ -195,7 +190,7 @@ const styles = StyleSheet.create({
   },
   logoTitle: {
     textAlign: 'center',
-    fontSize: 56,
+    fontSize: 40,
     fontFamily: 'Bungee-Regular',
     fontWeight: '400',
     lineHeight: 80,

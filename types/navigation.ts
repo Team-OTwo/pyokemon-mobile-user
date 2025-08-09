@@ -8,4 +8,5 @@ export type RootStackParamList = {
   Notification: undefined;
   TicketDetail: { ticketId: string };
   TicketQR: { ticketId: string };
+  Verification: undefined;
 };

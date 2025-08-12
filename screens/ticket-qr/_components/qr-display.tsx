@@ -2,6 +2,7 @@ import { ThemedText } from '@/components/common';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 
 interface QRDisplayProps {
   qrData: string;
@@ -58,12 +59,12 @@ export default function QRDisplay({
       <ThemedText style={styles.title}>{title}</ThemedText>
 
       <View style={styles.qrWrapper}>
-        {/* <QRCode
+        <QRCode
           value={qrData}
           size={200}
           color="#000000"
           backgroundColor="#FFFFFF"
-        /> */}
+        />
       </View>
 
       {showTimer && (

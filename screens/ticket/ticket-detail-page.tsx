@@ -3,11 +3,7 @@ import { ThemedText, ThemedView } from '@/components/common';
 import { SAMPLE_TICKETS } from '@/data/ticket';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { RootStackParamList } from '@/types/navigation';
-import {
-  getStatusColor,
-  getStatusText,
-  getTypeColor,
-} from '@/utils/ticket.utils';
+import { getStatusColor, getStatusText } from '@/utils/ticket.utils';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CheckCircle, ChevronLeft, CircleX } from 'lucide-react-native';

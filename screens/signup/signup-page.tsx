@@ -1,10 +1,17 @@
-import { AuthButton, AuthInput } from '@/components/auth';
+import { AuthButton, AuthInput, DatePicker } from '@/components/auth';
 import { SvgLogo, ThemedText, ThemedView } from '@/components/common';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { signup } from '@/services/apis/account';
+import {
+  isValidDate,
+  isValidPhoneNumber,
+  removeHyphens,
+} from '@/utils/format.utils';
 import { RootStackParamList } from '@/types/navigation';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import {
+  Alert,
   Dimensions,
   KeyboardAvoidingView,
   Platform,
@@ -21,16 +28,20 @@ type SignupScreenProps = {
 };
 
 export default function SignupPage({ navigation }: SignupScreenProps) {
-  const [email, setEmail] = useState<string>('');
+  const [loginId, setLoginId] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [confirmPassword, setConfirmPassword] = useState<string>('');
-  const [deviceId, setDeviceId] = useState<string>('');
+  const [passwordCheck, setPasswordCheck] = useState<string>('');
+  const [name, setName] = useState<string>('');
+  const [phone, setPhone] = useState<string>('');
+  const [birth, setBirth] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<{
-    deviceId?: string;
-    email?: string;
+    loginId?: string;
     password?: string;
-    confirmPassword?: string;
+    passwordCheck?: string;
+    name?: string;
+    phone?: string;
+    birth?: string;
   }>({});
 
   const { width, height } = Dimensions.get('window');
@@ -67,28 +78,52 @@ export default function SignupPage({ navigation }: SignupScreenProps) {
 
   const validateForm = (): boolean => {
     const newErrors: {
-      deviceId?: string;
-      email?: string;
+      loginId?: string;
       password?: string;
-      confirmPassword?: string;
+      passwordCheck?: string;
+      name?: string;
+      phone?: string;
+      birth?: string;
     } = {};
 
-    if (!email) {
-      newErrors.email = '이메일을 입력해주세요';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = '올바른 이메일 형식이 아닙니다';
+    // 이메일 검증
+    if (!loginId) {
+      newErrors.loginId = '이메일을 입력해주세요';
+    } else if (!/\S+@\S+\.\S+/.test(loginId)) {
+      newErrors.loginId = '올바른 이메일 형식이 아닙니다';
     }
 
+    // 비밀번호 검증
     if (!password) {
       newErrors.password = '비밀번호를 입력해주세요';
     } else if (password.length < 7) {
       newErrors.password = '비밀번호는 최소 7자 이상이어야 합니다';
     }
 
-    if (!confirmPassword) {
-      newErrors.confirmPassword = '비밀번호 확인을 입력해주세요';
-    } else if (confirmPassword !== password) {
-      newErrors.confirmPassword = '비밀번호가 일치하지 않습니다';
+    // 비밀번호 확인 검증
+    if (!passwordCheck) {
+      newErrors.passwordCheck = '비밀번호 확인을 입력해주세요';
+    } else if (passwordCheck !== password) {
+      newErrors.passwordCheck = '비밀번호가 일치하지 않습니다';
+    }
+
+    // 이름 검증
+    if (!name) {
+      newErrors.name = '이름을 입력해주세요';
+    }
+
+    // 전화번호 검증
+    if (!phone) {
+      newErrors.phone = '전화번호를 입력해주세요';
+    } else if (!isValidPhoneNumber(phone)) {
+      newErrors.phone = '올바른 전화번호 형식이 아닙니다 (예: 010-1234-5678)';
+    }
+
+    // 생년월일 검증
+    if (!birth) {
+      newErrors.birth = '생년월일을 입력해주세요';
+    } else if (!isValidDate(birth)) {
+      newErrors.birth = '올바른 생년월일 형식이 아닙니다 (예: 1999-01-01)';
     }
 
     setErrors(newErrors);
@@ -97,6 +132,27 @@ export default function SignupPage({ navigation }: SignupScreenProps) {
 
   const handleSignup = async () => {
     if (!validateForm()) return;
+
+    setIsLoading(true);
+
+    try {
+      // API 요청 수행
+      await signup(loginId, password, passwordCheck, name, phone, birth);
+
+      Alert.alert(
+        '회원가입 성공',
+        '회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.',
+        [{ text: '확인', onPress: () => navigation.navigate('Login') }],
+      );
+    } catch (error: any) {
+      console.error('회원가입 오류:', error);
+      Alert.alert(
+        '회원가입 실패',
+        error.message || '회원가입 중 오류가 발생했습니다.',
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -123,11 +179,11 @@ export default function SignupPage({ navigation }: SignupScreenProps) {
 
               <View style={styles.form}>
                 <AuthInput
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="pyokemon@gmail.com"
+                  value={loginId}
+                  onChangeText={setLoginId}
+                  placeholder="이메일 (예: example@gmail.com)"
                   keyboardType="email-address"
-                  error={errors.email}
+                  error={errors.loginId}
                 />
 
                 <AuthInput
@@ -139,11 +195,34 @@ export default function SignupPage({ navigation }: SignupScreenProps) {
                 />
 
                 <AuthInput
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
+                  value={passwordCheck}
+                  onChangeText={setPasswordCheck}
                   placeholder="비밀번호를 다시 입력하세요"
                   secureTextEntry
-                  error={errors.confirmPassword}
+                  error={errors.passwordCheck}
+                />
+
+                <AuthInput
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="이름 (예: 홍길동)"
+                  error={errors.name}
+                />
+                <AuthInput
+                  value={phone}
+                  onChangeText={setPhone}
+                  placeholder="전화번호 (예: 010-1234-5678)"
+                  inputType="phone"
+                  error={errors.phone}
+                />
+
+                <DatePicker
+                  value={birth}
+                  onChange={setBirth}
+                  error={errors.birth}
+                  maxDate={new Date()}
+                  minDate={new Date(1900, 0, 1)}
+                  label="생년월일"
                 />
               </View>
               <View>

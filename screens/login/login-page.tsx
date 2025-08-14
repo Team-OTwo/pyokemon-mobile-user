@@ -1,10 +1,12 @@
 import { AuthButton, AuthInput } from '@/components/auth';
 import { SvgLogo, ThemedText, ThemedView } from '@/components/common';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { RootStackParamList } from '@/types/navigation';
+import { login } from '@/services/apis/account';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { getUniqueId } from 'react-native-device-info';
 import React, { useState } from 'react';
 import {
+  Alert,
   Dimensions,
   KeyboardAvoidingView,
   Platform,
@@ -15,9 +17,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { textUpper } from '@/common/text-common';
+import { AuthStackParamList } from '@/types/navigation';
+import useAuth from '@/hooks/useAuth';
 
 type LoginScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Login'>;
+  navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 };
 
 export default function LoginScreen({ navigation }: LoginScreenProps) {
@@ -27,10 +32,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
     {},
   );
+  const { signIn } = useAuth();
 
   const { width, height } = Dimensions.get('window');
   const logoWidth = Math.min(width, height) * 0.4; // 화면 크기의 60%로 로고 너비 설정
-  const logoHeight = logoWidth * 0.465; // SVG 비율 유지 (129:60 = 2.15:1)
+  // const logoHeight = logoWidth * 0.465; // SVG 비율 유지 (129:60 = 2.15:1)
 
   const tintColor = useThemeColor(
     { light: '#807F7F', dark: '#2E5BFF' },
@@ -80,15 +86,41 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
   const handleLogin = async () => {
     if (!validateForm()) return;
+    setIsLoading(true);
 
-    // 최초 로그인인지 확인 (실제로는 서버에서 확인해야 함)
-    const isFirstLogin = true; // 임시로 true로 설정
+    try {
+      // 수정 예정 Spring Boot 쪽에서 처리해야 함
+      const device_number = await getUniqueId();
 
-    if (isFirstLogin) {
-      navigation.navigate('Verification');
-    } else {
-      navigation.navigate('Home');
+      const response = await login(email, password, device_number);
+
+      // 디바이스 등록 여부가 없을 시 등록 과정
+      const osType = textUpper(Platform.OS);
+      const fcmToken = 'fcmToken';
+
+      if (response.deviceStatus === 'NOT_REGISTERED') {
+        navigation.navigate('Verification', {
+          deviceId: device_number,
+          fcmToken,
+          osType,
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken,
+        });
+      } else if (response.deviceStatus === 'MISMATCHED') {
+        navigation.navigate('Verification', {
+          deviceId: device_number,
+          fcmToken,
+          osType,
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken,
+        });
+      } else {
+        signIn(response.accessToken, response.refreshToken);
+      }
+    } catch (error: any) {
+      Alert.alert('로그인에 실패했습니다.', error.message);
     }
+    setIsLoading(false);
   };
 
   return (

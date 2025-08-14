@@ -1,6 +1,9 @@
 import { ThemedText, ThemedView } from '@/components/common';
+import useAuth from '@/hooks/useAuth';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { RootStackParamList } from '@/types/navigation';
+import { removeStorageItem } from '@/services';
+import { removeTokens } from '@/services/storage/securStorage';
+import { MainStackParamList } from '@/types/navigation';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ArrowLeft } from 'lucide-react-native';
 import {
@@ -11,13 +14,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 
 type ProfileProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Profile'>;
+  navigation: NativeStackNavigationProp<MainStackParamList, 'Profile'>;
 };
 
 export default function Profile({ navigation }: ProfileProps) {
+  const { signOut } = useAuth();
+
   const backgroundColor = useThemeColor(
     { light: '#FFFFFF', dark: '#151718' },
     'background',
@@ -34,6 +38,15 @@ export default function Profile({ navigation }: ProfileProps) {
     { light: '#E5E9F0', dark: '#2C3235' },
     'text',
   );
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
       <StatusBar barStyle="default" />
@@ -50,7 +63,9 @@ export default function Profile({ navigation }: ProfileProps) {
         </View>
         <View style={styles.content}>
           <ThemedText style={styles.title}>알림설정</ThemedText>
-          <ThemedText style={styles.title}>로그아웃</ThemedText>
+          <ThemedText style={styles.title} onPress={handleLogout}>
+            로그아웃
+          </ThemedText>
           <ThemedText style={[styles.title, { color: 'red' }]}>
             회원탈퇴
           </ThemedText>

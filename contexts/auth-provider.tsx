@@ -34,8 +34,8 @@ export default function AuthProvider({
   const authActions = useMemo(
     () => ({
       signIn: async (accessToken: string, refreshToken: string) => {
-        setUserToken(accessToken);
         await setTokens(accessToken, refreshToken);
+        setUserToken(accessToken);
       },
       signOut: async () => {
         await removeTokens();

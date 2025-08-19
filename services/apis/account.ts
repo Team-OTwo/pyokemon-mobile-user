@@ -63,6 +63,7 @@ export const registerDevice = async (
       },
     },
   );
+  console.log('response', response);
   if (response.success && response.data) {
     return response.data;
   }

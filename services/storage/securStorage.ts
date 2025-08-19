@@ -1,4 +1,4 @@
-import * as Keychain from "react-native-keychain";
+import * as Keychain from 'react-native-keychain';
 /**
  * SecureStore 래퍼 서비스
  * 앱의 로컬 데이터 저장을 관리
@@ -8,43 +8,78 @@ import * as Keychain from "react-native-keychain";
  * 데이터 삭제 시 자동으로 타임스탬프 삭제
  */
 
-export interface StorageItem<T = any> {
-  key: string;
-  value: T;
-  timestamp: number;
-}
-
-export const getStorageItem = async <T = any>(key: string): Promise<StorageItem<T> | null> => {
+/**
+ * 액세스 토큰과 리프레시 토큰을 키체인에 저장합니다.
+ * @param {string} accessToken - 저장할 액세스 토큰
+ * @param {string} refreshToken - 저장할 리프레시 토큰
+ */
+export const setTokens = async (accessToken: string, refreshToken: string) => {
   try {
-    const result = await Keychain.getInternetCredentials(key);
-    if (result && result.password) {
-      const data = JSON.parse(result.password);
-      return data;
-    }
-    return null;
-  } catch (error) {
-    console.error("Error getting storage item:", error);
-    return null;
-  }
-};
-
-export const setStorageItem = async <T = any>(key: string, value: T): Promise<void> => {
-  try {
-    const item: StorageItem<T> = {
-      key,
-      value,
-      timestamp: Date.now(),
+    // 저장할 토큰들을 하나의 객체로 만듭니다.
+    const tokens = {
+      accessToken,
+      refreshToken,
     };
-    await Keychain.setInternetCredentials(key, key, JSON.stringify(item));
+
+    // 객체를 JSON 문자열로 변환하여 저장합니다.
+    // 'authToken'은 이 데이터를 식별하기 위한 고유한 키(username 역할)입니다.
+    await Keychain.setGenericPassword('authToken', JSON.stringify(tokens));
+    console.log('✅ 토큰이 안전하게 저장되었습니다.');
   } catch (error) {
-    console.error("Error setting storage item:", error);
+    console.error('토큰 저장 중 오류 발생:', error);
   }
 };
 
-export const removeStorageItem = async (key: string): Promise<void> => {
+/**
+ * 키체인에서 토큰 객체(accessToken, refreshToken)를 불러옵니다.
+ * @returns {Promise<{accessToken: string, refreshToken: string} | null>} 토큰 객체 또는 null
+ */
+export const getTokens = async (): Promise<{
+  accessToken: string;
+  refreshToken: string;
+} | null> => {
   try {
-    await Keychain.resetInternetCredentials(key);
+    // 'authToken' 키로 저장된 데이터를 불러옵니다.
+    const credentials = await Keychain.getGenericPassword();
+
+    if (credentials) {
+      // 저장된 password(JSON 문자열)를 다시 객체로 파싱합니다.
+      const tokens = JSON.parse(credentials.password);
+      console.log('🔑 불러온 토큰:', tokens);
+      return tokens;
+    } else {
+      console.log('저장된 토큰이 없습니다.');
+      return null;
+    }
   } catch (error) {
-    console.error("Error removing storage item:", error);
+    return null;
+  }
+};
+
+export const removeTokens = async () => {
+  try {
+    // 1. 현재 저장된 토큰을 모두 가져옵니다.
+    const currentTokens = await getTokens();
+
+    if (!currentTokens) {
+      console.log('삭제할 토큰이 없습니다.');
+      return;
+    }
+
+    // 2. 불러온 객체에서 refreshToken 속성을 삭제합니다.
+    const { accessToken, ...rest } = currentTokens;
+    await Keychain.setGenericPassword('authToken', JSON.stringify(rest));
+
+    // 3. 수정된 객체를 다시 키체인에 저장(덮어쓰기)합니다.
+    // 'authToken'은 저장할 때 사용했던 키와 동일해야 합니다.
+    // await Keychain.setGenericPassword(
+    //   'authToken',
+    //   JSON.stringify(currentTokens),
+    // );
+    await Keychain.resetGenericPassword();
+    // const updatedTokens = await getTokens();
+    // console.log('✨ 수정 후 데이터:', updatedTokens); // { accessToken: '...' }
+  } catch (error) {
+    console.error('리프레시 토큰 삭제 중 오류 발생:', error);
   }
 };

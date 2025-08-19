@@ -94,3 +94,6 @@ package-lock.json
 
 # Miscellaneous
 *.swp
+
+
+.env.local

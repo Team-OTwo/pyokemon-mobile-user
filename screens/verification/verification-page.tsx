@@ -1,7 +1,10 @@
 import { AuthButton, AuthInput } from '@/components/auth';
 import { ThemedText, ThemedView } from '@/components/common';
+import useAuth from '@/hooks/useAuth';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { RootStackParamList } from '@/types/navigation';
+import { registerDevice } from '@/services/apis/account';
+import { AuthStackParamList } from '@/types/navigation';
+import { RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -15,11 +18,13 @@ import {
   View,
   Text,
   TouchableOpacity,
+  BackHandler,
 } from 'react-native';
 
 // Types
 type VerificationScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Verification'>;
+  navigation: NativeStackNavigationProp<AuthStackParamList, 'Verification'>;
+  route: RouteProp<AuthStackParamList, 'Verification'>;
 };
 
 type VerificationStep = {
@@ -43,7 +48,7 @@ const VERIFICATION_STEPS: VerificationStep[] = [
     id: 0,
     title: '본인 인증을 시작합니다',
     subtitle:
-      '최초 로그인이시군요!\n안전한 서비스 이용을 위해\n본인 인증을 진행해주세요',
+      '최초 로그인이시군요!\n회원님의 기기등록을 위해\n본인 인증을 진행해주세요',
     icon: 'verified-user',
     hasInput: false,
     buttonText: '본인인증 시작하기',
@@ -186,6 +191,7 @@ const useVerificationValidation = () => {
         return false;
       }
       setErrors({});
+
       return true;
     },
     [],
@@ -325,7 +331,16 @@ const VerificationInput: React.FC<{
 // Main Component
 export default function VerificationScreen({
   navigation,
+  route,
 }: VerificationScreenProps) {
+  const { deviceId, fcmToken, osType, accessToken, refreshToken } =
+    route.params as {
+      deviceId: string;
+      fcmToken: string;
+      osType: string;
+      accessToken: string;
+      refreshToken: string;
+    };
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [phoneNumber, setPhoneNumber] = useState<string>('');
@@ -346,6 +361,8 @@ export default function VerificationScreen({
     useVerificationTimer();
   const { errors, validatePhoneNumber, validateVerificationCode, clearErrors } =
     useVerificationValidation();
+
+  const { signIn } = useAuth();
 
   const currentStepData = useMemo(
     () => VERIFICATION_STEPS[currentStep],
@@ -391,7 +408,7 @@ export default function VerificationScreen({
     }
   }, [startTimer]);
 
-  const handleNextStep = useCallback(() => {
+  const handleNextStep = useCallback(async () => {
     if (currentStep === 0) {
       setCurrentStep(1);
       return;
@@ -401,12 +418,15 @@ export default function VerificationScreen({
       handleSendVerificationCode();
     } else if (currentStep === 2) {
       if (validateVerificationCode(verificationCode)) {
-        stopTimer();
+        const response = await registerDevice(
+          deviceId,
+          fcmToken,
+          osType,
+          accessToken,
+        );
         setCurrentStep(3);
+        stopTimer();
         clearErrors();
-        setTimeout(() => {
-          navigation.replace('Home');
-        }, 2000);
       }
     }
   }, [
@@ -419,9 +439,7 @@ export default function VerificationScreen({
     stopTimer,
   ]);
 
-  const handleHomeNavigation = useCallback(() => {
-    navigation.replace('Home');
-  }, [navigation]);
+  const handleHomeNavigation = useCallback(() => {}, [navigation]);
 
   const renderButton = () => {
     if (currentStep === 0) {

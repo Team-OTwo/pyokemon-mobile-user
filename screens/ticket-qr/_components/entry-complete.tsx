@@ -3,6 +3,7 @@ import { ThemedText } from '@/components/common';
 import { Ticket } from '@/types/ticket';
 
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { CheckCircle } from 'lucide-react-native';
 import { SafeAreaView, StyleSheet, View } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
@@ -20,7 +21,7 @@ export default function EntryComplete({
   return (
     <View style={styles.container}>
       <View style={styles.successIcon}>
-        <Ionicons name="checkmark-circle" size={80} color="#4CAF50" />
+        <CheckCircle size={80} color="#4CAF50" />
       </View>
 
       <ThemedText style={styles.completeTitle}>

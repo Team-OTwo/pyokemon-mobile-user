@@ -1,48 +1,73 @@
-import { AuthButton } from "@/components/auth";
-import { ThemedText, ThemedView } from "@/components/common";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { RootStackParamList } from "@/types/navigation";
-import { RouteProp } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Platform, SafeAreaView, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
+import { AuthButton } from '@/components/auth';
+import { ThemedText, ThemedView } from '@/components/common';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { RootStackParamList } from '@/types/navigation';
+import { RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {
+  Platform,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 // Components
-import EntryComplete from "./_components/entry-complete";
-import PageHeader from "./_components/page-header";
-import QRDisplay from "./_components/qr-display";
-import QRScanner from "./_components/qr-scanner";
-import TestButton from "./_components/test-button";
+import EntryComplete from './_components/entry-complete';
+import PageHeader from './_components/page-header';
+import QRDisplay from './_components/qr-display';
+import QRScanner from './_components/qr-scanner';
+import TestButton from './_components/test-button';
 
 // Hooks
-import { useCameraPermission } from "./hooks/useCameraPermission";
-import { QRStep, useQRProcess } from "./hooks/useQRProcess";
+import { useCameraPermission } from './hooks/useCameraPermission';
+import { QRStep, useQRProcess } from './hooks/useQRProcess';
 
 type TicketQRScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, "TicketQR">;
-  route: RouteProp<RootStackParamList, "TicketQR">;
+  navigation: NativeStackNavigationProp<RootStackParamList, 'TicketQR'>;
+  route: RouteProp<RootStackParamList, 'TicketQR'>;
 };
 
-export default function TicketQRPage({ navigation, route }: TicketQRScreenProps) {
+export default function TicketQRPage({
+  navigation,
+  route,
+}: TicketQRScreenProps) {
   const { ticketId } = route.params;
   const { hasPermission } = useCameraPermission();
 
-  const { loading, ticket, currentStep, entryQRData, handleVenueQRScanned, resetToScanVenue, completeEntry } =
-    useQRProcess(ticketId);
+  const {
+    loading,
+    ticket,
+    currentStep,
+    entryQRData,
+    handleVenueQRScanned,
+    resetToScanVenue,
+    completeEntry,
+  } = useQRProcess(ticketId);
 
-  const backgroundColor = useThemeColor({ light: "#FFFFFF", dark: "#151718" }, "background");
-  const textColor = useThemeColor({ light: "#11181C", dark: "#ECEDEE" }, "text");
+  const backgroundColor = useThemeColor(
+    { light: '#FFFFFF', dark: '#151718' },
+    'background',
+  );
+  const textColor = useThemeColor(
+    { light: '#11181C', dark: '#ECEDEE' },
+    'text',
+  );
 
   const handleTestGenerateQR = () => {
     if (!ticket) return;
     const testVenueCode = `venue_${Date.now()}`;
-    handleVenueQRScanned(JSON.stringify({ type: "venue", venueCode: testVenueCode }));
+    handleVenueQRScanned(
+      JSON.stringify({ type: 'venue', venueCode: testVenueCode }),
+    );
   };
 
   const handleTestEntryComplete = () => {
     // 테스트용: 바로 입장 완료로 이동
     if (entryQRData) {
       // 실제로는 서버에 입장 완료 요청
-      console.log("테스트: 입장 완료");
+      console.log('테스트: 입장 완료');
       completeEntry();
     }
   };
@@ -54,7 +79,9 @@ export default function TicketQRPage({ navigation, route }: TicketQRScreenProps)
         <StatusBar barStyle="default" />
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.loadingContainer}>
-            <ThemedText style={styles.loadingText}>티켓 정보를 불러오는 중...</ThemedText>
+            <ThemedText style={styles.loadingText}>
+              티켓 정보를 불러오는 중...
+            </ThemedText>
           </View>
         </SafeAreaView>
       </ThemedView>
@@ -69,7 +96,9 @@ export default function TicketQRPage({ navigation, route }: TicketQRScreenProps)
         <SafeAreaView style={styles.safeArea}>
           <PageHeader title="입장 QR" onBackPress={() => navigation.goBack()} />
           <View style={styles.notFoundContainer}>
-            <ThemedText style={styles.notFoundText}>티켓을 찾을 수 없습니다.</ThemedText>
+            <ThemedText style={styles.notFoundText}>
+              티켓을 찾을 수 없습니다.
+            </ThemedText>
             <AuthButton title="돌아가기" onPress={() => navigation.goBack()} />
           </View>
         </SafeAreaView>
@@ -85,7 +114,9 @@ export default function TicketQRPage({ navigation, route }: TicketQRScreenProps)
         <SafeAreaView style={styles.safeArea}>
           <PageHeader title="입장 QR" onBackPress={() => navigation.goBack()} />
           <View style={styles.notFoundContainer}>
-            <ThemedText style={styles.notFoundText}>카메라 접근 권한이 필요합니다.</ThemedText>
+            <ThemedText style={styles.notFoundText}>
+              카메라 접근 권한이 필요합니다.
+            </ThemedText>
             <AuthButton title="돌아가기" onPress={() => navigation.goBack()} />
           </View>
         </SafeAreaView>
@@ -99,19 +130,24 @@ export default function TicketQRPage({ navigation, route }: TicketQRScreenProps)
       <SafeAreaView style={styles.safeArea}>
         {currentStep === QRStep.SCAN_VENUE_QR && (
           <>
-            <PageHeader title="입장 게이트 스캔" onBackPress={() => navigation.goBack()} />
-            <QRScanner
-              onQRScanned={handleVenueQRScanned}
-              title="입장 게이트의 QR 코드를 스캔해주세요"
-              description="입장 게이트에 있는 QR 코드를 스캔하면 입장용 QR 코드가 생성됩니다."
+            <PageHeader
+              title="입장 게이트 스캔"
+              onBackPress={() => navigation.goBack()}
             />
-            <TestButton title="테스트용: QR 생성하기" onPress={handleTestGenerateQR} />
+            <QRScanner onQRScanned={handleVenueQRScanned} />
+            <TestButton
+              title="테스트용: QR 생성하기"
+              onPress={handleTestGenerateQR}
+            />
           </>
         )}
 
         {currentStep === QRStep.GENERATE_ENTRY_QR && entryQRData && (
           <>
-            <PageHeader title="입장 QR" onBackPress={() => navigation.goBack()} />
+            <PageHeader
+              title="입장 QR"
+              onBackPress={() => navigation.goBack()}
+            />
             <QRDisplay
               qrData={entryQRData}
               title="입장용 QR 코드"
@@ -120,18 +156,33 @@ export default function TicketQRPage({ navigation, route }: TicketQRScreenProps)
               onTimeExpired={resetToScanVenue}
             />
             <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.secondaryButton} onPress={resetToScanVenue}>
-                <ThemedText style={styles.secondaryButtonText}>다시 스캔하기</ThemedText>
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={resetToScanVenue}
+              >
+                <ThemedText style={styles.secondaryButtonText}>
+                  다시 스캔하기
+                </ThemedText>
               </TouchableOpacity>
             </View>
-            <TestButton title="테스트용: 입장 완료" onPress={handleTestEntryComplete} />
+            <TestButton
+              title="테스트용: 입장 완료"
+              onPress={handleTestEntryComplete}
+            />
           </>
         )}
 
         {currentStep === QRStep.ENTRY_COMPLETE && ticket && (
           <>
-            <PageHeader title="입장 완료" onBackPress={() => navigation.goBack()} />
-            <EntryComplete ticket={ticket} onReset={resetToScanVenue} navigation={navigation} />
+            <PageHeader
+              title="입장 완료"
+              onBackPress={() => navigation.goBack()}
+            />
+            <EntryComplete
+              ticket={ticket}
+              onReset={resetToScanVenue}
+              navigation={navigation}
+            />
           </>
         )}
       </SafeAreaView>
@@ -148,17 +199,17 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loadingText: {
     fontSize: 16,
-    color: "#666",
+    color: '#666',
   },
   notFoundContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
   notFoundText: {
@@ -168,18 +219,18 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     paddingHorizontal: 40,
-    paddingBottom: Platform.OS === "android" ? 24 : 0,
+    paddingBottom: Platform.OS === 'android' ? 24 : 0,
   },
   secondaryButton: {
     padding: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.1)",
-    alignItems: "center",
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    alignItems: 'center',
   },
   secondaryButtonText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     opacity: 0.7,
   },
 });

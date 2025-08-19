@@ -1,90 +1,80 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  PermissionsAndroid,
-  Platform,
   StyleSheet,
   Text,
   View,
+  Linking,
+  TouchableOpacity,
 } from 'react-native';
-import QRCodeScanner from 'react-native-qrcode-scanner';
+import {
+  Camera,
+  useCameraDevice,
+  useCameraPermission,
+  useCodeScanner,
+} from 'react-native-vision-camera';
 
 interface QRScannerProps {
   onQRScanned: (data: string) => void;
-  title: string;
-  description: string;
 }
 
-export default function QRScanner({
-  onQRScanned,
-  title,
-  description,
-}: QRScannerProps) {
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+export default function QRScanner({ onQRScanned }: QRScannerProps) {
+  const { hasPermission, requestPermission } = useCameraPermission();
+  const device = useCameraDevice('back');
+  const [isActive, setIsActive] = useState(false);
+
+  const codeScanner = useCodeScanner({
+    codeTypes: ['qr'],
+    onCodeScanned: codes => {
+      if (codes.length > 0 && codes[0]?.value) {
+        onQRScanned(codes[0].value);
+      }
+    },
+  });
 
   useEffect(() => {
-    requestCameraPermission();
+    if (!hasPermission) {
+      requestPermission();
+    }
+  }, [hasPermission, requestPermission]);
+
+  // 컴포넌트가 마운트되면 카메라 활성화
+  useEffect(() => {
+    setIsActive(true);
+    return () => {
+      setIsActive(false);
+    };
   }, []);
 
-  const requestCameraPermission = async () => {
-    if (Platform.OS === 'android') {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.CAMERA,
-          {
-            title: '카메라 권한',
-            message: 'QR 코드를 스캔하기 위해 카메라 권한이 필요합니다.',
-            buttonNeutral: '나중에',
-            buttonNegative: '거부',
-            buttonPositive: '허용',
-          },
-        );
-        setHasPermission(granted === PermissionsAndroid.RESULTS.GRANTED);
-      } catch (err) {
-        console.warn(err);
-        setHasPermission(false);
-      }
-    } else {
-      setHasPermission(true);
-    }
-  };
-
-  const handleBarCodeRead = (event: any) => {
-    const { data } = event;
-    if (data) {
-      onQRScanned(data);
-    }
-  };
-
-  if (hasPermission === null) {
+  if (device == null) {
     return (
       <View style={styles.container}>
-        <Text style={styles.text}>카메라 권한을 요청 중...</Text>
+        <Text>카메라를 찾을 수 없습니다.</Text>
       </View>
     );
   }
 
-  if (hasPermission === false) {
+  if (!hasPermission) {
     return (
       <View style={styles.container}>
-        <Text style={styles.text}>카메라 접근 권한이 없습니다.</Text>
+        <Text style={styles.permissionText}>카메라 권한이 필요합니다.</Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => Linking.openSettings()}
+        >
+          <Text style={styles.buttonText}>설정으로 이동</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
-      </View>
-
-      <View style={styles.cameraContainer}>
-        <QRCodeScanner
-          onRead={handleBarCodeRead}
-          topContent={<Text style={styles.title}>{title}</Text>}
-          bottomContent={<Text style={styles.description}>{description}</Text>}
-        />
-      </View>
+      <Camera
+        style={StyleSheet.absoluteFill}
+        device={device}
+        isActive={isActive}
+        codeScanner={codeScanner}
+      />
     </View>
   );
 }
@@ -92,33 +82,22 @@ export default function QRScanner({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    padding: 20,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  description: {
-    fontSize: 14,
-    textAlign: 'center',
-    color: '#666',
-  },
-  cameraContainer: {
-    flex: 1,
-    margin: 20,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  camera: {
-    flex: 1,
-  },
-  text: {
-    textAlign: 'center',
+  permissionText: {
     fontSize: 16,
-    margin: 20,
+    marginBottom: 20,
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

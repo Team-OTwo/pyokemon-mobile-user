@@ -1,50 +1,22 @@
-import React, { useState } from 'react';
+import React, { createContext, useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-
-import HomeScreen from './screens/home/home-page';
-import LoginScreen from './screens/login/login-page';
-import SignupScreen from './screens/signup/signup-page';
-import ProfileScreen from './screens/profile/profile-page';
-import NotificationScreen from './screens/notification/notification-page';
-import TicketDetailScreen from './screens/ticket/ticket-detail-page';
-import TicketQRScreen from './screens/ticket-qr/ticket-qr-page';
-import VerificationScreen from './screens/verification/verification-page';
-import SplashScreen from './screens/splash/splash-page';
-import { RootStackParamList } from './types/navigation';
-
-const Stack = createNativeStackNavigator<RootStackParamList>();
+import RootNavigator from './navigation/root-navigator';
+import AuthProvider from './contexts/auth-provider';
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
-  const [isSplashVisible, setIsSplashVisible] = useState<boolean>(true);
-
-  if (isSplashVisible) {
-    return <SplashScreen onFinish={() => setIsSplashVisible(false)} />;
-  }
 
   return (
-    <GestureHandlerRootView>
-      <NavigationContainer>
-        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-        <Stack.Navigator
-          initialRouteName="Login"
-          screenOptions={{
-            headerShown: false,
-          }}
-        >
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Signup" component={SignupScreen} />
-          <Stack.Screen name="Verification" component={VerificationScreen} />
-          <Stack.Screen name="Profile" component={ProfileScreen} />
-          <Stack.Screen name="Notification" component={NotificationScreen} />
-          <Stack.Screen name="TicketDetail" component={TicketDetailScreen} />
-          <Stack.Screen name="TicketQR" component={TicketQRScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <NavigationContainer>
+          <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+          <RootNavigator />
+        </NavigationContainer>
+      </AuthProvider>
     </GestureHandlerRootView>
   );
 }

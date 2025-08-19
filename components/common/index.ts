@@ -5,3 +5,4 @@
 export { ThemedText } from './themed-text';
 export { ThemedView } from './themed-view';
 export { SvgLogo } from './svg-logo';
+export { ConfirmationModal } from './confirmation-modal';

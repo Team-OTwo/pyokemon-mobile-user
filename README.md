@@ -1,4 +1,34 @@
+# Pyokemon
+
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+
+## Components
+
+### ConfirmationModal
+
+확인 여부를 묻는 모달 UI 컴포넌트입니다. 앱의 디자인 시스템에 맞춰 제작되었으며, 다음과 같은 특징을 가지고 있습니다:
+
+- **타입별 스타일링**: `default`, `danger`, `warning` 타입 지원
+- **테마 지원**: 라이트/다크 모드 자동 지원
+- **커스터마이징**: 제목, 메시지, 버튼 텍스트 커스터마이징 가능
+- **접근성**: 키보드 및 백버튼 지원
+
+#### 사용 예시
+
+```tsx
+import { ConfirmationModal } from '@/components/common';
+
+<ConfirmationModal
+  visible={showModal}
+  title="삭제 확인"
+  message="이 항목을 삭제하시겠습니까?"
+  confirmText="삭제"
+  cancelText="취소"
+  onConfirm={handleConfirm}
+  onCancel={handleCancel}
+  type="danger"
+/>;
+```
 
 # Getting Started
 

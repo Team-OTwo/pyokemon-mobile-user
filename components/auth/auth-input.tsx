@@ -116,7 +116,6 @@ export function AuthInput({
         {secureTextEntry && (
           <TouchableOpacity
             onPress={() => setIsPasswordVisible(!isPasswordVisible)}
-            style={styles.eyeButton}
             activeOpacity={0.7}
           >
             {isPasswordVisible ? (
@@ -167,8 +166,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 4,
     marginLeft: 4,
-  },
-  eyeButton: {
-    padding: 4,
   },
 });

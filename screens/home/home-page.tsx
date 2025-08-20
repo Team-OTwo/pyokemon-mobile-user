@@ -1,7 +1,7 @@
-import { SvgLogo, ThemedText, ThemedView } from '@/components/common';
+import { ThemedText, ThemedView } from '@/components/common';
 import { SAMPLE_TICKETS } from '@/data/ticket';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { RootStackParamList } from '@/types/navigation';
+import { MainStackParamList } from '@/types/navigation';
 import { Ticket } from '@/types/ticket';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
@@ -16,7 +16,7 @@ import { TicketList } from './_components/ticket-list';
 import { Bell, User } from 'lucide-react-native';
 
 type HomeScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
+  navigation: NativeStackNavigationProp<MainStackParamList, 'Home'>;
 };
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
@@ -43,10 +43,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     { light: '#11181C', dark: '#ECEDEE' },
     'text',
   );
-
-  const handleLogout = () => {
-    navigation.navigate('Login');
-  };
 
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>

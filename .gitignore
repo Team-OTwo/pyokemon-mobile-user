@@ -97,3 +97,6 @@ package-lock.json
 
 
 .env.local
+
+
+android/app/google-services.json

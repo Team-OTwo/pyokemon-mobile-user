@@ -1,9 +1,10 @@
 import { AuthButton, AuthInput } from '@/components/auth';
-import { SvgLogo, ThemedText, ThemedView } from '@/components/common';
+import { ThemedText, ThemedView } from '@/components/common';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { login } from '@/services/apis/account';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getUniqueId } from 'react-native-device-info';
+import messaging from '@react-native-firebase/messaging';
 import React, { useState } from 'react';
 import {
   Alert,
@@ -36,7 +37,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
   const { width, height } = Dimensions.get('window');
   const logoWidth = Math.min(width, height) * 0.4; // 화면 크기의 60%로 로고 너비 설정
-  // const logoHeight = logoWidth * 0.465; // SVG 비율 유지 (129:60 = 2.15:1)
 
   const tintColor = useThemeColor(
     { light: '#807F7F', dark: '#2E5BFF' },
@@ -96,7 +96,8 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
       // 디바이스 등록 여부가 없을 시 등록 과정
       const osType = textUpper(Platform.OS);
-      const fcmToken = 'fcmToken';
+
+      const fcmToken = await messaging().getToken();
 
       if (response.deviceStatus === 'NOT_REGISTERED') {
         navigation.navigate('Verification', {

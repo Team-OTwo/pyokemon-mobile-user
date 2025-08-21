@@ -1,8 +1,9 @@
 import { AuthButton } from '@/components/auth';
 import { ThemedText, ThemedView } from '@/components/common';
+import PageHeader from '@/components/ui/header';
 import { SAMPLE_TICKETS } from '@/data/ticket';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { RootStackParamList } from '@/types/navigation';
+import { MainStackParamList } from '@/types/navigation';
 import { getStatusColor, getStatusText } from '@/utils/ticket.utils';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -20,8 +21,8 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 type TicketDetailProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'TicketDetail'>;
-  route: RouteProp<RootStackParamList, 'TicketDetail'>;
+  navigation: NativeStackNavigationProp<MainStackParamList, 'TicketDetail'>;
+  route: RouteProp<MainStackParamList, 'TicketDetail'>;
 };
 
 export default function TicketDetail({ navigation, route }: TicketDetailProps) {
@@ -43,7 +44,7 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
   );
 
   const handleGenerateQR = () => {
-    console.log('QR 생성');
+    // console.log('QR 생성');
     navigation.navigate('TicketQR', { ticketId });
   };
 
@@ -52,16 +53,6 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
       <ThemedView style={[styles.container, { backgroundColor }]}>
         <StatusBar barStyle="default" />
         <SafeAreaView style={styles.safeArea}>
-          <View style={styles.header}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-            >
-              <Ionicons name="chevron-back" size={24} color={textColor} />
-            </TouchableOpacity>
-            <ThemedText style={styles.headerTitle}>티켓 상세</ThemedText>
-            <View style={styles.placeholder} />
-          </View>
           <View style={styles.notFoundContainer}>
             <ThemedText style={styles.notFoundText}>
               티켓을 찾을 수 없습니다.
@@ -81,16 +72,10 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.header}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-            >
-              <ChevronLeft size={24} color={textColor} />
-            </TouchableOpacity>
-            <ThemedText style={styles.headerTitle}>티켓 상세</ThemedText>
-            <View style={styles.placeholder} />
-          </View>
+          <PageHeader
+            title="티켓 상세"
+            onBackPress={() => navigation.goBack()}
+          />
 
           <View style={styles.ticketContainer}>
             {/* 티켓 상태 및 타입 */}
@@ -222,13 +207,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginTop: Platform.OS === 'ios' ? 10 : 20,
   },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
+  // backButton: {
+  //   padding: 4,
+  // },
+  // headerTitle: {
+  //   fontSize: 18,
+  //   fontWeight: '600',
+  // },
   placeholder: {
     width: 32,
   },

@@ -1,7 +1,6 @@
 import { ThemedText } from '@/components/common';
-import { ArrowLeft, ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft } from 'lucide-react-native';
 import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 
 interface PageHeaderProps {
   title: string;
@@ -22,7 +21,7 @@ export default function PageHeader({ title, onBackPress }: PageHeaderProps) {
 
 const styles = StyleSheet.create({
   header: {
-    marginTop: Platform.OS === 'ios' ? 0 : 30,
+    // marginTop: Platform.OS === 'ios' ? 0 : 30,
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 12,

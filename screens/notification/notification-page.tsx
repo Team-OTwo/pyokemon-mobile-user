@@ -1,23 +1,20 @@
 import { ThemedText, ThemedView } from '@/components/common';
 import { SAMPLE_NOTIFICATIONS } from '@/data/notification';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { RootStackParamList } from '@/types/navigation';
+import { MainStackParamList } from '@/types/navigation';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   FlatList,
-  Platform,
   SafeAreaView,
   StatusBar,
   StyleSheet,
-  TouchableOpacity,
   View,
 } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import NotificationItem from './_components/notification-item';
-import { ChevronLeft } from 'lucide-react-native';
+import PageHeader from '@/components/ui/header';
 
 type NotificationProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Notification'>;
+  navigation: NativeStackNavigationProp<MainStackParamList, 'Notification'>;
 };
 
 export default function Notification({ navigation }: NotificationProps) {
@@ -42,16 +39,7 @@ export default function Notification({ navigation }: NotificationProps) {
     <ThemedView style={[styles.container, { backgroundColor }]}>
       <StatusBar barStyle="default" />
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          >
-            <ChevronLeft size={24} color={textColor} />
-          </TouchableOpacity>
-          <ThemedText style={styles.headerTitle}>알림</ThemedText>
-          <View style={styles.placeholder} />
-        </View>
+        <PageHeader title="알림" onBackPress={() => navigation.goBack()} />
         <View style={styles.content}>
           <FlatList
             data={SAMPLE_NOTIFICATIONS}
@@ -70,28 +58,6 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginTop: Platform.OS === 'ios' ? 10 : 30,
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  placeholder: {
-    width: 32,
   },
   content: {
     flex: 1,

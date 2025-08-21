@@ -1,19 +1,11 @@
-import { ThemedText, ThemedView } from '@/components/common';
+import { ConfirmationModal, ThemedText, ThemedView } from '@/components/common';
+import PageHeader from '@/components/ui/header';
 import useAuth from '@/hooks/useAuth';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { removeStorageItem } from '@/services';
-import { removeTokens } from '@/services/storage/securStorage';
 import { MainStackParamList } from '@/types/navigation';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ArrowLeft } from 'lucide-react-native';
-import {
-  Platform,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { useState } from 'react';
+import { SafeAreaView, StatusBar, StyleSheet, View } from 'react-native';
 
 type ProfileProps = {
   navigation: NativeStackNavigationProp<MainStackParamList, 'Profile'>;
@@ -21,6 +13,7 @@ type ProfileProps = {
 
 export default function Profile({ navigation }: ProfileProps) {
   const { signOut } = useAuth();
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const backgroundColor = useThemeColor(
     { light: '#FFFFFF', dark: '#151718' },
@@ -47,26 +40,39 @@ export default function Profile({ navigation }: ProfileProps) {
     }
   };
 
+  const handleDeleteAccount = async () => {};
+
+  const onClickModal = () => {
+    setIsModalVisible(true);
+  };
+
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
+      <ConfirmationModal
+        visible={isModalVisible}
+        title="회원탈퇴"
+        message="회원탈퇴 하시겠습니까?"
+        onConfirm={handleDeleteAccount}
+        onCancel={() => {
+          setIsModalVisible(false);
+        }}
+      />
       <StatusBar barStyle="default" />
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          >
-            <ArrowLeft size={24} color={textColor} />
-          </TouchableOpacity>
-          <ThemedText style={styles.headerTitle}>마이페이지</ThemedText>
-          <View style={styles.placeholder} />
-        </View>
+        <PageHeader
+          title="마이페이지"
+          onBackPress={() => navigation.goBack()}
+        />
+
         <View style={styles.content}>
-          <ThemedText style={styles.title}>알림설정</ThemedText>
+          <ThemedText style={styles.title}>알림 설정</ThemedText>
           <ThemedText style={styles.title} onPress={handleLogout}>
             로그아웃
           </ThemedText>
-          <ThemedText style={[styles.title, { color: 'red' }]}>
+          <ThemedText
+            style={[styles.title, { color: 'red' }]}
+            onPress={onClickModal}
+          >
             회원탈퇴
           </ThemedText>
         </View>
@@ -85,21 +91,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginTop: Platform.OS === 'ios' ? 10 : 30,
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
   },
   placeholder: {
     width: 32,

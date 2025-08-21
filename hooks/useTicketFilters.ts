@@ -1,18 +1,11 @@
 import { Ticket } from '@/types/ticket';
+import { FilterOptions } from '@/utils/ticket.utils';
 import { useMemo, useState } from 'react';
 
 export interface FilterOption {
   label: string;
   value: string | null;
 }
-
-export const FilterOptions: FilterOption[] = [
-  { label: '전체', value: null },
-  { label: '콘서트', value: 'concert' },
-  { label: '뮤지컬', value: 'musical' },
-  { label: '연극', value: 'drama' },
-  { label: '클래식', value: 'classic' },
-];
 
 export const useTicketFilters = (tickets: Ticket[]) => {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);

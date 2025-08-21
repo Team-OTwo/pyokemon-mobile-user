@@ -27,7 +27,7 @@ type LoginScreenProps = {
 };
 
 export default function LoginScreen({ navigation }: LoginScreenProps) {
-  const [email, setEmail] = useState<string>('');
+  const [loginId, setLoginId] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
@@ -68,10 +68,8 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const validateForm = (): boolean => {
     const newErrors: { email?: string; password?: string } = {};
 
-    if (!email) {
-      newErrors.email = '이메일을 입력해주세요';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = '올바른 이메일 형식이 아닙니다';
+    if (!loginId) {
+      newErrors.email = '아이디를 입력해주세요';
     }
 
     if (!password) {
@@ -92,8 +90,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       // 수정 예정 Spring Boot 쪽에서 처리해야 함
       const device_number = await getUniqueId();
 
-      const response = await login(email, password, device_number);
-
+      const response = await login(loginId, password, device_number);
       // 디바이스 등록 여부가 없을 시 등록 과정
       const osType = textUpper(Platform.OS);
 
@@ -101,6 +98,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
       if (response.deviceStatus === 'NOT_REGISTERED') {
         navigation.navigate('Verification', {
+          messageType: 'FIRST_LOGIN',
           deviceId: device_number,
           fcmToken,
           osType,
@@ -109,6 +107,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         });
       } else if (response.deviceStatus === 'MISMATCHED') {
         navigation.navigate('Verification', {
+          messageType: 'DIFFERENT_DEVICE',
           deviceId: device_number,
           fcmToken,
           osType,
@@ -148,10 +147,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
               <View style={styles.form}>
                 <AuthInput
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="이메일을 입력하세요"
-                  keyboardType="email-address"
+                  value={loginId}
+                  onChangeText={setLoginId}
+                  placeholder="아이디를 입력하세요"
+                  keyboardType="default"
                   error={errors.email}
                 />
 
@@ -208,11 +207,11 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 16,
+    paddingBottom: 16,
     justifyContent: 'center',
   },
   header: {
-    marginBottom: Platform.OS === 'ios' ? 24 : 32,
+    marginBottom: 32,
     alignItems: 'center',
   },
   title: {

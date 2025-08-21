@@ -39,17 +39,17 @@ export const getStatusColor = (status: string) => {
 export const getStatusText = (status: string) => {
   switch (status) {
     case 'active':
-      return '유효함';
+      return '유효';
     case 'used':
-      return '사용됨';
+      return '사용';
     case 'expired':
-      return '만료됨';
+      return '만료';
     case 'cancelled':
-      return '취소됨';
+      return '취소';
     case 'completed':
-      return '완료됨';
+      return '완료';
     case 'upcoming':
-      return '예정됨';
+      return '예정';
     default:
       return '알 수 없음';
   }

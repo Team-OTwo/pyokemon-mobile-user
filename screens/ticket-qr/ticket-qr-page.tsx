@@ -1,7 +1,6 @@
 import { AuthButton } from '@/components/auth';
 import { ThemedText, ThemedView } from '@/components/common';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { RootStackParamList } from '@/types/navigation';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -14,8 +13,8 @@ import {
 } from 'react-native';
 
 // Components
+import PageHeader from '@/components/ui/header';
 import EntryComplete from './_components/entry-complete';
-import PageHeader from './_components/page-header';
 import QRDisplay from './_components/qr-display';
 import QRScanner from './_components/qr-scanner';
 import TestButton from './_components/test-button';
@@ -23,10 +22,11 @@ import TestButton from './_components/test-button';
 // Hooks
 import { useCameraPermission } from './hooks/useCameraPermission';
 import { QRStep, useQRProcess } from './hooks/useQRProcess';
+import { MainStackParamList } from '@/types/navigation';
 
 type TicketQRScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'TicketQR'>;
-  route: RouteProp<RootStackParamList, 'TicketQR'>;
+  navigation: NativeStackNavigationProp<MainStackParamList, 'TicketQR'>;
+  route: RouteProp<MainStackParamList, 'TicketQR'>;
 };
 
 export default function TicketQRPage({
@@ -67,7 +67,7 @@ export default function TicketQRPage({
     // 테스트용: 바로 입장 완료로 이동
     if (entryQRData) {
       // 실제로는 서버에 입장 완료 요청
-      console.log('테스트: 입장 완료');
+      // console.log('테스트: 입장 완료');
       completeEntry();
     }
   };

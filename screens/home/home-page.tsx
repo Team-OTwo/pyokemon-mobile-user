@@ -77,9 +77,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             refreshing={refreshing}
           />
         </View>
-        <SafeAreaView style={styles.bottomSafeArea}>
-          <View style={styles.footer}></View>
-        </SafeAreaView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -120,10 +117,6 @@ const styles = StyleSheet.create({
   },
   bottomSafeArea: {
     backgroundColor: 'transparent',
-  },
-  footer: {
-    padding: 16,
-    paddingBottom: Platform.OS === 'android' ? 50 : 16,
   },
   userIcon: {
     display: 'flex',

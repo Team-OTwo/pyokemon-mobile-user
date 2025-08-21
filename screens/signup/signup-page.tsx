@@ -2,12 +2,8 @@ import { AuthButton, AuthInput, DatePicker } from '@/components/auth';
 import { SvgLogo, ThemedText, ThemedView } from '@/components/common';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { signup } from '@/services/apis/account';
-import {
-  isValidDate,
-  isValidPhoneNumber,
-  removeHyphens,
-} from '@/utils/format.utils';
-import { RootStackParamList } from '@/types/navigation';
+import { AuthStackParamList } from '@/types/navigation';
+import { isValidDate, isValidPhoneNumber } from '@/utils/format.utils';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import {
@@ -24,7 +20,7 @@ import {
 } from 'react-native';
 
 type SignupScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Signup'>;
+  navigation: NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
 };
 
 export default function SignupPage({ navigation }: SignupScreenProps) {
@@ -88,9 +84,7 @@ export default function SignupPage({ navigation }: SignupScreenProps) {
 
     // 이메일 검증
     if (!loginId) {
-      newErrors.loginId = '이메일을 입력해주세요';
-    } else if (!/\S+@\S+\.\S+/.test(loginId)) {
-      newErrors.loginId = '올바른 이메일 형식이 아닙니다';
+      newErrors.loginId = '아이디를 입력해주세요';
     }
 
     // 비밀번호 검증
@@ -181,8 +175,8 @@ export default function SignupPage({ navigation }: SignupScreenProps) {
                 <AuthInput
                   value={loginId}
                   onChangeText={setLoginId}
-                  placeholder="이메일 (예: example@gmail.com)"
-                  keyboardType="email-address"
+                  placeholder="아이디"
+                  keyboardType="default"
                   error={errors.loginId}
                 />
 

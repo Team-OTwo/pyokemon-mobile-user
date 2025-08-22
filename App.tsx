@@ -13,7 +13,6 @@ function App(): React.JSX.Element {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
         <NavigationContainer>
-          <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
           <RootNavigator />
         </NavigationContainer>
       </AuthProvider>

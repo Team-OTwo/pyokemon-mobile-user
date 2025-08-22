@@ -203,8 +203,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18"
-          cache: "npm"
+          node-version: '18'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
@@ -225,8 +225,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18"
-          cache: "npm"
+          node-version: '18'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
@@ -252,8 +252,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18"
-          cache: "npm"
+          node-version: '18'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
@@ -279,8 +279,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18"
-          cache: "npm"
+          node-version: '18'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
@@ -300,33 +300,6 @@ jobs:
         run: eas submit --platform all --profile production --non-interactive
 ```
 
-## 배포 체크리스트
-
-### 빌드 전 체크리스트
-
-- [ ] 모든 테스트 통과
-- [ ] 린팅 오류 해결
-- [ ] 환경 변수 설정 확인
-- [ ] API 엔드포인트 확인
-- [ ] 앱 아이콘 및 스플래시 이미지 업데이트
-- [ ] 버전 번호 업데이트
-- [ ] 변경사항 문서화
-
-### 배포 전 체크리스트
-
-- [ ] 스테이징 환경에서 테스트 완료
-- [ ] 성능 테스트 완료
-- [ ] 보안 검토 완료
-- [ ] 앱 스토어 가이드라인 준수 확인
-- [ ] 백업 생성
-
-### 배포 후 체크리스트
-
-- [ ] 앱 스토어 승인 확인
-- [ ] 프로덕션 환경 모니터링 설정
-- [ ] 사용자 피드백 수집 준비
-- [ ] 롤백 계획 준비
-
 ## 환경별 설정 관리
 
 ### 개발 환경
@@ -334,34 +307,34 @@ jobs:
 ```typescript
 // constants/environment.ts
 export const getEnvironmentConfig = () => {
-  const env = process.env.EXPO_PUBLIC_ENV || "development";
+  const env = process.env.EXPO_PUBLIC_ENV || 'development';
 
   switch (env) {
-    case "development":
+    case 'development':
       return {
-        apiBaseUrl: "http://localhost:3000/api",
-        appName: "Pyokemon Dev",
+        apiBaseUrl: 'http://localhost:3000/api',
+        appName: 'Pyokemon Dev',
         enableLogs: true,
         enableAnalytics: false,
       };
-    case "staging":
+    case 'staging':
       return {
-        apiBaseUrl: "https://staging-api.pyokemon.com",
-        appName: "Pyokemon Staging",
+        apiBaseUrl: 'https://staging-api.pyokemon.com',
+        appName: 'Pyokemon Staging',
         enableLogs: true,
         enableAnalytics: true,
       };
-    case "production":
+    case 'production':
       return {
-        apiBaseUrl: "https://api.pyokemon.com",
-        appName: "Pyokemon",
+        apiBaseUrl: 'https://api.pyokemon.com',
+        appName: 'Pyokemon',
         enableLogs: false,
         enableAnalytics: true,
       };
     default:
       return {
-        apiBaseUrl: "http://localhost:3000/api",
-        appName: "Pyokemon Dev",
+        apiBaseUrl: 'http://localhost:3000/api',
+        appName: 'Pyokemon Dev',
         enableLogs: true,
         enableAnalytics: false,
       };
@@ -373,7 +346,7 @@ export const getEnvironmentConfig = () => {
 
 ```typescript
 // utils/logger.ts
-import { getEnvironmentConfig } from "@/constants/environment";
+import { getEnvironmentConfig } from '@/constants/environment';
 
 class Logger {
   private config = getEnvironmentConfig();
@@ -406,7 +379,7 @@ export const logger = new Logger();
 
 ```typescript
 // services/analytics/crashlytics.ts
-import { getEnvironmentConfig } from "@/constants/environment";
+import { getEnvironmentConfig } from '@/constants/environment';
 
 class Crashlytics {
   private config = getEnvironmentConfig();
@@ -414,21 +387,21 @@ class Crashlytics {
   init() {
     if (this.config.enableAnalytics) {
       // Crashlytics 초기화
-      console.log("Crashlytics initialized");
+      console.log('Crashlytics initialized');
     }
   }
 
   logError(error: Error, context?: any) {
     if (this.config.enableAnalytics) {
       // 에러 로깅
-      console.error("Crashlytics error logged:", error, context);
+      console.error('Crashlytics error logged:', error, context);
     }
   }
 
   setUser(userId: string) {
     if (this.config.enableAnalytics) {
       // 사용자 ID 설정
-      console.log("Crashlytics user set:", userId);
+      console.log('Crashlytics user set:', userId);
     }
   }
 }
@@ -440,7 +413,7 @@ export const crashlytics = new Crashlytics();
 
 ```typescript
 // services/analytics/performance.ts
-import { getEnvironmentConfig } from "@/constants/environment";
+import { getEnvironmentConfig } from '@/constants/environment';
 
 class PerformanceMonitor {
   private config = getEnvironmentConfig();
@@ -478,7 +451,7 @@ name: Rollback
 
 on:
   workflow_run:
-    workflows: ["Build and Deploy"]
+    workflows: ['Build and Deploy']
     types:
       - completed
 
@@ -514,14 +487,14 @@ eas submit --platform all --profile production
 ```typescript
 // constants/secrets.ts
 export const getApiKeys = () => {
-  const env = process.env.EXPO_PUBLIC_ENV || "development";
+  const env = process.env.EXPO_PUBLIC_ENV || 'development';
 
   return {
     // 환경별 API 키 설정
     [env]: {
       // 프로덕션에서는 환경 변수에서 가져오기
-      apiKey: process.env.EXPO_PUBLIC_API_KEY || "",
-      analyticsKey: process.env.EXPO_PUBLIC_ANALYTICS_KEY || "",
+      apiKey: process.env.EXPO_PUBLIC_API_KEY || '',
+      analyticsKey: process.env.EXPO_PUBLIC_ANALYTICS_KEY || '',
     },
   };
 };

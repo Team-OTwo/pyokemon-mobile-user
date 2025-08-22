@@ -4,13 +4,9 @@
  */
 
 // 스토리지 관련
-export {
-  setStorageItem,
-  getStorageItem,
-  removeStorageItem,
-} from './storage/securStorage';
+export { setTokens, getTokens, removeTokens } from './storage/securStorage';
 
 // API 관련
 export { default as restful } from './apis/restful';
-export { apiService, apiRequest } from './apis/restful';
+export { apiRequest } from './apis/restful';
 export type { HttpMethod, ApiResponse, RequestOptions } from './apis/restful';

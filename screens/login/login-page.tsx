@@ -49,22 +49,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
   const statusBarHeight = 0;
 
-  // iOS 기기 높이에 따른 패딩 조정
-  const getTopPadding = (): number => {
-    if (Platform.OS !== 'ios') return 40;
-
-    if (height <= 667) {
-      // iPhone SE, iPhone 8 등 작은 화면
-      return 30;
-    } else if (height <= 812) {
-      // iPhone X, 11 Pro, 12 mini 등 중간 화면
-      return 50;
-    } else {
-      // iPhone 11, 12, 13 Pro Max 등 큰 화면
-      return 60;
-    }
-  };
-
   const validateForm = (): boolean => {
     const newErrors: { email?: string; password?: string } = {};
 
@@ -88,9 +72,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
     try {
       // 수정 예정 Spring Boot 쪽에서 처리해야 함
-      const device_number = await getUniqueId();
+      const deviceNumber = await getUniqueId();
 
-      const response = await login(loginId, password, device_number);
+      const response = await login(loginId, password, deviceNumber);
       // 디바이스 등록 여부가 없을 시 등록 과정
       const osType = textUpper(Platform.OS);
 
@@ -99,7 +83,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       if (response.deviceStatus === 'NOT_REGISTERED') {
         navigation.navigate('Verification', {
           messageType: 'FIRST_LOGIN',
-          deviceId: device_number,
+          deviceNumber,
           fcmToken,
           osType,
           accessToken: response.accessToken,
@@ -108,7 +92,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       } else if (response.deviceStatus === 'MISMATCHED') {
         navigation.navigate('Verification', {
           messageType: 'DIFFERENT_DEVICE',
-          deviceId: device_number,
+          deviceNumber,
           fcmToken,
           osType,
           accessToken: response.accessToken,
@@ -128,9 +112,8 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       <StatusBar barStyle="default" />
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoid}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? statusBarHeight : 20}
+          keyboardVerticalOffset={20}
         >
           <ScrollView
             contentContainerStyle={styles.scrollContent}
@@ -138,9 +121,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             showsVerticalScrollIndicator={false}
             alwaysBounceVertical={false}
           >
-            <View
-              style={[styles.contentContainer, { paddingTop: getTopPadding() }]}
-            >
+            <View style={[styles.contentContainer]}>
               <View style={styles.header}>
                 <ThemedText style={styles.title}>Pyokemon</ThemedText>
               </View>

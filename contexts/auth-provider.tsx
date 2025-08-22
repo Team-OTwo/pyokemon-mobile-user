@@ -40,11 +40,12 @@ export default function AuthProvider({
       },
       signOut: async () => {
         try {
-          await removeTokens();
-          setUserToken(null);
           await logout();
         } catch (error) {
           console.error(error);
+        } finally {
+          await removeTokens();
+          setUserToken(null);
         }
       },
     }),

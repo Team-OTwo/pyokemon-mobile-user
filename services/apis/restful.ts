@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { getTokens } from '../storage/securStorage';
 import { Platform } from 'react-native';
 
@@ -21,6 +21,18 @@ export interface RequestOptions {
   headers?: Record<string, string>;
   isFormData?: boolean;
   isAuth?: boolean;
+  timeout?: number;
+  retries?: number;
+}
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public message: string,
+    public originalError?: Error,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
 }
 
 /**
@@ -32,15 +44,11 @@ const getAuthToken = async (): Promise<string | null> => {
     const tokenData: any = await getTokens();
     return tokenData?.accessToken || null;
   } catch (error) {
+    // console.error('getAuthToken error', error);
     return null;
   }
 };
 
-/**
- * FormData 객체 생성 함수
- * @param data FormData로 변환할 데이터
- * @returns FormData 객체
- */
 const createFormData = (data: any): FormData => {
   const formData = new FormData();
 
@@ -64,27 +72,55 @@ const createFormData = (data: any): FormData => {
   return formData;
 };
 
-/**
- * API 요청 함수
- * @param method HTTP 메소드
- * @param endpoint API 엔드포인트
- * @param data 요청 데이터
- * @param options 요청 옵션
- * @returns API 응답
- */
+axios.interceptors.response.use(
+  response => response,
+  error => {
+    handleApiError(error);
+    return Promise.reject(error);
+  },
+);
+
+const handleApiError = (error: AxiosError, retries: number = 0): void => {
+  if (error.code === 'ECONNABORTED' && retries > 0) {
+    throw new ApiError(408, '요청 시간이 초과되었습니다.', error);
+  }
+
+  if (error.response) {
+    // 서버 응답이 있는 경우
+    const status = error.response.status;
+    const message =
+      (error.response.data as any).message || '서버 오류가 발생했습니다.';
+    // throw new ApiError(status, message, error);
+  } else if (error.request) {
+    // 요청은 보냈지만 응답을 받지 못한 경우
+    throw new ApiError(0, '네트워크 연결을 확인해주세요.', error);
+  } else {
+    // 요청 자체에 문제가 있는 경우
+    throw new ApiError(0, '요청을 처리할 수 없습니다.', error);
+  }
+};
+
 export const apiRequest = async <T = any>(
   method: HttpMethod,
   endpoint: string,
   data?: any,
   options: RequestOptions = {},
 ): Promise<T> => {
+  const {
+    isFormData = false,
+    isAuth = false,
+    headers = {},
+    timeout = 10000,
+    retries = 0,
+  } = options;
+
   try {
     const url = `${API_URL}${endpoint}`;
-    const { isFormData = false, isAuth = false, headers = {} } = options;
 
     // 기본 설정
     const config: AxiosRequestConfig = {
       headers: { ...headers },
+      timeout,
     };
 
     // 인증 토큰 추가
@@ -118,7 +154,9 @@ export const apiRequest = async <T = any>(
         response = await axios.put(url, requestData, config);
         break;
       case 'DELETE':
-        config.params = requestData;
+        if (requestData && Object.keys(requestData).length > 0) {
+          config.params = requestData;
+        }
         response = await axios.delete(url, config);
         break;
       case 'PATCH':
@@ -129,6 +167,19 @@ export const apiRequest = async <T = any>(
     }
     return response.data;
   } catch (error: any) {
+    // 재시도 로직
+    if (
+      retries > 0 &&
+      (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK')
+    ) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return apiRequest<T>(method, endpoint, data, {
+        ...options,
+        retries: retries - 1,
+      });
+    }
+
+    handleApiError(error, retries);
     throw new Error(error.response.data.message || 'API 요청에 실패했습니다.');
   }
 };
@@ -158,7 +209,7 @@ const apiService = {
 
 // 기존 코드와의 호환성을 위한 함수
 const restful = async (
-  method: 'GET' | 'POST',
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
   uri: string,
   params: any,
   options?: RequestOptions,
@@ -167,9 +218,21 @@ const restful = async (
     return apiService.upload(uri, params);
   }
 
+  // POST, PUT, PATCH 요청 시 params를 data로 전달
+  if (method === 'POST') {
+    return apiService.post(uri, params, options);
+  }
+  if (method === 'PUT') {
+    return apiService.put(uri, params, options);
+  }
+  if (method === 'PATCH') {
+    return apiService.patch(uri, params, options);
+  }
+
+  // GET, DELETE 요청 시 params를 쿼리 파라미터로 전달
   return method === 'GET'
     ? apiService.get(uri, params, options)
-    : apiService.post(uri, params, options);
+    : apiService.delete(uri, params, options);
 };
 
 export default restful;

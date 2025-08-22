@@ -4,7 +4,8 @@ export type Ticket = {
   date: string;
   location: string;
   seat: string;
-  issuer: string;
-  status: "active" | "used" | "expired" | "pending" | "cancelled";
+  tenantName: string;
+  status: 'active' | 'used' | 'expired' | 'pending' | 'cancelled';
   type: string;
+  image?: string;
 };

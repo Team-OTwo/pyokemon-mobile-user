@@ -7,9 +7,11 @@ export const SAMPLE_TICKETS: Ticket[] = [
     date: '2023년 12월 15일 19:30',
     location: '서울 올림픽 주경기장',
     seat: '스탠딩 A구역 12번',
-    issuer: 'Ticketmaster Korea',
+    tenantName: 'Ticketmaster Korea',
     status: 'active',
-    type: 'concert',
+    type: '콘서트',
+    image:
+      'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=200&fit=crop',
   },
   {
     id: '2',
@@ -17,9 +19,11 @@ export const SAMPLE_TICKETS: Ticket[] = [
     date: '2025.12.22(토) 16:00',
     location: '서울월드컵경기장',
     seat: '동측 2층 24구역 5열 12번',
-    issuer: '대한축구협회',
+    tenantName: '대한축구협회',
     status: 'expired',
-    type: 'sports',
+    type: '스포츠',
+    image:
+      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=200&fit=crop',
   },
   {
     id: '3',
@@ -27,9 +31,11 @@ export const SAMPLE_TICKETS: Ticket[] = [
     date: '2025.10.10(목) 13:00',
     location: '국립현대미술관',
     seat: '일반 입장권',
-    issuer: '국립현대미술관',
+    tenantName: '국립현대미술관',
     status: 'used',
-    type: 'exhibition',
+    type: '전시회',
+    image:
+      'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=200&fit=crop',
   },
   {
     id: '4',
@@ -37,8 +43,10 @@ export const SAMPLE_TICKETS: Ticket[] = [
     date: '2025.01.07(화) 19:00',
     location: '샤롯데 씨어터',
     seat: 'R석 1층 C열 15번',
-    issuer: '인터파크 티켓',
+    tenantName: '인터파크 티켓',
     status: 'active',
-    type: 'concert',
+    type: '콘서트',
+    image:
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=200&fit=crop',
   },
 ];

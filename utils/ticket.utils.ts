@@ -2,11 +2,12 @@ import { FilterOption } from '@/hooks/useTicketFilters';
 
 export const FilterOptions: FilterOption[] = [
   { label: '전체', value: null },
-  { label: '콘서트', value: 'concert' },
-  { label: '스포츠', value: 'sports' },
-  { label: '전시회', value: 'exhibition' },
-  { label: '팬미팅', value: 'fanmeeting' },
-  { label: '뮤지컬', value: 'musical' },
+  { label: '콘서트', value: '콘서트' },
+  { label: '뮤지컬', value: '뮤지컬' },
+  { label: '연극', value: '연극' },
+  { label: '클래식', value: '클래식' },
+  { label: '스포츠', value: '스포츠' },
+  { label: '전시회', value: '전시회' },
 ];
 
 export const getTicketFilters = (type: string) => {

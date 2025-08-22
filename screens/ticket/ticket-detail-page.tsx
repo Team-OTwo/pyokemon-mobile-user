@@ -4,21 +4,19 @@ import PageHeader from '@/components/ui/header';
 import { SAMPLE_TICKETS } from '@/data/ticket';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { MainStackParamList } from '@/types/navigation';
-import { getStatusColor, getStatusText } from '@/utils/ticket.utils';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CheckCircle, ChevronLeft, CircleX } from 'lucide-react-native';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Platform,
   SafeAreaView,
-  ScrollView,
   StatusBar,
   StyleSheet,
   TouchableOpacity,
   View,
+  Image,
+  Animated,
 } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 
 type TicketDetailProps = {
   navigation: NativeStackNavigationProp<MainStackParamList, 'TicketDetail'>;
@@ -30,6 +28,21 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
   const [vc, setVc] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const ticket = SAMPLE_TICKETS.find(ticket => ticket.id === ticketId);
+
+  // 애니메이션 값들
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const imageHeight = scrollY.interpolate({
+    inputRange: [0, 150],
+    outputRange: [250, 120],
+    extrapolate: 'clamp',
+  });
+
+  const imageOpacity = scrollY.interpolate({
+    inputRange: [0, 150],
+    outputRange: [1, 0.7],
+    extrapolate: 'clamp',
+  });
+
   const backgroundColor = useThemeColor(
     { light: '#FFFFFF', dark: '#1E2022' },
     'background',
@@ -44,7 +57,6 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
   );
 
   const handleGenerateQR = () => {
-    // console.log('QR 생성');
     navigation.navigate('TicketQR', { ticketId });
   };
 
@@ -68,9 +80,14 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
     <ThemedView style={[styles.container, { backgroundColor }]}>
       <StatusBar barStyle="default" />
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView
+        <Animated.ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false },
+          )}
+          scrollEventThrottle={16}
         >
           <PageHeader
             title="티켓 상세"
@@ -78,31 +95,23 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
           />
 
           <View style={styles.ticketContainer}>
-            {/* 티켓 상태 및 타입 */}
-            <View style={styles.statusContainer}>
-              <ThemedText
-                type="defaultSemiBold"
+            {/* 썸네일 이미지 */}
+            {ticket.image && (
+              <Animated.View
                 style={[
-                  styles.statusText,
-                  { color: getStatusColor(ticket.status).textColor },
+                  styles.thumbnailContainer,
+                  {
+                    height: imageHeight,
+                    opacity: imageOpacity,
+                  },
                 ]}
               >
-                {getStatusText(ticket.status)}
-              </ThemedText>
-              {ticket.status === 'active' && (
-                <CheckCircle
-                  size={18}
-                  color={getStatusColor(ticket.status).textColor}
+                <Image
+                  source={{ uri: ticket.image }}
+                  style={styles.thumbnail}
                 />
-              )}
-              {(ticket.status === 'expired' ||
-                ticket.status === 'cancelled') && (
-                <CircleX
-                  size={18}
-                  color={getStatusColor(ticket.status).textColor}
-                />
-              )}
-            </View>
+              </Animated.View>
+            )}
 
             {/* 티켓 제목 */}
             <ThemedText style={styles.ticketTitle}>{ticket.title}</ThemedText>
@@ -137,7 +146,7 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
                   발급처
                 </ThemedText>
                 <ThemedText style={styles.infoValue}>
-                  {ticket.issuer}
+                  {ticket.tenantName}
                 </ThemedText>
               </View>
             </View>
@@ -153,7 +162,7 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
               </ThemedText>
             </View>
           </View>
-        </ScrollView>
+        </Animated.ScrollView>
 
         {/* 하단 버튼 영역 */}
         <SafeAreaView style={styles.bottomSafeArea}>
@@ -199,33 +208,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 16,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginTop: Platform.OS === 'ios' ? 10 : 20,
-  },
-  // backButton: {
-  //   padding: 4,
-  // },
-  // headerTitle: {
-  //   fontSize: 18,
-  //   fontWeight: '600',
-  // },
-  placeholder: {
-    width: 32,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-  },
   notFoundContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -238,57 +220,50 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   ticketContainer: {
+    marginTop: 20,
     paddingHorizontal: 16,
   },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
+  thumbnailContainer: {
+    height: 250,
+    overflow: 'hidden',
+    marginBottom: 20,
+    marginTop: -20,
+    marginHorizontal: -16,
   },
-  typeTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  typeText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  statusText: {
-    fontSize: 16,
-    fontWeight: '600',
+  thumbnail: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   ticketTitle: {
     fontSize: 24,
-    marginVertical: 10,
-    marginBottom: 30,
+    marginBottom: 24,
     fontWeight: 'bold',
+    lineHeight: 32,
   },
   infoCard: {
     borderWidth: 1,
     borderColor: '#E5E9F0',
     borderRadius: 16,
-    padding: 16,
+    padding: 20,
     marginBottom: 24,
+    backgroundColor: '#FAFAFA',
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 16,
   },
   infoLabel: {
     width: 60,
     fontSize: 16,
     opacity: 0.7,
+    marginRight: 16,
   },
   infoValue: {
     flex: 1,
     fontSize: 16,
     fontWeight: '600',
-  },
-  divider: {
-    height: 1,
-    width: '100%',
-    opacity: 0.5,
   },
   noticeContainer: {
     marginBottom: 24,
@@ -310,9 +285,6 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 16,
     paddingBottom: Platform.OS === 'android' ? 25 : 16,
-  },
-  disabledButton: {
-    opacity: 0.6,
   },
   cancelContainer: {
     borderWidth: 1,

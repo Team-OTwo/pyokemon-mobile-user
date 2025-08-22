@@ -103,7 +103,7 @@ export function TicketList({
           <TicketCard
             ticket={item}
             onPress={onTicketPress}
-            onVCStatusChange={handleVCStatusChange}
+            // onVCStatusChange={handleVCStatusChange}
           />
         )}
         contentContainerStyle={styles.listContent}

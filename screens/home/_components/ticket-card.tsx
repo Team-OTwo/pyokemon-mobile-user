@@ -1,29 +1,25 @@
 import { ThemedText } from '@/components/common';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { Ticket } from '@/types/ticket';
-import {
-  getStatusColor,
-  getStatusText,
-  getTicketFilters,
-  getTypeColor,
-} from '@/utils/ticket.utils';
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Calendar, CheckCircle, CircleX, MapPin } from 'lucide-react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { StyleSheet, TouchableOpacity, View, Image } from 'react-native';
+import {
+  Calendar,
+  MapPin,
+  Shield,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react-native';
 
 interface TicketCardProps {
   ticket: Ticket;
   onPress?: (ticket: Ticket) => void;
-  onVCStatusChange?: () => void;
 }
 
-export function TicketCard({
-  ticket,
-  onPress,
-  onVCStatusChange,
-}: TicketCardProps) {
+export function TicketCard({ ticket, onPress }: TicketCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [hasVC] = useState(ticket.status === 'active'); // VC 보유 여부 (임시로 active 상태로 판단)
+
   const cardBgColor = useThemeColor(
     { light: '#FFFFFF', dark: '#1E2022' },
     'background',
@@ -33,53 +29,99 @@ export function TicketCard({
     'text',
   );
 
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  const handleCardPress = () => {
+    if (onPress) {
+      onPress(ticket);
+    }
+  };
+
   return (
     <TouchableOpacity
       style={[styles.container, { backgroundColor: cardBgColor, borderColor }]}
-      onPress={() => onPress && onPress(ticket)}
+      onPress={handleCardPress}
       activeOpacity={0.7}
     >
-      <View style={styles.titleContainer}>
-        <ThemedText style={styles.title}>{ticket.title}</ThemedText>
-        <View style={styles.statusContainer}>
-          <ThemedText
+      {/* 이미지가 메인인 카드 디자인 */}
+      <View style={styles.imageContainer}>
+        {ticket.image && (
+          <Image source={{ uri: ticket.image }} style={styles.image} />
+        )}
+
+        {/* VC 배지 오버레이 */}
+        <View style={styles.vcBadgeOverlay}>
+          <View
             style={[
-              styles.statusText,
-              { color: getStatusColor(ticket.status).textColor },
+              styles.vcBadge,
+              hasVC ? styles.vcActive : styles.vcInactive,
             ]}
           >
-            {getStatusText(ticket.status)}
-          </ThemedText>
-          {ticket.status === 'active' && (
-            <CheckCircle
-              size={18}
-              color={getStatusColor(ticket.status).textColor}
-            />
-          )}
-          {(ticket.status === 'expired' || ticket.status === 'cancelled') && (
-            <CircleX
-              size={18}
-              color={getStatusColor(ticket.status).textColor}
-            />
-          )}
+            {hasVC && (
+              <Shield size={10} color={hasVC ? '#FFFFFF' : '#9CA3AF'} />
+            )}
+            <ThemedText
+              type="defaultSemiBold"
+              style={[
+                styles.vcBadgeText,
+                hasVC ? styles.vcActiveText : styles.vcInactiveText,
+              ]}
+            >
+              {hasVC ? '발급완료' : '미발급'}
+            </ThemedText>
+          </View>
         </View>
+
+        {/* 확장/축소 버튼 */}
+        <TouchableOpacity style={styles.expandButton} onPress={toggleExpand}>
+          {isExpanded ? (
+            <ChevronUp size={20} color="#FFFFFF" />
+          ) : (
+            <ChevronDown size={20} color="#FFFFFF" />
+          )}
+        </TouchableOpacity>
       </View>
 
+      {/* 기본 정보 */}
       <View style={styles.infoContainer}>
-        <View style={styles.infoRow}>
-          <MapPin size={16} color="#646568" />
-          <ThemedText type="defaultSemiBold" style={styles.infoValue}>
-            {ticket.location}
-          </ThemedText>
-        </View>
+        <ThemedText type="subtitle" numberOfLines={2}>
+          {ticket.title}
+        </ThemedText>
 
-        <View style={styles.infoRow}>
-          <Calendar size={16} color="#646568" />
-          <ThemedText type="defaultSemiBold" style={styles.infoValue}>
-            {ticket.date}
-          </ThemedText>
+        <View>
+          <View style={styles.infoItem}>
+            <MapPin size={14} color="#646568" />
+            <ThemedText
+              type="defaultSemiBold"
+              style={styles.infoText}
+              numberOfLines={1}
+            >
+              {ticket.location}
+            </ThemedText>
+          </View>
+          <View style={styles.infoItem}>
+            <Calendar size={14} color="#646568" />
+            <ThemedText
+              type="defaultSemiBold"
+              style={styles.infoText}
+              numberOfLines={1}
+            >
+              {ticket.date}
+            </ThemedText>
+          </View>
         </View>
       </View>
+
+      {/* 확장된 정보 (VC가 있을 때만) */}
+      {isExpanded && (
+        <View style={styles.expandedContent}>
+          <View style={styles.issuerContainer}>
+            <ThemedText style={styles.issuer}>{ticket.tenantName}</ThemedText>
+          </View>
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
@@ -88,59 +130,89 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 16,
     borderWidth: 1,
-    padding: 24,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
+    elevation: 4,
+    overflow: 'hidden',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  imageContainer: {
+    position: 'relative',
+    height: 180,
   },
-  typeText: {
-    fontSize: 12,
-    fontWeight: '600',
+  image: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
-  statusText: {
-    fontSize: 16,
-    fontWeight: '600',
+  vcBadgeOverlay: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
   },
-  statusContainer: {
-    display: 'flex',
+  vcBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 3,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  vcActive: {
+    backgroundColor: 'rgba(79, 70, 229, 0.9)',
+  },
+  vcInactive: {
+    backgroundColor: 'rgba(156, 163, 175, 0.9)',
+  },
+  vcBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  vcActiveText: {
+    color: '#FFFFFF',
+  },
+  vcInactiveText: {
+    color: '#FFFFFF',
+  },
+  expandButton: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 20,
+    padding: 8,
   },
   infoContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    opacity: 0.7,
+    padding: 12,
   },
-  infoRow: {
-    display: 'flex',
+  title: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  infoItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    flexDirection: 'row',
-    gap: 10,
+    gap: 6,
   },
-  infoValue: {
+  infoText: {
+    fontSize: 13,
+    color: '#6B7280',
     flex: 1,
-    fontSize: 14,
-    fontWeight: '500',
   },
-  titleContainer: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  expandedContent: {
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  issuerContainer: {
     alignItems: 'center',
   },
   issuer: {
     fontSize: 12,
-    opacity: 0.6,
+    color: '#9CA3AF',
+    fontWeight: '500',
   },
 });

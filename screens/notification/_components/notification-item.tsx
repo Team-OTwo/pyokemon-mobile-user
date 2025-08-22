@@ -9,14 +9,14 @@ const NotificationItem = ({ notification }: { notification: any }) => {
           {notification.title}
         </ThemedText>
         <ThemedText style={styles.body} type="subtitle">
-          {notification.body}
+          {notification.message}
         </ThemedText>
         <ThemedText style={styles.date} type="default">
-          {notification.date}
+          {notification.created_at}
         </ThemedText>
       </View>
       <View>
-        <Text style={styles.dot}>{notification.isRead ? '' : '●'}</Text>
+        <Text style={styles.dot}>{notification.is_checked ? '' : '●'}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -48,6 +48,6 @@ const styles = StyleSheet.create({
   },
   dot: {
     fontSize: 12,
-    color: '#2E5BFF',
+    color: '#75B8FF',
   },
 });

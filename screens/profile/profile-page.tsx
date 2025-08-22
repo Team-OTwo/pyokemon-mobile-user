@@ -7,6 +7,7 @@ import {
 import PageHeader from '@/components/ui/header';
 import useAuth from '@/hooks/useAuth';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { deleteUser } from '@/services/apis';
 import { MainStackParamList } from '@/types/navigation';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
@@ -41,7 +42,12 @@ export default function Profile({ navigation }: ProfileProps) {
 
   const handleDeleteAccount = async () => {
     // 회원탈퇴 로직 구현
-    console.log('회원탈퇴 처리');
+    try {
+      await deleteUser();
+      await signOut();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const showModal = (type: ModalType) => {

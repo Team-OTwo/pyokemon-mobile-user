@@ -42,9 +42,13 @@ export default function Notification({ navigation }: NotificationProps) {
         <PageHeader title="알림" onBackPress={() => navigation.goBack()} />
         <View style={styles.content}>
           <FlatList
+            onRefresh={() => {
+              console.log('refresh');
+            }}
+            refreshing={false}
             data={SAMPLE_NOTIFICATIONS}
             renderItem={({ item }) => <NotificationItem notification={item} />}
-            keyExtractor={item => item.id}
+            keyExtractor={item => item.notification_id}
             style={styles.list}
           />
         </View>

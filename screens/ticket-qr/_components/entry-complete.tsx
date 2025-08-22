@@ -54,7 +54,7 @@ export default function EntryComplete({
         <View style={styles.buttonContainer}>
           <AuthButton
             title="홈으로 돌아가기"
-            onPress={() => navigation.navigate('Home')}
+            onPress={() => navigation.replace('Home')}
           />
         </View>
       </SafeAreaView>

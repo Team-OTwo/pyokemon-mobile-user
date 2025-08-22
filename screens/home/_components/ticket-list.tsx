@@ -98,7 +98,7 @@ export function TicketList({
 
       <FlatList
         data={filteredTickets}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item.bookingId.toString()}
         renderItem={({ item }: any) => (
           <TicketCard
             ticket={item}

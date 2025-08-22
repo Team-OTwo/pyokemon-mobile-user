@@ -1,11 +1,27 @@
 export type Ticket = {
-  id: string;
-  title: string;
-  date: string;
-  location: string;
-  seat: string;
+  bookingId: string;
+  eventTitle: string;
+  eventDate: string;
   tenantName: string;
-  status: 'active' | 'used' | 'expired' | 'pending' | 'cancelled';
-  type: string;
-  image?: string;
+  venueName: string;
+  thumbnailUrl: string;
+};
+
+export type TicketDetail = {
+  bookingId: string;
+  event: {
+    title: string;
+    thumbnailUrl: string;
+    eventDate: string;
+    venue: {
+      name: string;
+    };
+  };
+  seat: {
+    className: string;
+    floor: number;
+    row: string;
+    col: string;
+  };
+  tenantName: string;
 };

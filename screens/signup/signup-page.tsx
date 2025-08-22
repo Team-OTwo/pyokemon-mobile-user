@@ -40,10 +40,6 @@ export default function SignupPage({ navigation }: SignupScreenProps) {
     birth?: string;
   }>({});
 
-  const { width, height } = Dimensions.get('window');
-  const logoWidth = Math.min(width, height) * 0.4; // 화면 크기의 60%로 로고 너비 설정
-  const logoHeight = logoWidth * 0.465;
-
   const tintColor = useThemeColor({ light: '#2E5BFF' }, 'tint');
   const backgroundColor = useThemeColor({ light: '#FFFFFF' }, 'background');
 

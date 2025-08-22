@@ -5,13 +5,7 @@ import { MainStackParamList } from '@/types/navigation';
 import { Ticket } from '@/types/ticket';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
-import {
-  Platform,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { SafeAreaView, StatusBar, StyleSheet, View } from 'react-native';
 import { TicketList } from './_components/ticket-list';
 import { Bell, User } from 'lucide-react-native';
 
@@ -25,7 +19,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
   const handleTicketPress = (ticket: Ticket) => {
-    navigation.navigate('TicketDetail', { ticketId: ticket.id });
+    navigation.navigate('TicketDetail', {
+      ticketId: ticket.bookingId.toString(),
+    });
   };
 
   const handleRefresh = () => {

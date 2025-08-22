@@ -18,7 +18,6 @@ interface TicketCardProps {
 
 export function TicketCard({ ticket, onPress }: TicketCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [hasVC] = useState(ticket.status === 'active'); // VC 보유 여부 (임시로 active 상태로 판단)
 
   const cardBgColor = useThemeColor(
     { light: '#FFFFFF', dark: '#1E2022' },
@@ -47,13 +46,13 @@ export function TicketCard({ ticket, onPress }: TicketCardProps) {
     >
       {/* 이미지가 메인인 카드 디자인 */}
       <View style={styles.imageContainer}>
-        {ticket.image && (
-          <Image source={{ uri: ticket.image }} style={styles.image} />
+        {ticket.thumbnailUrl && (
+          <Image source={{ uri: ticket.thumbnailUrl }} style={styles.image} />
         )}
 
         {/* VC 배지 오버레이 */}
         <View style={styles.vcBadgeOverlay}>
-          <View
+          {/* <View
             style={[
               styles.vcBadge,
               hasVC ? styles.vcActive : styles.vcInactive,
@@ -71,7 +70,7 @@ export function TicketCard({ ticket, onPress }: TicketCardProps) {
             >
               {hasVC ? '발급완료' : '미발급'}
             </ThemedText>
-          </View>
+          </View> */}
         </View>
 
         {/* 확장/축소 버튼 */}
@@ -87,7 +86,7 @@ export function TicketCard({ ticket, onPress }: TicketCardProps) {
       {/* 기본 정보 */}
       <View style={styles.infoContainer}>
         <ThemedText type="subtitle" numberOfLines={2}>
-          {ticket.title}
+          {ticket.eventTitle}
         </ThemedText>
 
         <View>
@@ -98,7 +97,7 @@ export function TicketCard({ ticket, onPress }: TicketCardProps) {
               style={styles.infoText}
               numberOfLines={1}
             >
-              {ticket.location}
+              {ticket.venueName}
             </ThemedText>
           </View>
           <View style={styles.infoItem}>
@@ -108,7 +107,7 @@ export function TicketCard({ ticket, onPress }: TicketCardProps) {
               style={styles.infoText}
               numberOfLines={1}
             >
-              {ticket.date}
+              {ticket.eventDate}
             </ThemedText>
           </View>
         </View>

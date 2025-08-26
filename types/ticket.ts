@@ -1,9 +1,9 @@
 export type Ticket = {
-  bookingId: string;
+  bookingId: number;
   eventTitle: string;
   eventDate: string;
-  tenantName: string;
   venueName: string;
+  tenantName: string;
   thumbnailUrl: string;
 };
 

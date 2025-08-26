@@ -1,4 +1,7 @@
-import { FilterOption } from '@/hooks/useTicketFilters';
+export interface FilterOption {
+  label: string;
+  value: string | null;
+}
 
 export const FilterOptions: FilterOption[] = [
   { label: '전체', value: null },

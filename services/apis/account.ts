@@ -34,6 +34,23 @@ export const logout = async () => {
   throw new Error(response.message || '로그아웃에 실패했습니다.');
 };
 
+export const refreshToken = async (refreshToken: string) => {
+  const response = await restful(
+    'POST',
+    'account/api/refresh',
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${refreshToken}`,
+      },
+    },
+  );
+  if (response.success && response) {
+    return response.data;
+  }
+  throw new Error(response.message || '토큰 갱신에 실패했습니다.');
+};
+
 // 회원가입
 export const signup = async (
   loginId: string,
@@ -51,7 +68,7 @@ export const signup = async (
     phone,
     birth,
   });
-
+  console.log(response);
   if (response.success && response) {
     return response.data;
   }

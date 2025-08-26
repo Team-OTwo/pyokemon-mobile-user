@@ -1,9 +1,11 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { getTokens } from '../storage/securStorage';
 import { Platform } from 'react-native';
+import { API_URL } from '@env';
+import { refreshToken } from './account';
 
 // API URL은 환경 변수에서 가져오거나 기본값 사용
-const API_URL = process.env.API_URL || 'https://api.example.com';
+const API_BASE_URL = API_URL || 'https://api.example.com';
 
 // HTTP 메소드 타입 정의
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
@@ -74,8 +76,24 @@ const createFormData = (data: any): FormData => {
 
 axios.interceptors.response.use(
   response => response,
-  error => {
-    handleApiError(error);
+  async error => {
+    if (error.response.status === 401) {
+      const token: any = await getAuthToken();
+      const response = await refreshToken(token.refreshToken);
+      console.log('response', response);
+      // const token: any = await getAuthToken();
+      // console.log('token', token);
+      // if (token) {
+      //   return restful(
+      //     'POST',
+      //     'account/api/refresh',
+      //     {},
+      //     {
+      //       headers: { Authorization: `Bearer ${token}` },
+      //     },
+      //   );
+      // }
+    }
     return Promise.reject(error);
   },
 );
@@ -110,13 +128,12 @@ export const apiRequest = async <T = any>(
     isFormData = false,
     isAuth = false,
     headers = {},
-    timeout = 10000,
+    timeout = 30000, // Default timeout
     retries = 0,
   } = options;
 
   try {
-    const url = `${API_URL}${endpoint}`;
-
+    const url = `${API_BASE_URL}${endpoint}`;
     // 기본 설정
     const config: AxiosRequestConfig = {
       headers: { ...headers },
@@ -179,7 +196,9 @@ export const apiRequest = async <T = any>(
       });
     }
     handleApiError(error, retries);
-    throw new Error(error.response.data.message || 'API 요청에 실패했습니다.');
+    throw new Error(
+      error.response?.data?.message || 'API 요청에 실패했습니다.',
+    );
   }
 };
 

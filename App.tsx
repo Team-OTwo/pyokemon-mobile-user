@@ -1,10 +1,10 @@
-import React, { createContext, useEffect, useState } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { StatusBar, useColorScheme } from 'react-native';
+import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import RootNavigator from './navigation/root-navigator';
 import AuthProvider from './contexts/auth-provider';
+import { NotificationProvider } from './contexts/notification-provider';
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -12,9 +12,11 @@ function App(): React.JSX.Element {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
+        <NotificationProvider>
+          <NavigationContainer>
+            <RootNavigator />
+          </NavigationContainer>
+        </NotificationProvider>
       </AuthProvider>
     </GestureHandlerRootView>
   );

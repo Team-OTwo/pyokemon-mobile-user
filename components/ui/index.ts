@@ -3,3 +3,4 @@
  */
 
 export { default as TabBarBackground } from './tab-bar-background';
+export { Badge } from './badge';

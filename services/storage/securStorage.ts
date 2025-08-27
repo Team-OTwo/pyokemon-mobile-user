@@ -53,6 +53,18 @@ const getTokens = async (): Promise<{
   }
 };
 
+export const setAccessToken = async (accessToken: string) => {
+  try {
+    const tokens = await getTokens();
+    if (tokens) {
+      tokens.accessToken = accessToken;
+      await setTokens(tokens.accessToken, tokens.refreshToken);
+    }
+  } catch (error) {
+    console.error('액세스 토큰 저장 중 오류 발생:', error);
+  }
+};
+
 const removeTokens = async () => {
   try {
     // 1. 현재 저장된 토큰을 모두 가져옵니다.

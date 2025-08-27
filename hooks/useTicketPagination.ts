@@ -3,12 +3,12 @@ import { Ticket } from '@/types/ticket';
 
 export interface PaginationResponse {
   tickets: Ticket[];
-  next_cursor: number | null;
+  next_cursor: string | null;
   hasMore: boolean;
 }
 
 export interface UseTicketPaginationProps {
-  onLoadMore: (cursor?: number, genre?: string) => Promise<PaginationResponse>;
+  onLoadMore: (cursor?: string, genre?: string) => Promise<PaginationResponse>;
 }
 
 export const useTicketPagination = ({
@@ -18,7 +18,7 @@ export const useTicketPagination = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [nextCursor, setNextCursor] = useState<number | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [currentGenre, setCurrentGenre] = useState<string | null>(null);
 

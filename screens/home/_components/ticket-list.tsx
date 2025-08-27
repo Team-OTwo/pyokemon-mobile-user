@@ -3,13 +3,7 @@ import { useThemeColor } from '@/hooks';
 import { TicketCard } from '@/screens/home/_components/ticket-card';
 import { Ticket } from '@/types/ticket';
 import React, { useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
 
 interface TicketListProps {
   tickets: Ticket[];
@@ -19,19 +13,8 @@ interface TicketListProps {
   onTicketPress?: (ticket: Ticket) => void;
   onRefresh?: () => void;
   onLoadMore?: () => void;
-  onGenreChange?: (genre: string | null) => void;
   refreshing?: boolean;
 }
-
-// 장르 필터 옵션
-const GENRE_FILTERS = [
-  { label: '전체', value: null },
-  { label: '콘서트', value: 'concert' },
-  { label: '뮤지컬', value: 'musical' },
-  { label: '연극', value: 'play' },
-  { label: '전시', value: 'exhibition' },
-  { label: '스포츠', value: 'sports' },
-];
 
 export function TicketList({
   tickets,
@@ -41,10 +24,8 @@ export function TicketList({
   onTicketPress,
   onRefresh,
   onLoadMore,
-  onGenreChange,
   refreshing,
 }: TicketListProps) {
-  const [activeGenre, setActiveGenre] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState<number>(0);
 
   const tintColor = useThemeColor(
@@ -59,11 +40,6 @@ export function TicketList({
   // VC 상태 변경 시 리스트 리렌더링
   const handleVCStatusChange = () => {
     setRefreshKey(prevKey => prevKey + 1);
-  };
-
-  const handleGenreFilter = (genre: string | null) => {
-    setActiveGenre(genre);
-    onGenreChange?.(genre);
   };
 
   const handleEndReached = () => {
@@ -95,34 +71,6 @@ export function TicketList({
 
   return (
     <View style={styles.container} key={refreshKey}>
-      <View style={styles.filterContainer}>
-        <FlatList
-          horizontal
-          data={GENRE_FILTERS}
-          keyExtractor={item => item.label}
-          showsHorizontalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[
-                styles.filterButton,
-                activeGenre === item.value && { backgroundColor: tintColor },
-              ]}
-              onPress={() => handleGenreFilter(item.value)}
-            >
-              <ThemedText
-                style={[
-                  styles.filterText,
-                  activeGenre === item.value && { color: '#ffffff' },
-                ]}
-              >
-                {item.label}
-              </ThemedText>
-            </TouchableOpacity>
-          )}
-          contentContainerStyle={styles.filterList}
-        />
-      </View>
-
       <FlatList
         data={tickets}
         keyExtractor={item => item.bookingId.toString()}
@@ -177,24 +125,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     opacity: 0.7,
-  },
-  filterContainer: {
-    paddingVertical: 16,
-  },
-  filterList: {
-    paddingHorizontal: 16,
-  },
-  filterButton: {
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    marginRight: 8,
-    marginTop: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-  },
-  filterText: {
-    fontSize: 16,
-    color: '#646568',
-    fontWeight: 'bold',
   },
   listContent: {
     padding: 16,

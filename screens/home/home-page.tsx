@@ -4,30 +4,29 @@ import { useThemeColor, useTicketPagination, useNotification } from '@/hooks';
 import { MainStackParamList } from '@/types/navigation';
 import { Ticket } from '@/types/ticket';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { TicketList } from './_components/ticket-list';
+import { TicketList, GenreFilter } from './_components';
 import { Bell, User } from 'lucide-react-native';
 import { Badge } from '@/components/ui/badge';
 import { SAMPLE_TICKETS } from '@/data/ticket';
 import { getNotifications } from '@/services/apis/notification';
+import { getListTicket } from '@/services/apis/ticket';
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<MainStackParamList, 'Home'>;
 };
 
 // API 호출 함수 (실제 구현은 사용자가 할 예정)
-const fetchTickets = async (cursor?: number, genre?: string) => {
+const fetchTickets = async (cursor?: string, genre?: string) => {
   // TODO: 실제 API 호출로 교체
-  // const response = await fetch(`/api/app/bookings/my-tickets?${cursor ? `cursor=${cursor}` : ''}${genre ? `&eventgenre=${genre}` : ''}`);
-  // return response.json();
+  const response = await getListTicket(genre, cursor);
 
-  // 임시 더미 데이터
   return {
-    tickets: SAMPLE_TICKETS,
-    next_cursor: null,
-    hasMore: false,
+    tickets: response.content,
+    next_cursor: response.next_cursor,
+    hasMore: response.hasMore,
   };
 };
 
@@ -48,6 +47,7 @@ const fetchUnreadNotificationCount = async () => {
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const { unreadCount, setUnreadCount } = useNotification();
+  const [activeGenre, setActiveGenre] = useState<string | null>(null);
 
   const {
     tickets,
@@ -80,6 +80,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   };
 
   const handleGenreChange = (genre: string | null) => {
+    setActiveGenre(genre);
     changeGenre(genre);
   };
 
@@ -136,6 +137,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         </View>
 
         <View style={styles.content}>
+          <GenreFilter
+            activeGenre={activeGenre}
+            onGenreChange={handleGenreChange}
+          />
           <TicketList
             tickets={tickets}
             isLoading={isLoading}
@@ -144,7 +149,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             onTicketPress={handleTicketPress}
             onRefresh={handleRefresh}
             onLoadMore={handleLoadMore}
-            onGenreChange={handleGenreChange}
             refreshing={refreshing}
           />
         </View>

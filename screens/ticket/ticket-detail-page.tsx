@@ -1,34 +1,71 @@
 import { AuthButton } from '@/components/auth';
 import { ThemedText, ThemedView } from '@/components/common';
-import { SAMPLE_TICKETS } from '@/data/ticket';
+import PageHeader from '@/components/ui/header';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { RootStackParamList } from '@/types/navigation';
-import { getStatusColor, getStatusText } from '@/utils/ticket.utils';
+import { getDetailTicket } from '@/services/apis/ticket';
+import { MainStackParamList } from '@/types/navigation';
+import type { TicketDetail } from '@/types/ticket';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CheckCircle, ChevronLeft, CircleX } from 'lucide-react-native';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Platform,
   SafeAreaView,
-  ScrollView,
   StatusBar,
   StyleSheet,
   TouchableOpacity,
   View,
+  Image,
+  Animated,
 } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 
 type TicketDetailProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'TicketDetail'>;
-  route: RouteProp<RootStackParamList, 'TicketDetail'>;
+  navigation: NativeStackNavigationProp<MainStackParamList, 'TicketDetail'>;
+  route: RouteProp<MainStackParamList, 'TicketDetail'>;
 };
 
 export default function TicketDetail({ navigation, route }: TicketDetailProps) {
   const { ticketId } = route.params;
   const [vc, setVc] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const ticket = SAMPLE_TICKETS.find(ticket => ticket.id === ticketId);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isVc, setIsVc] = useState(false);
+  const [ticket, setTicket] = useState<TicketDetail | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // 티켓 데이터 페칭
+  useEffect(() => {
+    const fetchTicket = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const ticketData = await getDetailTicket(ticketId);
+        setTicket(ticketData);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : '티켓을 불러오는데 실패했습니다',
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTicket();
+  }, [ticketId]);
+
+  // 애니메이션 값들
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const imageHeight = scrollY.interpolate({
+    inputRange: [0, 150],
+    outputRange: [250, 120],
+    extrapolate: 'clamp',
+  });
+
+  const imageOpacity = scrollY.interpolate({
+    inputRange: [0, 150],
+    outputRange: [1, 0.7],
+    extrapolate: 'clamp',
+  });
+
   const backgroundColor = useThemeColor(
     { light: '#FFFFFF', dark: '#1E2022' },
     'background',
@@ -43,25 +80,56 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
   );
 
   const handleGenerateQR = () => {
-    console.log('QR 생성');
-    navigation.navigate('TicketQR', { ticketId });
+    navigation.navigate('TicketQR', {
+      ticketId: ticket?.bookingId || '',
+    });
   };
 
+  // 로딩 상태 처리
+  if (isLoading) {
+    return (
+      <ThemedView style={[styles.container, { backgroundColor }]}>
+        <StatusBar barStyle="default" />
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.loadingContainer}>
+            <ThemedText style={styles.loadingText}>
+              티켓을 불러오는 중...
+            </ThemedText>
+          </View>
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
+
+  // 에러 상태 처리
+  if (error) {
+    return (
+      <ThemedView style={[styles.container, { backgroundColor }]}>
+        <StatusBar barStyle="default" />
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.errorContainer}>
+            <ThemedText style={styles.errorText}>{error}</ThemedText>
+            <AuthButton
+              title="다시 시도"
+              onPress={() => {
+                setError(null);
+                setIsLoading(true);
+                // fetchTicket();
+              }}
+            />
+            <AuthButton title="돌아가기" onPress={() => navigation.goBack()} />
+          </View>
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
+
+  // 티켓이 없는 경우 처리
   if (!ticket) {
     return (
       <ThemedView style={[styles.container, { backgroundColor }]}>
         <StatusBar barStyle="default" />
         <SafeAreaView style={styles.safeArea}>
-          <View style={styles.header}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-            >
-              <Ionicons name="chevron-back" size={24} color={textColor} />
-            </TouchableOpacity>
-            <ThemedText style={styles.headerTitle}>티켓 상세</ThemedText>
-            <View style={styles.placeholder} />
-          </View>
           <View style={styles.notFoundContainer}>
             <ThemedText style={styles.notFoundText}>
               티켓을 찾을 수 없습니다.
@@ -75,52 +143,45 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
-      <StatusBar barStyle="default" />
+      {/* <StatusBar barStyle="default" /> */}
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView
+        <Animated.ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false },
+          )}
+          scrollEventThrottle={16}
         >
-          <View style={styles.header}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-            >
-              <ChevronLeft size={24} color={textColor} />
-            </TouchableOpacity>
-            <ThemedText style={styles.headerTitle}>티켓 상세</ThemedText>
-            <View style={styles.placeholder} />
-          </View>
+          <PageHeader
+            title="티켓 상세"
+            onBackPress={() => navigation.goBack()}
+          />
 
           <View style={styles.ticketContainer}>
-            {/* 티켓 상태 및 타입 */}
-            <View style={styles.statusContainer}>
-              <ThemedText
-                type="defaultSemiBold"
+            {/* 썸네일 이미지 */}
+            {ticket && (
+              <Animated.View
                 style={[
-                  styles.statusText,
-                  { color: getStatusColor(ticket.status).textColor },
+                  styles.thumbnailContainer,
+                  {
+                    height: imageHeight,
+                    opacity: imageOpacity,
+                  },
                 ]}
               >
-                {getStatusText(ticket.status)}
-              </ThemedText>
-              {ticket.status === 'active' && (
-                <CheckCircle
-                  size={18}
-                  color={getStatusColor(ticket.status).textColor}
+                <Image
+                  source={{ uri: ticket.event.thumbnailUrl }}
+                  style={styles.thumbnail}
                 />
-              )}
-              {(ticket.status === 'expired' ||
-                ticket.status === 'cancelled') && (
-                <CircleX
-                  size={18}
-                  color={getStatusColor(ticket.status).textColor}
-                />
-              )}
-            </View>
+              </Animated.View>
+            )}
 
             {/* 티켓 제목 */}
-            <ThemedText style={styles.ticketTitle}>{ticket.title}</ThemedText>
+            <ThemedText style={styles.ticketTitle}>
+              {ticket.event.title}
+            </ThemedText>
 
             {/* 티켓 정보 */}
             <View style={[styles.infoCard, { borderColor }]}>
@@ -128,7 +189,9 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
                 <ThemedText type="subtitle" style={styles.infoLabel}>
                   일시
                 </ThemedText>
-                <ThemedText style={styles.infoValue}>{ticket.date}</ThemedText>
+                <ThemedText style={styles.infoValue}>
+                  {ticket.event.eventDate}
+                </ThemedText>
               </View>
 
               <View style={styles.infoRow}>
@@ -136,7 +199,7 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
                   장소
                 </ThemedText>
                 <ThemedText style={styles.infoValue}>
-                  {ticket.location}
+                  {ticket.event.venue.name}
                 </ThemedText>
               </View>
 
@@ -144,7 +207,10 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
                 <ThemedText type="subtitle" style={styles.infoLabel}>
                   좌석
                 </ThemedText>
-                <ThemedText style={styles.infoValue}>{ticket.seat}</ThemedText>
+                <ThemedText style={styles.infoValue}>
+                  {ticket.seat.className}-{ticket.seat.floor}-{ticket.seat.row}-
+                  {ticket.seat.col}
+                </ThemedText>
               </View>
 
               <View style={styles.infoRow}>
@@ -152,7 +218,7 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
                   발급처
                 </ThemedText>
                 <ThemedText style={styles.infoValue}>
-                  {ticket.issuer}
+                  {ticket.tenantName}
                 </ThemedText>
               </View>
             </View>
@@ -168,7 +234,7 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
               </ThemedText>
             </View>
           </View>
-        </ScrollView>
+        </Animated.ScrollView>
 
         {/* 하단 버튼 영역 */}
         <SafeAreaView style={styles.bottomSafeArea}>
@@ -177,20 +243,20 @@ export default function TicketDetail({ navigation, route }: TicketDetailProps) {
               <AuthButton
                 title="QR 생성"
                 onPress={handleGenerateQR}
-                disabled={ticket.status !== 'active'}
+                // disabled={ticket.status !== 'active'}
               />
             ) : (
               <AuthButton
-                isLoading={isLoading}
+                isLoading={isVc}
                 title="VC 요청"
                 onPress={() => {
-                  setIsLoading(true);
+                  setIsVc(true);
                   setTimeout(() => {
-                    setIsLoading(false);
+                    setIsVc(false);
                     setVc(true);
                   }, 1000);
                 }}
-                disabled={ticket.status !== 'active'}
+                // disabled={ticket.status !== 'active'}
               />
             )}
             <TouchableOpacity style={styles.cancelContainer}>
@@ -214,32 +280,27 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 16,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginTop: Platform.OS === 'ios' ? 10 : 20,
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  placeholder: {
-    width: 32,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
   loadingText: {
-    marginTop: 16,
     fontSize: 16,
+    opacity: 0.7,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#FF5959',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   notFoundContainer: {
     flex: 1,
@@ -253,57 +314,50 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   ticketContainer: {
+    marginTop: 20,
     paddingHorizontal: 16,
   },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
+  thumbnailContainer: {
+    height: 250,
+    overflow: 'hidden',
+    marginBottom: 20,
+    marginTop: -20,
+    marginHorizontal: -16,
   },
-  typeTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  typeText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  statusText: {
-    fontSize: 16,
-    fontWeight: '600',
+  thumbnail: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   ticketTitle: {
     fontSize: 24,
-    marginVertical: 10,
-    marginBottom: 30,
+    marginBottom: 24,
     fontWeight: 'bold',
+    lineHeight: 32,
   },
   infoCard: {
     borderWidth: 1,
     borderColor: '#E5E9F0',
     borderRadius: 16,
-    padding: 16,
+    padding: 20,
     marginBottom: 24,
+    backgroundColor: '#FAFAFA',
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 16,
   },
   infoLabel: {
     width: 60,
     fontSize: 16,
     opacity: 0.7,
+    marginRight: 16,
   },
   infoValue: {
     flex: 1,
     fontSize: 16,
     fontWeight: '600',
-  },
-  divider: {
-    height: 1,
-    width: '100%',
-    opacity: 0.5,
   },
   noticeContainer: {
     marginBottom: 24,
@@ -325,9 +379,6 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 16,
     paddingBottom: Platform.OS === 'android' ? 25 : 16,
-  },
-  disabledButton: {
-    opacity: 0.6,
   },
   cancelContainer: {
     borderWidth: 1,

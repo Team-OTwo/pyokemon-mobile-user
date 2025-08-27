@@ -1,33 +1,33 @@
 import { ThemedText } from '@/components/common';
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { useTicketFilters } from '@/hooks/useTicketFilters';
+import { useThemeColor } from '@/hooks';
 import { TicketCard } from '@/screens/home/_components/ticket-card';
 import { Ticket } from '@/types/ticket';
 import React, { useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
 
 interface TicketListProps {
   tickets: Ticket[];
   isLoading?: boolean;
+  isLoadingMore?: boolean;
+  hasMore?: boolean;
   onTicketPress?: (ticket: Ticket) => void;
   onRefresh?: () => void;
+  onLoadMore?: () => void;
   refreshing?: boolean;
 }
 
 export function TicketList({
   tickets,
   isLoading,
+  isLoadingMore,
+  hasMore,
   onTicketPress,
   onRefresh,
+  onLoadMore,
   refreshing,
 }: TicketListProps) {
   const [refreshKey, setRefreshKey] = useState<number>(0);
+
   const tintColor = useThemeColor(
     { light: '#75B8FF', dark: '#75B8FF' },
     'tint',
@@ -37,12 +37,15 @@ export function TicketList({
     'background',
   );
 
-  const { activeFilter, setActiveFilter, filteredTickets, filterOptions } =
-    useTicketFilters(tickets);
-
   // VC 상태 변경 시 리스트 리렌더링
   const handleVCStatusChange = () => {
     setRefreshKey(prevKey => prevKey + 1);
+  };
+
+  const handleEndReached = () => {
+    if (hasMore && !isLoadingMore) {
+      onLoadMore?.();
+    }
   };
 
   if (isLoading) {
@@ -68,48 +71,32 @@ export function TicketList({
 
   return (
     <View style={styles.container} key={refreshKey}>
-      <View style={styles.filterContainer}>
-        <FlatList
-          horizontal
-          data={filterOptions}
-          keyExtractor={item => item.label}
-          showsHorizontalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[
-                styles.filterButton,
-                activeFilter === item.value && { backgroundColor: tintColor },
-              ]}
-              onPress={() => setActiveFilter(item.value)}
-            >
-              <ThemedText
-                style={[
-                  styles.filterText,
-                  activeFilter === item.value && { color: '#ffffff' },
-                ]}
-              >
-                {item.label}
-              </ThemedText>
-            </TouchableOpacity>
-          )}
-          contentContainerStyle={styles.filterList}
-        />
-      </View>
-
       <FlatList
-        data={filteredTickets}
-        keyExtractor={item => item.id}
+        data={tickets}
+        keyExtractor={item => item.bookingId.toString()}
         renderItem={({ item }: any) => (
           <TicketCard
             ticket={item}
             onPress={onTicketPress}
-            onVCStatusChange={handleVCStatusChange}
+            // onVCStatusChange={handleVCStatusChange}
           />
         )}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         onRefresh={onRefresh}
         refreshing={refreshing || false}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.1}
+        ListFooterComponent={
+          isLoadingMore ? (
+            <View style={styles.loadingMoreContainer}>
+              <ActivityIndicator size="small" color={tintColor} />
+              <ThemedText style={styles.loadingMoreText}>
+                더 불러오는 중...
+              </ThemedText>
+            </View>
+          ) : null
+        }
       />
     </View>
   );
@@ -139,25 +126,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     opacity: 0.7,
   },
-  filterContainer: {
-    paddingVertical: 16,
-  },
-  filterList: {
-    paddingHorizontal: 16,
-  },
-  filterButton: {
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    marginRight: 8,
-    marginTop: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-  },
-  filterText: {
-    fontSize: 16,
-    color: '#646568',
-    fontWeight: 'bold',
-  },
   listContent: {
     padding: 16,
+  },
+  loadingMoreContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  loadingMoreText: {
+    marginTop: 8,
+    fontSize: 14,
+    opacity: 0.7,
   },
 });

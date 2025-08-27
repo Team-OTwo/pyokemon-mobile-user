@@ -1,12 +1,16 @@
-import { FilterOption } from '@/hooks/useTicketFilters';
+export interface FilterOption {
+  label: string;
+  value: string | null;
+}
 
 export const FilterOptions: FilterOption[] = [
   { label: '전체', value: null },
-  { label: '콘서트', value: 'concert' },
-  { label: '스포츠', value: 'sports' },
-  { label: '전시회', value: 'exhibition' },
-  { label: '팬미팅', value: 'fanmeeting' },
-  { label: '뮤지컬', value: 'musical' },
+  { label: '콘서트', value: '콘서트' },
+  { label: '뮤지컬', value: '뮤지컬' },
+  { label: '연극', value: '연극' },
+  { label: '클래식', value: '클래식' },
+  { label: '스포츠', value: '스포츠' },
+  { label: '전시회', value: '전시회' },
 ];
 
 export const getTicketFilters = (type: string) => {
@@ -39,17 +43,17 @@ export const getStatusColor = (status: string) => {
 export const getStatusText = (status: string) => {
   switch (status) {
     case 'active':
-      return '유효함';
+      return '유효';
     case 'used':
-      return '사용됨';
+      return '사용';
     case 'expired':
-      return '만료됨';
+      return '만료';
     case 'cancelled':
-      return '취소됨';
+      return '취소';
     case 'completed':
-      return '완료됨';
+      return '완료';
     case 'upcoming':
-      return '예정됨';
+      return '예정';
     default:
       return '알 수 없음';
   }

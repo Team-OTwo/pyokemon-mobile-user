@@ -7,6 +7,7 @@ import {
   removeTokens,
   getTokens,
 } from '@/services/storage/securStorage';
+import { logout } from '@/services/apis';
 export const AuthContext = createContext<AuthContextType | undefined>({
   userToken: null,
   signIn: async () => {},
@@ -38,8 +39,14 @@ export default function AuthProvider({
         setUserToken(accessToken);
       },
       signOut: async () => {
-        await removeTokens();
-        setUserToken(null);
+        try {
+          await logout();
+        } catch (error) {
+          console.error(error);
+        } finally {
+          await removeTokens();
+          setUserToken(null);
+        }
       },
     }),
     [],

@@ -1,9 +1,10 @@
 import { AuthButton, AuthInput } from '@/components/auth';
-import { SvgLogo, ThemedText, ThemedView } from '@/components/common';
+import { ThemedText, ThemedView } from '@/components/common';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { login } from '@/services/apis/account';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getUniqueId } from 'react-native-device-info';
+import messaging from '@react-native-firebase/messaging';
 import React, { useState } from 'react';
 import {
   Alert,
@@ -26,7 +27,7 @@ type LoginScreenProps = {
 };
 
 export default function LoginScreen({ navigation }: LoginScreenProps) {
-  const [email, setEmail] = useState<string>('');
+  const [loginId, setLoginId] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
@@ -36,7 +37,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
   const { width, height } = Dimensions.get('window');
   const logoWidth = Math.min(width, height) * 0.4; // 화면 크기의 60%로 로고 너비 설정
-  // const logoHeight = logoWidth * 0.465; // SVG 비율 유지 (129:60 = 2.15:1)
 
   const tintColor = useThemeColor(
     { light: '#807F7F', dark: '#2E5BFF' },
@@ -49,29 +49,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
   const statusBarHeight = 0;
 
-  // iOS 기기 높이에 따른 패딩 조정
-  const getTopPadding = (): number => {
-    if (Platform.OS !== 'ios') return 40;
-
-    if (height <= 667) {
-      // iPhone SE, iPhone 8 등 작은 화면
-      return 30;
-    } else if (height <= 812) {
-      // iPhone X, 11 Pro, 12 mini 등 중간 화면
-      return 50;
-    } else {
-      // iPhone 11, 12, 13 Pro Max 등 큰 화면
-      return 60;
-    }
-  };
-
   const validateForm = (): boolean => {
     const newErrors: { email?: string; password?: string } = {};
 
-    if (!email) {
-      newErrors.email = '이메일을 입력해주세요';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = '올바른 이메일 형식이 아닙니다';
+    if (!loginId) {
+      newErrors.email = '아이디를 입력해주세요';
     }
 
     if (!password) {
@@ -90,17 +72,18 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
     try {
       // 수정 예정 Spring Boot 쪽에서 처리해야 함
-      const device_number = await getUniqueId();
+      const deviceNumber = await getUniqueId();
 
-      const response = await login(email, password, device_number);
-
+      const response = await login(loginId, password, deviceNumber);
       // 디바이스 등록 여부가 없을 시 등록 과정
       const osType = textUpper(Platform.OS);
-      const fcmToken = 'fcmToken';
+
+      const fcmToken = await messaging().getToken();
 
       if (response.deviceStatus === 'NOT_REGISTERED') {
         navigation.navigate('Verification', {
-          deviceId: device_number,
+          messageType: 'FIRST_LOGIN',
+          deviceNumber,
           fcmToken,
           osType,
           accessToken: response.accessToken,
@@ -108,7 +91,8 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         });
       } else if (response.deviceStatus === 'MISMATCHED') {
         navigation.navigate('Verification', {
-          deviceId: device_number,
+          messageType: 'DIFFERENT_DEVICE',
+          deviceNumber,
           fcmToken,
           osType,
           accessToken: response.accessToken,
@@ -128,9 +112,8 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       <StatusBar barStyle="default" />
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoid}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? statusBarHeight : 20}
+          keyboardVerticalOffset={20}
         >
           <ScrollView
             contentContainerStyle={styles.scrollContent}
@@ -138,19 +121,17 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             showsVerticalScrollIndicator={false}
             alwaysBounceVertical={false}
           >
-            <View
-              style={[styles.contentContainer, { paddingTop: getTopPadding() }]}
-            >
+            <View style={[styles.contentContainer]}>
               <View style={styles.header}>
                 <ThemedText style={styles.title}>Pyokemon</ThemedText>
               </View>
 
               <View style={styles.form}>
                 <AuthInput
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="이메일을 입력하세요"
-                  keyboardType="email-address"
+                  value={loginId}
+                  onChangeText={setLoginId}
+                  placeholder="아이디를 입력하세요"
+                  keyboardType="default"
                   error={errors.email}
                 />
 
@@ -207,11 +188,11 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 16,
+    paddingBottom: 16,
     justifyContent: 'center',
   },
   header: {
-    marginBottom: Platform.OS === 'ios' ? 24 : 32,
+    marginBottom: 32,
     alignItems: 'center',
   },
   title: {

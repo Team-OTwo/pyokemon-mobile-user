@@ -9,7 +9,6 @@ import {
   Modal,
   Pressable,
 } from 'react-native';
-import { AuthInput } from './auth-input';
 
 interface DatePickerProps {
   value: string;
@@ -50,26 +49,11 @@ export function DatePicker({
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   // 테마 색상
-  const backgroundColor = useThemeColor(
-    { light: '#FFFFFF', dark: '#151718' },
-    'background',
-  );
-  const textColor = useThemeColor(
-    { light: '#11181C', dark: '#ECEDEE' },
-    'text',
-  );
-  const tintColor = useThemeColor(
-    { light: '#2E5BFF', dark: '#2E5BFF' },
-    'tint',
-  );
-  const borderColor = useThemeColor(
-    { light: '#E1E3E5', dark: '#404040' },
-    'background',
-  );
-  const placeholderColor = useThemeColor(
-    { light: '#6C757D', dark: '#ADB5BD' },
-    'text',
-  );
+  const backgroundColor = useThemeColor({ light: '#FFFFFF' }, 'background');
+  const textColor = useThemeColor({ light: '#11181C' }, 'text');
+  const tintColor = useThemeColor({ light: '#6C757D' }, 'tint');
+  const borderColor = useThemeColor({ light: '#E1E3E5' }, 'background');
+  const placeholderColor = useThemeColor({ light: '#6C757D' }, 'text');
   const errorColor = '#FF3B30';
 
   // 초기 값 설정

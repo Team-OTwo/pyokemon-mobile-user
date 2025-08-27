@@ -2,12 +2,8 @@ import { AuthButton, AuthInput, DatePicker } from '@/components/auth';
 import { SvgLogo, ThemedText, ThemedView } from '@/components/common';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { signup } from '@/services/apis/account';
-import {
-  isValidDate,
-  isValidPhoneNumber,
-  removeHyphens,
-} from '@/utils/format.utils';
-import { RootStackParamList } from '@/types/navigation';
+import { AuthStackParamList } from '@/types/navigation';
+import { validateSignupForm } from '@/utils/auth-validation.utils';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import {
@@ -24,7 +20,7 @@ import {
 } from 'react-native';
 
 type SignupScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Signup'>;
+  navigation: NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
 };
 
 export default function SignupPage({ navigation }: SignupScreenProps) {
@@ -44,90 +40,23 @@ export default function SignupPage({ navigation }: SignupScreenProps) {
     birth?: string;
   }>({});
 
-  const { width, height } = Dimensions.get('window');
-  const logoWidth = Math.min(width, height) * 0.4; // 화면 크기의 60%로 로고 너비 설정
-  const logoHeight = logoWidth * 0.465;
-
-  const tintColor = useThemeColor(
-    { light: '#2E5BFF', dark: '#2E5BFF' },
-    'tint',
-  );
-  const backgroundColor = useThemeColor(
-    { light: '#FFFFFF', dark: '#151718' },
-    'background',
-  );
-
-  // 화면 크기 가져오기
-  const statusBarHeight = 0;
-
-  // iOS 기기 높이에 따른 패딩 조정
-  const getTopPadding = (): number => {
-    if (Platform.OS !== 'ios') return 40;
-
-    if (height <= 667) {
-      // iPhone SE, iPhone 8 등 작은 화면
-      return 20;
-    } else if (height <= 812) {
-      // iPhone X, 11 Pro, 12 mini 등 중간 화면
-      return 30;
-    } else {
-      // iPhone 11, 12, 13 Pro Max 등 큰 화면
-      return 40;
-    }
-  };
+  const tintColor = useThemeColor({ light: '#2E5BFF' }, 'tint');
+  const backgroundColor = useThemeColor({ light: '#FFFFFF' }, 'background');
 
   const validateForm = (): boolean => {
-    const newErrors: {
-      loginId?: string;
-      password?: string;
-      passwordCheck?: string;
-      name?: string;
-      phone?: string;
-      birth?: string;
-    } = {};
+    const formData = {
+      loginId,
+      password,
+      passwordCheck,
+      name,
+      phone,
+      birth,
+    };
 
-    // 이메일 검증
-    if (!loginId) {
-      newErrors.loginId = '이메일을 입력해주세요';
-    } else if (!/\S+@\S+\.\S+/.test(loginId)) {
-      newErrors.loginId = '올바른 이메일 형식이 아닙니다';
-    }
+    const validationResult = validateSignupForm(formData);
+    setErrors(validationResult.errors);
 
-    // 비밀번호 검증
-    if (!password) {
-      newErrors.password = '비밀번호를 입력해주세요';
-    } else if (password.length < 7) {
-      newErrors.password = '비밀번호는 최소 7자 이상이어야 합니다';
-    }
-
-    // 비밀번호 확인 검증
-    if (!passwordCheck) {
-      newErrors.passwordCheck = '비밀번호 확인을 입력해주세요';
-    } else if (passwordCheck !== password) {
-      newErrors.passwordCheck = '비밀번호가 일치하지 않습니다';
-    }
-
-    // 이름 검증
-    if (!name) {
-      newErrors.name = '이름을 입력해주세요';
-    }
-
-    // 전화번호 검증
-    if (!phone) {
-      newErrors.phone = '전화번호를 입력해주세요';
-    } else if (!isValidPhoneNumber(phone)) {
-      newErrors.phone = '올바른 전화번호 형식이 아닙니다 (예: 010-1234-5678)';
-    }
-
-    // 생년월일 검증
-    if (!birth) {
-      newErrors.birth = '생년월일을 입력해주세요';
-    } else if (!isValidDate(birth)) {
-      newErrors.birth = '올바른 생년월일 형식이 아닙니다 (예: 1999-01-01)';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return validationResult.isValid;
   };
 
   const handleSignup = async () => {
@@ -157,12 +86,10 @@ export default function SignupPage({ navigation }: SignupScreenProps) {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
-      <StatusBar barStyle="default" />
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoid}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? statusBarHeight : 20}
+          keyboardVerticalOffset={20}
         >
           <ScrollView
             contentContainerStyle={styles.scrollContent}
@@ -170,9 +97,7 @@ export default function SignupPage({ navigation }: SignupScreenProps) {
             showsVerticalScrollIndicator={false}
             alwaysBounceVertical={false}
           >
-            <View
-              style={[styles.contentContainer, { paddingTop: getTopPadding() }]}
-            >
+            <View style={styles.contentContainer}>
               <View style={styles.header}>
                 <ThemedText style={styles.title}>Pyokemon</ThemedText>
               </View>
@@ -181,8 +106,8 @@ export default function SignupPage({ navigation }: SignupScreenProps) {
                 <AuthInput
                   value={loginId}
                   onChangeText={setLoginId}
-                  placeholder="이메일 (예: example@gmail.com)"
-                  keyboardType="email-address"
+                  placeholder="아이디"
+                  keyboardType="default"
                   error={errors.loginId}
                 />
 
@@ -271,11 +196,11 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 16,
+    paddingBottom: 16,
     justifyContent: 'center',
   },
   header: {
-    marginBottom: Platform.OS === 'ios' ? 20 : 32,
+    marginBottom: 32,
     paddingTop: 10,
     alignItems: 'center',
   },

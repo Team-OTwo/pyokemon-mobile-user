@@ -33,10 +33,7 @@ export function ConfirmationModal({
   onCancel,
   type = 'default',
 }: ConfirmationModalProps) {
-  const tintColor = useThemeColor({ light: '#0a7ea4', dark: '#fff' }, 'tint');
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const iconColor = useThemeColor({}, 'icon');
+  const tintColor = useThemeColor({ light: '#75B8FF', dark: '#fff' }, 'tint');
 
   const getTypeColors = () => {
     switch (type) {
@@ -118,12 +115,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
   },
   modalContainer: {
     width: screenWidth - 40,
-    borderRadius: 20,
+    borderRadius: 10,
     padding: 24,
+    marginBottom: 100,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -152,14 +149,12 @@ const styles = StyleSheet.create({
   button: {
     flex: 1,
     height: 48,
-    borderRadius: 16,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cancelButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#E1E5E9',
+    backgroundColor: '#F1F1F3',
   },
   confirmButton: {
     // backgroundColor는 동적으로 설정됨

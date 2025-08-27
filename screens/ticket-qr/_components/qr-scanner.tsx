@@ -69,19 +69,50 @@ export default function QRScanner({ onQRScanned }: QRScannerProps) {
 
   return (
     <View style={styles.container}>
-      <Camera
-        style={StyleSheet.absoluteFill}
-        device={device}
-        isActive={isActive}
-        codeScanner={codeScanner}
-      />
+      <Text style={styles.stepTitle}>입장 티켓을 스캔해주세요</Text>
+      <Text style={styles.text}>QR을 스캔하면 입장이 완료됩니다.</Text>
+      {/* {!scanned ? ( */}
+      <View style={styles.scanContainer}>
+        <Camera
+          style={StyleSheet.absoluteFill}
+          device={device}
+          isActive={isActive}
+          codeScanner={codeScanner}
+        />
+      </View>
+      {/* ) : (
+       <View style={styles.resultContainer}>
+         <Text style={styles.resultText}>QR 코드 스캔 완료!</Text>
+         <CustomButton text="다시 스캔" onPress={onResetScan} />
+       </View>
+     )} */}
+      {/* <View style={styles.buttonContainer}>
+       <CustomButton text="이전 단계로" onPress={onGoBack} />
+     </View> */}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  stepTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  text: {
+    textAlign: 'center',
+    fontSize: 16,
+  },
+  scanContainer: {
+    width: 300,
+    height: 300,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
   container: {
-    flex: 1,
+    gap: 20,
+    marginTop: 50,
     justifyContent: 'center',
     alignItems: 'center',
   },

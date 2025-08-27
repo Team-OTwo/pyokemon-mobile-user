@@ -1,14 +1,11 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { getTokens } from '../storage/securStorage';
-import { Platform } from 'react-native';
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { getTokens, setAccessToken } from '../storage/securStorage';
+import { API_URL } from '@env';
+import { Alert } from 'react-native';
+import { useAuth } from '@/hooks';
 
-// API URL은 환경 변수에서 가져오거나 기본값 사용
-const API_URL = process.env.API_URL || 'https://api.example.com';
-
-// HTTP 메소드 타입 정의
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
-// API 응답 타입 정의
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
@@ -16,45 +13,96 @@ export interface ApiResponse<T = any> {
   message?: string;
 }
 
-// API 요청 옵션 타입 정의
 export interface RequestOptions {
   headers?: Record<string, string>;
   isFormData?: boolean;
   isAuth?: boolean;
+  timeout?: number;
+  retries?: number;
 }
 
-/**
- * 인증 토큰을 가져오는 함수
- * @returns 저장된 액세스 토큰
- */
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public message: string,
+    public originalError?: Error,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+const API_BASE_URL = API_URL || 'https://api.example.com';
+const DEFAULT_TIMEOUT = 30000;
+const RETRY_DELAY = 1000;
+
+interface TokenData {
+  accessToken: string;
+  refreshToken: string;
+}
+
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value: string) => void;
+  reject: (error: Error) => void;
+}> = [];
+
+// const processQueue = (
+//   error: Error | null,
+//   token: string | null = null,
+// ): void => {
+//   failedQueue.forEach(({ resolve, reject }) => {
+//     if (error) {
+//       reject(error);
+//     } else if (token) {
+//       resolve(token);
+//     }
+//   });
+//   failedQueue = [];
+// };
+
 const getAuthToken = async (): Promise<string | null> => {
   try {
-    const tokenData: any = await getTokens();
+    const tokenData = await getTokens();
     return tokenData?.accessToken || null;
-  } catch (error) {
+  } catch {
     return null;
   }
 };
 
-/**
- * FormData 객체 생성 함수
- * @param data FormData로 변환할 데이터
- * @returns FormData 객체
- */
+const refreshAuthToken = async (refreshToken: string): Promise<string> => {
+  const response = await restful(
+    'POST',
+    'account/api/refresh',
+    {},
+    {
+      headers: { Authorization: `Bearer ${refreshToken}` },
+    },
+  );
+
+  if (!response.success || !response.data?.accessToken) {
+    Alert.alert('재로그인 해주시기 바랍니다');
+    await useAuth().signOut();
+  }
+  setAccessToken(response.data.accessToken);
+
+  return response.data.accessToken;
+};
+
 const createFormData = (data: any): FormData => {
   const formData = new FormData();
 
+  // 파일 데이터 처리
   if (data.assets && Array.isArray(data.assets) && data.assets.length > 0) {
     const file = data.assets[0];
     formData.append('file', {
       name: file.fileName,
       type: file.type,
-      uri:
-        Platform.OS === 'android' ? file.uri : file.uri.replace('file://', ''),
+      uri: file.uri,
     });
   }
 
-  // 파일 외 다른 데이터도 FormData에 추가
+  // 일반 데이터 처리
   Object.keys(data).forEach(key => {
     if (key !== 'assets') {
       formData.append(key, data[key]);
@@ -64,36 +112,105 @@ const createFormData = (data: any): FormData => {
   return formData;
 };
 
-/**
- * API 요청 함수
- * @param method HTTP 메소드
- * @param endpoint API 엔드포인트
- * @param data 요청 데이터
- * @param options 요청 옵션
- * @returns API 응답
- */
+const handleApiError = (error: AxiosError, retries: number = 0): void => {
+  if (error.code === 'ECONNABORTED' && retries > 0) {
+    throw new ApiError(408, '요청 시간이 초과되었습니다.', error);
+  }
+
+  if (error.response) {
+    const status = error.response.status;
+    const message =
+      (error.response.data as any)?.message || '서버 오류가 발생했습니다.';
+    throw new ApiError(status, message, error);
+  }
+
+  if (error.request) {
+    throw new ApiError(0, '네트워크 연결을 확인해주세요.', error);
+  }
+
+  throw new ApiError(0, '요청을 처리할 수 없습니다.', error);
+};
+
+axios.interceptors.response.use(
+  response => response,
+  async error => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // 이미 토큰 재발급 중인 경우 대기열에 추가
+        return new Promise<string>((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(token => {
+            originalRequest.headers['Authorization'] = `Bearer ${token}`;
+            return axios(originalRequest);
+          })
+          .catch(err => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const tokenData = await getTokens();
+
+        if (!tokenData?.refreshToken) {
+          throw new Error('리프레시 토큰이 없습니다.');
+        }
+
+        const newAccessToken = await refreshAuthToken(tokenData.refreshToken);
+
+        // 새 토큰으로 원래 요청 재시도
+        originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+        // processQueue(null, newAccessToken);
+
+        return axios(originalRequest);
+      } catch (refreshError) {
+        const error =
+          refreshError instanceof Error
+            ? refreshError
+            : new Error('토큰 재발급 실패');
+        // processQueue(error, null);
+        throw error;
+      } finally {
+        // isRefreshing = false;
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
+
 export const apiRequest = async <T = any>(
   method: HttpMethod,
   endpoint: string,
   data?: any,
   options: RequestOptions = {},
 ): Promise<T> => {
-  try {
-    const url = `${API_URL}${endpoint}`;
-    const { isFormData = false, isAuth = false, headers = {} } = options;
+  const {
+    isFormData = false,
+    isAuth = false,
+    headers = {},
+    timeout = DEFAULT_TIMEOUT,
+    retries = 0,
+  } = options;
 
-    // 기본 설정
+  try {
+    const url = `${API_BASE_URL}${endpoint}`;
     const config: AxiosRequestConfig = {
       headers: { ...headers },
+      timeout,
     };
 
     // 인증 토큰 추가
     if (isAuth) {
-      const token: any = await getAuthToken();
+      const token = await getAuthToken();
       if (token && config.headers) {
         config.headers['Authorization'] = `Bearer ${token}`;
       }
     }
+
     // 요청 데이터 준비
     let requestData = data;
     if (isFormData && data) {
@@ -104,38 +221,63 @@ export const apiRequest = async <T = any>(
     }
 
     // API 요청 실행
-    let response: AxiosResponse;
-
-    switch (method) {
-      case 'GET':
-        config.params = requestData;
-        response = await axios.get(url, config);
-        break;
-      case 'POST':
-        response = await axios.post(url, requestData, config);
-        break;
-      case 'PUT':
-        response = await axios.put(url, requestData, config);
-        break;
-      case 'DELETE':
-        config.params = requestData;
-        response = await axios.delete(url, config);
-        break;
-      case 'PATCH':
-        response = await axios.patch(url, requestData, config);
-        break;
-      default:
-        throw new Error(`지원하지 않는 HTTP 메소드입니다: ${method}`);
-    }
+    const response = await executeRequest(method, url, requestData, config);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response.data.message || 'API 요청에 실패했습니다.');
+    // 재시도 로직
+    if (retries > 0 && shouldRetry(error)) {
+      await delay(RETRY_DELAY);
+      return apiRequest<T>(method, endpoint, data, {
+        ...options,
+        retries: retries - 1,
+      });
+    }
+
+    handleApiError(error, retries);
+    throw new Error(
+      error.response?.data?.message || 'API 요청에 실패했습니다.',
+    );
   }
 };
 
-/**
- * 간편 API 호출 함수들
- */
+const executeRequest = async (
+  method: HttpMethod,
+  url: string,
+  data: any,
+  config: AxiosRequestConfig,
+): Promise<AxiosResponse> => {
+  switch (method) {
+    case 'GET':
+      config.params = data;
+      return axios.get(url, config);
+    case 'POST':
+      return axios.post(url, data, config);
+    case 'PUT':
+      return axios.put(url, data, config);
+    case 'DELETE':
+      if (data && Object.keys(data).length > 0) {
+        config.params = data;
+      }
+      return axios.delete(url, config);
+    case 'PATCH':
+      return axios.patch(url, data, config);
+    default:
+      throw new Error(`지원하지 않는 HTTP 메소드입니다: ${method}`);
+  }
+};
+
+const shouldRetry = (error: any): boolean => {
+  return error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK';
+};
+
+const delay = (ms: number): Promise<void> => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+};
+
+// ============================================================================
+// API SERVICE METHODS
+// ============================================================================
+
 const apiService = {
   get: <T = any>(endpoint: string, params?: any, options?: RequestOptions) =>
     apiRequest<T>('GET', endpoint, params, options),
@@ -156,9 +298,12 @@ const apiService = {
     apiRequest<T>('POST', endpoint, data, { isFormData: true }),
 };
 
-// 기존 코드와의 호환성을 위한 함수
+// ============================================================================
+// LEGACY COMPATIBILITY FUNCTION
+// ============================================================================
+
 const restful = async (
-  method: 'GET' | 'POST',
+  method: HttpMethod,
   uri: string,
   params: any,
   options?: RequestOptions,
@@ -167,9 +312,19 @@ const restful = async (
     return apiService.upload(uri, params);
   }
 
+  const isDataMethod = ['POST', 'PUT', 'PATCH'].includes(method);
+
+  if (isDataMethod) {
+    return apiService[method.toLowerCase() as keyof typeof apiService](
+      uri,
+      params,
+      options,
+    );
+  }
+
   return method === 'GET'
     ? apiService.get(uri, params, options)
-    : apiService.post(uri, params, options);
+    : apiService.delete(uri, params, options);
 };
 
 export default restful;

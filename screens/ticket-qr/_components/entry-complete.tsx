@@ -1,14 +1,13 @@
 import { AuthButton } from '@/components/auth';
 import { ThemedText } from '@/components/common';
-import { Ticket } from '@/types/ticket';
+import type { TicketDetail } from '@/types/ticket';
 
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CheckCircle } from 'lucide-react-native';
 import { SafeAreaView, StyleSheet, View } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 
 interface EntryCompleteProps {
-  ticket: Ticket;
+  ticket: TicketDetail;
   onReset: () => void;
   navigation: NativeStackNavigationProp<any>;
 }
@@ -32,21 +31,28 @@ export default function EntryComplete({
         <ThemedText style={styles.ticketInfoTitle}>티켓 정보</ThemedText>
         <View style={styles.ticketInfoRow}>
           <ThemedText style={styles.ticketInfoLabel}>공연명:</ThemedText>
-          <ThemedText style={styles.ticketInfoValue}>{ticket.title}</ThemedText>
+          <ThemedText style={styles.ticketInfoValue}>
+            {ticket.event.title}
+          </ThemedText>
         </View>
         <View style={styles.ticketInfoRow}>
           <ThemedText style={styles.ticketInfoLabel}>날짜:</ThemedText>
-          <ThemedText style={styles.ticketInfoValue}>{ticket.date}</ThemedText>
+          <ThemedText style={styles.ticketInfoValue}>
+            {ticket.event.eventDate}
+          </ThemedText>
         </View>
         <View style={styles.ticketInfoRow}>
           <ThemedText style={styles.ticketInfoLabel}>장소:</ThemedText>
           <ThemedText style={styles.ticketInfoValue}>
-            {ticket.location}
+            {ticket.event.venue.name}
           </ThemedText>
         </View>
         <View style={styles.ticketInfoRow}>
           <ThemedText style={styles.ticketInfoLabel}>좌석:</ThemedText>
-          <ThemedText style={styles.ticketInfoValue}>{ticket.seat}</ThemedText>
+          <ThemedText style={styles.ticketInfoValue}>
+            {ticket.seat.className}-{ticket.seat.floor}-{ticket.seat.row}-
+            {ticket.seat.col}
+          </ThemedText>
         </View>
       </View>
 
@@ -54,7 +60,7 @@ export default function EntryComplete({
         <View style={styles.buttonContainer}>
           <AuthButton
             title="홈으로 돌아가기"
-            onPress={() => navigation.navigate('Home')}
+            onPress={() => navigation.replace('Home')}
           />
         </View>
       </SafeAreaView>

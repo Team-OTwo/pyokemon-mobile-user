@@ -1,22 +1,30 @@
 import { ThemedText } from '@/components/common';
+import { readNotification } from '@/services/apis/notification';
+import { Notification } from '@/types/notification';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const NotificationItem = ({ notification }: { notification: any }) => {
+const NotificationItem = ({
+  notification,
+  onPress,
+}: {
+  notification: Notification;
+  onPress: () => void;
+}) => {
   return (
-    <TouchableOpacity style={styles.container}>
+    <TouchableOpacity style={styles.container} onPress={onPress}>
       <View>
         <ThemedText style={styles.title} type="defaultSemiBold">
           {notification.title}
         </ThemedText>
         <ThemedText style={styles.body} type="subtitle">
-          {notification.body}
+          {notification.message}
         </ThemedText>
         <ThemedText style={styles.date} type="default">
-          {notification.date}
+          {notification.createdAt}
         </ThemedText>
       </View>
       <View>
-        <Text style={styles.dot}>{notification.isRead ? '' : '●'}</Text>
+        <Text style={styles.dot}>{notification.isChecked ? '' : '●'}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -48,6 +56,6 @@ const styles = StyleSheet.create({
   },
   dot: {
     fontSize: 12,
-    color: '#2E5BFF',
+    color: '#75B8FF',
   },
 });

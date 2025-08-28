@@ -4,12 +4,16 @@ export type VerificationStep = {
   subtitle: string;
   icon: string;
   hasInput: boolean;
-  inputType?: 'phone' | 'code';
+  inputType?: 'phone' | 'code' | 'phone-number' | 'full-verification';
   buttonText?: string;
+  verificationMode?: 'FIRST_DEVICE' | 'DEVICE_CHANGE';
 };
 
 export type ValidationErrors = {
   phoneNumber?: string;
+  phone?: string;
+  name?: string;
+  birth?: string;
   verificationCode?: string;
 };
 
@@ -22,6 +26,7 @@ export interface VerificationScreenProps {
   messageType?: MessageType; // 새로운 필드
   requestType?: RequestType;
   deviceAction?: DeviceAction; // 기기 등록 방식
+  accountId: number; // 기기변경 시 필요
   deviceNumber: string;
   fcmToken: string;
   osType: string;

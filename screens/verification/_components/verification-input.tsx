@@ -1,13 +1,17 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { AuthInput } from '@/components/auth';
+import { AuthInput, DatePicker } from '@/components/auth';
 import { VerificationStep, ValidationErrors } from '../types';
 
 interface VerificationInputProps {
   step: VerificationStep;
   phoneNumber: string;
+  name: string;
+  birth: string;
   verificationCode: string;
   onPhoneNumberChange: (text: string) => void;
+  onNameChange: (text: string) => void;
+  onBirthChange: (date: any) => void;
   onVerificationCodeChange: (text: string) => void;
   errors: ValidationErrors;
   timeLeft: number;
@@ -18,8 +22,12 @@ interface VerificationInputProps {
 export const VerificationInput: React.FC<VerificationInputProps> = ({
   step,
   phoneNumber,
+  name,
+  birth,
   verificationCode,
   onPhoneNumberChange,
+  onNameChange,
+  onBirthChange,
   onVerificationCodeChange,
   errors,
   timeLeft,
@@ -30,15 +38,46 @@ export const VerificationInput: React.FC<VerificationInputProps> = ({
 
   return (
     <View style={styles.inputContainer}>
-      {step.inputType === 'phone' && (
-        <AuthInput
-          value={phoneNumber}
-          onChangeText={onPhoneNumberChange}
-          placeholder="휴대폰 번호 (예: 01012345678)"
-          keyboardType="phone-pad"
-          error={errors.phoneNumber}
-        />
+      {/* 기기변경용: 이름, 생년월일, 휴대폰번호 모두 입력 */}
+      {step.inputType === 'full-verification' && (
+        <>
+          <AuthInput
+            value={name}
+            onChangeText={onNameChange}
+            placeholder="이름"
+            keyboardType="default"
+            error={errors.name}
+          />
+          <DatePicker
+            value={birth}
+            onChange={onBirthChange}
+            placeholder="생년월일"
+            error={errors.birth}
+          />
+          <AuthInput
+            value={phoneNumber}
+            onChangeText={onPhoneNumberChange}
+            placeholder="휴대폰 번호 (예: 010-9960-0464)"
+            inputType="phone"
+            error={errors.phoneNumber}
+          />
+        </>
       )}
+
+      {/* 첫 기기등록용: 휴대폰번호만 입력 */}
+      {step.inputType === 'phone-number' && (
+        <>
+          <AuthInput
+            value={phoneNumber}
+            onChangeText={onPhoneNumberChange}
+            placeholder="휴대폰 번호 (예: 010-9960-0464)"
+            inputType="phone"
+            error={errors.phoneNumber}
+          />
+        </>
+      )}
+
+      {/* 인증번호 입력 */}
       {step.inputType === 'code' && (
         <>
           <AuthInput

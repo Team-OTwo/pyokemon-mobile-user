@@ -2,8 +2,8 @@ import { ThemedText, ThemedView } from '@/components/common';
 import useAuth from '@/hooks/useAuth';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import {
-  deleteUserDevice,
   registerDevice,
+  verifyDevice,
   verifyUser,
 } from '@/services/apis/account';
 import { AuthStackParamList } from '@/types/navigation';
@@ -27,9 +27,9 @@ import {
   VerificationButton,
 } from './_components';
 import {
-  VERIFICATION_STEPS,
   getMessageByType,
   getRequestConfig,
+  getVerificationSteps,
 } from './constants';
 import { VerificationScreenProps, DeviceAction } from './types';
 import { useVerificationAnimation } from './hooks';
@@ -53,6 +53,7 @@ export default function VerificationScreen({
     deviceNumber,
     fcmToken,
     osType,
+    accountId,
     accessToken,
     refreshToken,
   } = route.params as VerificationScreenProps;
@@ -66,6 +67,9 @@ export default function VerificationScreen({
     DeviceAction | undefined
   >(deviceAction);
 
+  const [name, setName] = useState<string>('');
+  const [birth, setBirth] = useState<string>('');
+
   const backgroundColor = useThemeColor(
     { light: '#FFFFFF', dark: '#151718' },
     'background',
@@ -78,10 +82,22 @@ export default function VerificationScreen({
   const { fadeAnim, scaleAnim, startAnimation } = useVerificationAnimation();
   const { timeLeft, isTimerActive, startTimer, stopTimer } =
     useVerificationTimer();
-  const { errors, validatePhoneNumber, validateVerificationCode, clearErrors } =
-    useVerificationValidation();
+  const {
+    errors,
+    validatePhoneNumber,
+    validateName,
+    validateBirth,
+    validateVerificationCode,
+    clearErrors,
+  } = useVerificationValidation();
 
   const { signIn } = useAuth();
+
+  // 인증 모드별 단계 가져오기
+  const verificationSteps = useMemo(
+    () => getVerificationSteps(messageType || 'FIRST_LOGIN'),
+    [messageType],
+  );
 
   // 동적 메시지와 설정 (기존 message 필드 우선, 없으면 messageType 사용)
   const dynamicMessage = useMemo(() => {
@@ -96,21 +112,10 @@ export default function VerificationScreen({
 
   // 현재 단계 데이터를 동적으로 생성
   const currentStepData = useMemo(() => {
-    const baseStep = VERIFICATION_STEPS[currentStep];
+    const baseStep = verificationSteps[currentStep];
 
     // 첫 번째 단계의 메시지를 동적으로 변경
     if (currentStep === 0) {
-      // 디바이스 불일치인 경우 기기 등록 방식 선택 UI 표시
-      if (messageType === 'DIFFERENT_DEVICE' && !selectedDeviceAction) {
-        return {
-          ...baseStep,
-          title: '기기 등록 확인',
-          subtitle:
-            '등록된 디바이스가 다릅니다. 기존 기기 등록을 해제하고 새로운 기기로 등록하시겠습니까?',
-          buttonText: '본인인증 시작하기',
-        };
-      }
-
       return {
         ...baseStep,
         subtitle: dynamicMessage,
@@ -127,14 +132,7 @@ export default function VerificationScreen({
     }
 
     return baseStep;
-  }, [
-    currentStep,
-    dynamicMessage,
-    requestConfig,
-    messageType,
-    selectedDeviceAction,
-    // deviceActionMessage,
-  ]);
+  }, [currentStep, dynamicMessage, requestConfig, verificationSteps]);
 
   useEffect(() => {
     startAnimation();
@@ -142,6 +140,12 @@ export default function VerificationScreen({
 
   // 휴대폰 번호 유효성 검사 및 인증번호 발송
   const handlePhoneNumberSubmit = useCallback(async () => {
+    // 기기변경 모드일 때는 이름과 생년월일도 검증
+    if (messageType === 'DIFFERENT_DEVICE') {
+      if (!validateName(name)) return;
+      if (!validateBirth(birth)) return;
+    }
+
     if (!validatePhoneNumber(phoneNumber)) return;
 
     setIsLoading(true);
@@ -167,8 +171,13 @@ export default function VerificationScreen({
     requestType,
     accessToken,
     validatePhoneNumber,
+    validateName,
+    validateBirth,
     clearErrors,
     startTimer,
+    messageType,
+    name,
+    birth,
   ]);
 
   // 인증번호 재발송
@@ -201,24 +210,35 @@ export default function VerificationScreen({
     try {
       if (messageType === 'DIFFERENT_DEVICE') {
         try {
-          await deleteUserDevice(accessToken);
-          console.info('Previous device deleted successfully');
-        } catch (deleteError) {
-          console.error('Failed to delete previous device:', deleteError);
+          // 기기변경 시: 본인인증 후 디바이스 변경 API 호출
+          await verifyDevice({
+            accountId,
+            name,
+            phoneNumber,
+            birth,
+            deviceNumber,
+            fcmToken,
+            osType,
+          });
+          console.info('Device verification completed successfully');
+        } catch (verifyError) {
+          console.error('Failed to verify device:', verifyError);
           throw new Error(
-            '이전 디바이스 삭제에 실패했습니다. 보안상 새 디바이스 등록이 불가능합니다.',
+            '본인인증에 실패했습니다. 입력하신 정보를 다시 확인해주세요.',
           );
         }
-      }
-      const deviceResponse = await registerDevice(
-        deviceNumber,
-        fcmToken,
-        osType,
-        accessToken,
-      );
+      } else {
+        // 첫 기기등록 시: 일반 디바이스 등록
+        const deviceResponse = await registerDevice(
+          deviceNumber,
+          fcmToken,
+          osType,
+          accessToken,
+        );
 
-      if (!deviceResponse.success) {
-        throw new Error('디바이스 등록에 실패했습니다.');
+        if (!deviceResponse.success) {
+          throw new Error('디바이스 등록에 실패했습니다.');
+        }
       }
 
       // 3. 사용자 인증
@@ -229,7 +249,11 @@ export default function VerificationScreen({
 
       setCurrentStep(3);
       stopTimer();
-      Alert.alert('성공', '인증이 완료되었습니다!');
+      if (messageType === 'DIFFERENT_DEVICE') {
+        Alert.alert('성공', '기기변경이 완료되었습니다! 다시 로그인해주세요.');
+      } else {
+        Alert.alert('성공', '인증이 완료되었습니다!');
+      }
     } catch (error: any) {
       Alert.alert(
         '오류',
@@ -248,24 +272,34 @@ export default function VerificationScreen({
     fcmToken,
     osType,
     accessToken,
+    messageType,
+    accountId,
+    name,
+    phoneNumber,
+    birth,
+    navigation,
   ]);
 
   // 홈으로 이동
   const handleHomeNavigation = useCallback(async () => {
     try {
-      await signIn(accessToken, refreshToken);
+      if (messageType === 'FIRST_LOGIN') {
+        await signIn(accessToken, refreshToken);
+      } else {
+        navigation.goBack();
+      }
     } catch (error) {
       Alert.alert('오류', '로그인 중 오류가 발생했습니다.');
     }
-  }, [signIn, accessToken, refreshToken]);
+  }, [signIn, accessToken, refreshToken, messageType, navigation]);
 
   // 단계별 버튼 동작 처리
   const handleButtonPress = useCallback(async () => {
     switch (currentStep) {
-      case 0: // 본인인증 시작 또는 기기 등록 방식 선택
+      case 0: // 본인인증 시작
         setCurrentStep(1);
         break;
-      case 1: // 휴대폰 번호 입력
+      case 1: // 휴대폰 번호 입력 또는 본인정보 입력
         handlePhoneNumberSubmit();
         break;
       case 2: // 인증번호 입력
@@ -277,8 +311,6 @@ export default function VerificationScreen({
     }
   }, [
     currentStep,
-    messageType,
-    selectedDeviceAction,
     handlePhoneNumberSubmit,
     handleVerificationCodeSubmit,
     handleHomeNavigation,
@@ -317,7 +349,7 @@ export default function VerificationScreen({
                   <>
                     <ProgressIndicator
                       currentStep={currentStep}
-                      totalSteps={VERIFICATION_STEPS.length}
+                      totalSteps={verificationSteps.length}
                       tintColor={tintColor}
                     />
                     <StepIcon
@@ -336,6 +368,10 @@ export default function VerificationScreen({
                 <VerificationInput
                   step={currentStepData}
                   phoneNumber={phoneNumber}
+                  name={name}
+                  birth={birth}
+                  onNameChange={setName}
+                  onBirthChange={setBirth}
                   verificationCode={verificationCode}
                   onPhoneNumberChange={setPhoneNumber}
                   onVerificationCodeChange={setVerificationCode}
@@ -347,7 +383,7 @@ export default function VerificationScreen({
                 {/* 인증버튼 */}
                 <VerificationButton
                   currentStep={currentStep}
-                  totalSteps={VERIFICATION_STEPS.length}
+                  totalSteps={verificationSteps.length}
                   currentStepData={currentStepData}
                   onPress={handleButtonPress}
                   onBack={currentStep > 0 ? handleBackStep : undefined}

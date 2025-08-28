@@ -17,6 +17,7 @@ export type AuthStackParamList = {
     deviceNumber: string;
     fcmToken: string;
     osType: string;
+    accountId?: number;
     accessToken: string;
     refreshToken: string;
   };

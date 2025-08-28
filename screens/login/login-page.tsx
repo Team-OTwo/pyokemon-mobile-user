@@ -93,6 +93,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         navigation.navigate('Verification', {
           messageType: 'DIFFERENT_DEVICE',
           deviceNumber,
+          accountId: response.accountId,
           fcmToken,
           osType,
           accessToken: response.accessToken,

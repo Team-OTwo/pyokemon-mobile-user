@@ -252,7 +252,7 @@ export default function VerificationScreen({
       if (messageType === 'DIFFERENT_DEVICE') {
         Alert.alert('성공', '기기변경이 완료되었습니다! 다시 로그인해주세요.');
       } else {
-        Alert.alert('성공', '인증이 완료되었습니다!');
+        Alert.alert('성공', '인증이 완료되었습니다! 다시 로그인해주세요.');
       }
     } catch (error: any) {
       Alert.alert(
@@ -283,11 +283,7 @@ export default function VerificationScreen({
   // 홈으로 이동
   const handleHomeNavigation = useCallback(async () => {
     try {
-      if (messageType === 'FIRST_LOGIN') {
-        await signIn(accessToken, refreshToken);
-      } else {
-        navigation.goBack();
-      }
+      navigation.goBack();
     } catch (error) {
       Alert.alert('오류', '로그인 중 오류가 발생했습니다.');
     }

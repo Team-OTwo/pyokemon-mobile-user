@@ -1,6 +1,5 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { getTokens, setAccessToken } from '../storage/securStorage';
-import { API_URL } from '@env';
 import { Alert } from 'react-native';
 import { useAuth } from '@/hooks';
 
@@ -32,7 +31,7 @@ export class ApiError extends Error {
   }
 }
 
-const API_BASE_URL = API_URL || 'https://api.example.com';
+const API_BASE_URL = 'http://192.168.0.238:8087/';
 const DEFAULT_TIMEOUT = 30000;
 const RETRY_DELAY = 1000;
 

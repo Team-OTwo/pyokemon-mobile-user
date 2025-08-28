@@ -20,14 +20,34 @@ type HomeScreenProps = {
 
 // API 호출 함수 (실제 구현은 사용자가 할 예정)
 const fetchTickets = async (cursor?: string, genre?: string) => {
-  // TODO: 실제 API 호출로 교체
-  const response = await getListTicket(genre, cursor);
+  try {
+    const response = await getListTicket(genre, cursor);
 
-  return {
-    tickets: response.content,
-    next_cursor: response.next_cursor,
-    hasMore: response.hasMore,
-  };
+    // API 응답 구조 확인 및 안전한 처리
+    if (!response) {
+      throw new Error('API 응답이 없습니다.');
+    }
+
+    // 응답 구조에 따라 안전하게 데이터 추출
+    const tickets = response.content || response.tickets || [];
+    const next_cursor = response.next_cursor || response.nextCursor || null;
+    const hasMore =
+      response.hasMore !== undefined ? response.hasMore : next_cursor !== null;
+
+    return {
+      tickets,
+      next_cursor,
+      hasMore,
+    };
+  } catch (error) {
+    console.error('티켓 목록 조회 실패:', error);
+    // 에러 발생 시 빈 결과 반환
+    return {
+      tickets: [],
+      next_cursor: null,
+      hasMore: false,
+    };
+  }
 };
 
 // 홈화면에서 안 읽은 알림 개수 가져오기
@@ -71,12 +91,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   const handleRefresh = () => {
     refreshTickets();
-  };
-
-  const handleLoadMore = () => {
-    if (hasMore && !isLoadingMore) {
-      loadMoreTickets();
-    }
   };
 
   const handleGenreChange = (genre: string | null) => {
@@ -148,7 +162,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             hasMore={hasMore}
             onTicketPress={handleTicketPress}
             onRefresh={handleRefresh}
-            onLoadMore={handleLoadMore}
+            onLoadMore={loadMoreTickets}
             refreshing={refreshing}
           />
         </View>

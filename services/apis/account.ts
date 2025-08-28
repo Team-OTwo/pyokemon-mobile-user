@@ -19,10 +19,9 @@ export const login = async (
 };
 
 export const logout = async () => {
-  const deviceNumber = await getUniqueId();
   const response = await restful(
     'POST',
-    `account/api/logout?deviceNumber=${deviceNumber}`,
+    `account/api/logout`,
     {},
     {
       isAuth: true,

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Ticket } from '@/types/ticket';
 
 export interface PaginationResponse {
@@ -21,6 +21,7 @@ export const useTicketPagination = ({
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [currentGenre, setCurrentGenre] = useState<string | null>(null);
+  const isLoadingMoreRef = useRef(false);
 
   const loadInitialTickets = useCallback(
     async (genre?: string) => {
@@ -43,9 +44,10 @@ export const useTicketPagination = ({
   );
 
   const loadMoreTickets = useCallback(async () => {
-    if (!hasMore || isLoadingMore || !nextCursor) return;
+    if (!hasMore || isLoadingMoreRef.current || !nextCursor) return;
 
     try {
+      isLoadingMoreRef.current = true;
       setIsLoadingMore(true);
 
       const response = await onLoadMore(nextCursor, currentGenre || undefined);
@@ -57,8 +59,9 @@ export const useTicketPagination = ({
       console.error('추가 티켓 로딩 실패:', error);
     } finally {
       setIsLoadingMore(false);
+      isLoadingMoreRef.current = false;
     }
-  }, [hasMore, isLoadingMore, nextCursor, currentGenre, onLoadMore]);
+  }, [hasMore, nextCursor, currentGenre, onLoadMore]);
 
   const refreshTickets = useCallback(async () => {
     try {

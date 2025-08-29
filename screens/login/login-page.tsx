@@ -2,9 +2,9 @@ import {AuthButton, AuthInput} from '../../components/auth';
 import {ThemedText, ThemedView} from '../../components/common';
 import {useThemeColor} from '../../hooks/useThemeColor';
 // import { login } from '../../services/apis/account';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-// import { getUniqueId } from 'react-native-device-info';
-// import messaging from '@react-native-firebase/messaging';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {getUniqueId} from 'react-native-device-info';
+import messaging from '@react-native-firebase/messaging';
 import React, {useState} from 'react';
 import {
   Alert,
@@ -23,7 +23,7 @@ import {AuthStackParamList} from '../../types/navigation';
 import useAuth from '../../hooks/useAuth';
 
 type LoginScreenProps = {
-  navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>;
+  navigation: StackNavigationProp<AuthStackParamList, 'Login'>;
 };
 
 export default function LoginScreen({navigation}: LoginScreenProps) {
@@ -67,11 +67,11 @@ export default function LoginScreen({navigation}: LoginScreenProps) {
 
     try {
       // 수정 예정 Spring Boot 쪽에서 처리해야 함
-      // const deviceNumber = await getUniqueId();
+      const deviceNumber = await getUniqueId();
       // const response = await login(loginId, password, deviceNumber);
       // 디바이스 등록 여부가 없을 시 등록 과정
-      //   const osType = textUpper(Platform.OS);
-      //   // const fcmToken = await messaging().getToken();
+      const osType = textUpper(Platform.OS);
+      const fcmToken = await messaging().getToken();
       //   const fcmToken = 'fcm';
       //   if (response.deviceStatus === 'NOT_REGISTERED') {
       //     navigation.navigate('Verification', {

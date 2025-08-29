@@ -1,5 +1,6 @@
 apply plugin: "com.android.application"
 apply plugin: "com.facebook.react"
+apply plugin: "com.google.gms.google-services"
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -73,13 +74,16 @@ android {
 
     compileSdkVersion rootProject.ext.compileSdkVersion
 
-    namespace "com.pyokemon"
+
     defaultConfig {
         applicationId "com.pyokemon"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        minSdkVersion 23
+        targetSdkVersion 33
+        multiDexEnabled true
     }
     
     compileOptions {
@@ -112,6 +116,12 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+
+    implementation "androidx.multidex:multidex:2.0.1"
+    implementation "androidx.core:core:1.9.0"
+    implementation "androidx.appcompat:appcompat:1.6.1"
+    implementation "androidx.activity:activity:1.6.1"
+    implementation "androidx.lifecycle:lifecycle-runtime:2.5.1"
 
     // 특정 버전의 androidx 라이브러리 사용
     implementation("androidx.appcompat:appcompat:${rootProject.ext.androidx_appcompat_version}")

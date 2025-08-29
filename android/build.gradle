@@ -13,6 +13,9 @@ buildscript {
         androidx_activity_version = "1.7.2"
         androidx_lifecycle_version = "2.6.2"
 
+        androidx_core_version = "1.9.0"
+        androidx_appcompat_version = "1.6.1"
+    
         // We use NDK 23 which has both M1 support and is the side-by-side NDK version from AGP.
         ndkVersion = "23.1.7779620"
     }
@@ -21,8 +24,9 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:7.4.2")
+        classpath("com.android.tools.build:gradle:7.3.1")
         classpath("com.facebook.react:react-native-gradle-plugin:0.72.0")
+        classpath("com.google.gms:google-services:4.4.3")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
     }
 }

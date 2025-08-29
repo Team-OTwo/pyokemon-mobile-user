@@ -81,6 +81,12 @@ android {
         versionCode 1
         versionName "1.0"
     }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -106,6 +112,16 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+
+    // 특정 버전의 androidx 라이브러리 사용
+    implementation("androidx.appcompat:appcompat:${rootProject.ext.androidx_appcompat_version}")
+    implementation("androidx.core:core:${rootProject.ext.androidx_core_version}")
+    implementation("androidx.core:core-ktx:${rootProject.ext.androidx_core_version}")
+    implementation("androidx.activity:activity:${rootProject.ext.androidx_activity_version}")
+    implementation("androidx.activity:activity-ktx:${rootProject.ext.androidx_activity_version}")
+    implementation("androidx.lifecycle:lifecycle-runtime:${rootProject.ext.androidx_lifecycle_version}")
+    implementation("androidx.lifecycle:lifecycle-viewmodel:${rootProject.ext.androidx_lifecycle_version}")
+    implementation("androidx.lifecycle:lifecycle-livedata:${rootProject.ext.androidx_lifecycle_version}")
 
     debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}")
     debugImplementation("com.facebook.flipper:flipper-network-plugin:${FLIPPER_VERSION}") {

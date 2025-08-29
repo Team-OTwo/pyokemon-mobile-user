@@ -1,18 +1,21 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
 import React from 'react';
-import {Text, View} from 'react-native';
+import {NavigationContainer} from '@react-navigation/native';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import RootNavigator from './navigation/root-navigator';
+import AuthProvider from './contexts/auth-provider';
+import {NotificationProvider} from './contexts/notification-provider';
 
 function App(): JSX.Element {
   return (
-    <View>
-      <Text>ㅎㅇ</Text>
-    </View>
+    <GestureHandlerRootView style={{flex: 1}}>
+      <AuthProvider>
+        <NotificationProvider>
+          <NavigationContainer>
+            <RootNavigator />
+          </NavigationContainer>
+        </NotificationProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }
 

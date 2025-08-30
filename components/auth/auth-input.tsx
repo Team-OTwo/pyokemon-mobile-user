@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-// import { Eye, EyeOff } from 'lucide-react-native';
+import {Eye, EyeOff} from 'lucide-react-native';
 
 type InputType = 'default' | 'phone' | 'date';
 
@@ -113,11 +113,11 @@ export function AuthInput({
           <TouchableOpacity
             onPress={() => setIsPasswordVisible(!isPasswordVisible)}
             activeOpacity={0.7}>
-            {/* {isPasswordVisible ? (
+            {isPasswordVisible ? (
               <EyeOff
                 size={20}
                 color={useThemeColor(
-                  { light: '#6C757D', dark: '#ADB5BD' },
+                  {light: '#6C757D', dark: '#ADB5BD'},
                   'text',
                 )}
               />
@@ -125,11 +125,11 @@ export function AuthInput({
               <Eye
                 size={20}
                 color={useThemeColor(
-                  { light: '#6C757D', dark: '#ADB5BD' },
+                  {light: '#6C757D', dark: '#ADB5BD'},
                   'text',
                 )}
               />
-            )} */}
+            )}
           </TouchableOpacity>
         )}
       </View>

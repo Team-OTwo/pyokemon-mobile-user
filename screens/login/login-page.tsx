@@ -1,14 +1,13 @@
 import {AuthButton, AuthInput} from '../../components/auth';
 import {ThemedText, ThemedView} from '../../components/common';
 import {useThemeColor} from '../../hooks/useThemeColor';
-// import { login } from '../../services/apis/account';
+import {login} from '../../services/apis/account';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {getUniqueId} from 'react-native-device-info';
 import messaging from '@react-native-firebase/messaging';
 import React, {useState} from 'react';
 import {
   Alert,
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -32,9 +31,6 @@ export default function LoginScreen({navigation}: LoginScreenProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
   const {signIn} = useAuth();
-
-  const {width, height} = Dimensions.get('window');
-  const logoWidth = Math.min(width, height) * 0.4; // 화면 크기의 60%로 로고 너비 설정
 
   const tintColor = useThemeColor({light: '#807F7F', dark: '#2E5BFF'}, 'tint');
   const backgroundColor = useThemeColor(
@@ -68,36 +64,32 @@ export default function LoginScreen({navigation}: LoginScreenProps) {
     try {
       // 수정 예정 Spring Boot 쪽에서 처리해야 함
       const deviceNumber = await getUniqueId();
-      // const response = await login(loginId, password, deviceNumber);
+      const response = await login(loginId, password, deviceNumber);
       // 디바이스 등록 여부가 없을 시 등록 과정
       const osType = textUpper(Platform.OS);
       const fcmToken = await messaging().getToken();
-      //   const fcmToken = 'fcm';
-      //   if (response.deviceStatus === 'NOT_REGISTERED') {
-      //     navigation.navigate('Verification', {
-      //       messageType: 'FIRST_LOGIN',
-      //       deviceNumber,
-      //       fcmToken,
-      //       osType,
-      //       accessToken: response.accessToken,
-      //       refreshToken: response.refreshToken,
-      //     });
-      //   } else if (response.deviceStatus === 'MISMATCHED') {
-      //     navigation.navigate('Verification', {
-      //       messageType: 'DIFFERENT_DEVICE',
-      //       deviceNumber,
-      //       accountId: response.accountId,
-      //       fcmToken,
-      //       osType,
-      //       accessToken: response.accessToken,
-      //       refreshToken: response.refreshToken,
-      //     });
-      //   } else {
-      //     signIn(response.accessToken, response.refreshToken);
-      //   }
-      // } catch (error: any) {
-      //   Alert.alert('로그인에 실패했습니다.', error.message);
-      // }
+      if (response.deviceStatus === 'NOT_REGISTERED') {
+        navigation.navigate('Verification', {
+          messageType: 'FIRST_LOGIN',
+          deviceNumber,
+          fcmToken,
+          osType,
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken,
+        });
+      } else if (response.deviceStatus === 'MISMATCHED') {
+        navigation.navigate('Verification', {
+          messageType: 'DIFFERENT_DEVICE',
+          deviceNumber,
+          accountId: response.accountId,
+          fcmToken,
+          osType,
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken,
+        });
+      } else {
+        signIn(response.accessToken, response.refreshToken);
+      }
     } catch (error: any) {
       Alert.alert('로그인에 실패했습니다.', error.message);
     }

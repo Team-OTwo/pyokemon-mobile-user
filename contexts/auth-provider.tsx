@@ -2,12 +2,12 @@
 import React, {createContext, useEffect, useMemo, useState} from 'react';
 import type {AuthContextType} from '../types/auth';
 import SplashScreen from '../screens/splash/splash-page';
-// import {
-//   setTokens,
-//   removeTokens,
-//   getTokens,
-// } from '../services/storage/securStorage';
-// import {logout} from '../services/apis';
+import {
+  setTokens,
+  removeTokens,
+  getTokens,
+} from '../services/storage/securStorage';
+import {logout} from '../services/apis';
 export const AuthContext = createContext<AuthContextType | undefined>({
   userToken: null,
   signIn: async () => {},
@@ -20,10 +20,10 @@ export default function AuthProvider({children}: {children: React.ReactNode}) {
 
   useEffect(() => {
     const checkLoginStatus = async () => {
-      // const token = await getTokens();
-      // if (token) {
-      //   setUserToken(token.accessToken);
-      // }
+      const token = await getTokens();
+      if (token) {
+        setUserToken(token.accessToken);
+      }
     };
     checkLoginStatus();
   }, []);
@@ -31,17 +31,17 @@ export default function AuthProvider({children}: {children: React.ReactNode}) {
   const authActions = useMemo(
     () => ({
       signIn: async (accessToken: string, refreshToken: string) => {
-        // await setTokens(accessToken, refreshToken);
-        // setUserToken(accessToken);
+        await setTokens(accessToken, refreshToken);
+        setUserToken(accessToken);
       },
       signOut: async () => {
         try {
-          // await logout();
+          await logout();
         } catch (error) {
           console.error(error);
         } finally {
-          // await removeTokens();
-          // setUserToken(null);
+          await removeTokens();
+          setUserToken(null);
         }
       },
     }),

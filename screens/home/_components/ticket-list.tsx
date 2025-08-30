@@ -1,5 +1,5 @@
 import {ThemedText} from '../../../components/common';
-import {useThemeColor} from '../../../hooks';
+import {useThemeColor} from '../../../hooks/useThemeColor';
 import {TicketCard} from './ticket-card';
 import {Ticket} from '../../../types/ticket';
 import React, {useState, useRef, useCallback} from 'react';

@@ -3,45 +3,44 @@ import {ThemedText, ThemedView} from '../../components/common';
 import {useThemeColor, useTicketPagination, useNotification} from '../../hooks';
 import {MainStackParamList} from '../../types/navigation';
 import {Ticket} from '../../types/ticket';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {StackNavigationProp} from '@react-navigation/stack';
 import {useEffect, useState} from 'react';
 import {SafeAreaView, StatusBar, StyleSheet, View} from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
 import {GenreFilter, TicketList} from './_components';
-// import { TicketList, GenreFilter } from './_components';
-// import { Bell, User } from 'lucide-react-native';
-// import { Badge } from '@/components/ui/badge';
-// import { SAMPLE_TICKETS } from '@/data/ticket';
-// import { getNotifications } from '@/services/apis/notification';
-// import { getListTicket } from '@/services/apis/ticket';
+import {Bell, User} from 'lucide-react-native';
+import {SAMPLE_TICKETS} from '../../data/ticket';
+import {getListTicket} from '../../services/apis/ticket';
+import {Badge} from '../../components/ui/badge';
+import {getNotifications} from '../../services/apis/notification';
 
 type HomeScreenProps = {
-  navigation: NativeStackNavigationProp<MainStackParamList, 'Home'>;
+  navigation: StackNavigationProp<MainStackParamList, 'Home'>;
 };
 
 // API 호출 함수 (실제 구현은 사용자가 할 예정)
 const fetchTickets = async (cursor?: string, genre?: string) => {
   try {
-    // const response = await getListTicket(genre, cursor);
+    const response = await getListTicket(genre, cursor);
     // API 응답 구조 확인 및 안전한 처리
-    // if (!response) {
-    //   throw new Error('API 응답이 없습니다.');
-    // }
+    if (!response) {
+      throw new Error('API 응답이 없습니다.');
+    }
     // 응답 구조에 따라 안전하게 데이터 추출
-    // const tickets = response.content || response.tickets || [];
-    // const next_cursor = response.next_cursor || response.nextCursor || null;
-    // const hasMore =
-    //   response.hasMore !== undefined ? response.hasMore : next_cursor !== null;
-    // return {
-    //   tickets,
-    //   next_cursor,
-    //   hasMore,
-    // };
+    const tickets = response.content || response.tickets || [];
+    const next_cursor = response.next_cursor || response.nextCursor || null;
+    const hasMore =
+      response.hasMore !== undefined ? response.hasMore : next_cursor !== null;
+    return {
+      tickets,
+      nextCursor: next_cursor,
+      hasMore,
+    };
   } catch (error) {
     console.error('티켓 목록 조회 실패:', error);
     // 에러 발생 시 빈 결과 반환
     return {
-      tickets: [],
+      tickets: SAMPLE_TICKETS,
       nextCursor: null,
       hasMore: false,
     };
@@ -51,12 +50,11 @@ const fetchTickets = async (cursor?: string, genre?: string) => {
 // 홈화면에서 안 읽은 알림 개수 가져오기
 const fetchUnreadNotificationCount = async () => {
   try {
-    // const response = await getNotifications();
-    // const unreadCount = (response.notifications || []).filter(
-    //   (n: any) => !n.isChecked,
-    // ).length;
-    // console.log('unreadCount', unreadCount);
-    // return unreadCount;
+    const response = await getNotifications();
+    const unreadCount = (response.notifications || []).filter(
+      (n: any) => !n.isChecked,
+    ).length;
+    return unreadCount;
   } catch (error) {
     console.error('안 읽은 알림 개수 조회 실패:', error);
     return 0;
@@ -78,13 +76,7 @@ export default function HomeScreen({navigation}: HomeScreenProps) {
     refreshTickets,
     changeGenre,
   } = useTicketPagination({
-    onLoadMore: async () => {
-      return {
-        tickets: [],
-        next_cursor: null,
-        hasMore: false,
-      };
-    },
+    onLoadMore: fetchTickets,
   });
 
   const handleTicketPress = (ticket: Ticket) => {
@@ -111,8 +103,8 @@ export default function HomeScreen({navigation}: HomeScreenProps) {
   useFocusEffect(
     React.useCallback(() => {
       const loadUnreadCount = async () => {
-        // const count = await fetchUnreadNotificationCount();
-        // setUnreadCount(count);
+        const count = await fetchUnreadNotificationCount();
+        setUnreadCount(count);
       };
       loadUnreadCount();
     }, [setUnreadCount]),
@@ -132,22 +124,22 @@ export default function HomeScreen({navigation}: HomeScreenProps) {
           <ThemedText style={styles.welcomeText}>내 티켓</ThemedText>
           <View style={styles.userIcon}>
             <View style={styles.bellContainer}>
-              {/* <Bell
+              <Bell
                 size={23}
                 color={textColor}
                 onPress={() => {
                   navigation.navigate('Notification');
                 }}
               />
-              <Badge count={unreadCount} size="small" /> */}
+              <Badge count={unreadCount} size="small" />
             </View>
-            {/* <User
+            <User
               size={25}
               color={textColor}
               onPress={() => {
                 navigation.navigate('Profile');
               }}
-            /> */}
+            />
           </View>
         </View>
 

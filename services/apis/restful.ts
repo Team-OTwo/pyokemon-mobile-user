@@ -1,7 +1,7 @@
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { getTokens, setAccessToken } from '../storage/securStorage';
-import { Alert } from 'react-native';
-import { useAuth } from '@/hooks';
+import {useAuth} from '../../hooks';
+import axios, {AxiosError, AxiosRequestConfig, AxiosResponse} from 'axios';
+import {Alert} from 'react-native';
+import {getTokens, setAccessToken} from '../storage/securStorage';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
@@ -31,7 +31,7 @@ export class ApiError extends Error {
   }
 }
 
-const API_BASE_URL = 'http://192.168.0.238:8087/';
+const API_BASE_URL = 'http://192.168.75.240:8087/';
 const DEFAULT_TIMEOUT = 30000;
 const RETRY_DELAY = 1000;
 
@@ -46,19 +46,19 @@ let failedQueue: Array<{
   reject: (error: Error) => void;
 }> = [];
 
-// const processQueue = (
-//   error: Error | null,
-//   token: string | null = null,
-// ): void => {
-//   failedQueue.forEach(({ resolve, reject }) => {
-//     if (error) {
-//       reject(error);
-//     } else if (token) {
-//       resolve(token);
-//     }
-//   });
-//   failedQueue = [];
-// };
+const processQueue = (
+  error: Error | null,
+  token: string | null = null,
+): void => {
+  failedQueue.forEach(({resolve, reject}) => {
+    if (error) {
+      reject(error);
+    } else if (token) {
+      resolve(token);
+    }
+  });
+  failedQueue = [];
+};
 
 const getAuthToken = async (): Promise<string | null> => {
   try {
@@ -75,7 +75,7 @@ const refreshAuthToken = async (refreshToken: string): Promise<string> => {
     'account/api/refresh',
     {},
     {
-      headers: { Authorization: `Bearer ${refreshToken}` },
+      headers: {Authorization: `Bearer ${refreshToken}`},
     },
   );
 
@@ -139,7 +139,7 @@ axios.interceptors.response.use(
       if (isRefreshing) {
         // 이미 토큰 재발급 중인 경우 대기열에 추가
         return new Promise<string>((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
+          failedQueue.push({resolve, reject});
         })
           .then(token => {
             originalRequest.headers['Authorization'] = `Bearer ${token}`;
@@ -162,7 +162,7 @@ axios.interceptors.response.use(
 
         // 새 토큰으로 원래 요청 재시도
         originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
-        // processQueue(null, newAccessToken);
+        processQueue(null, newAccessToken);
 
         return axios(originalRequest);
       } catch (refreshError) {
@@ -198,7 +198,7 @@ export const apiRequest = async <T = any>(
   try {
     const url = `${API_BASE_URL}${endpoint}`;
     const config: AxiosRequestConfig = {
-      headers: { ...headers },
+      headers: {...headers},
       timeout,
     };
 
@@ -273,10 +273,6 @@ const delay = (ms: number): Promise<void> => {
   return new Promise(resolve => setTimeout(resolve, ms));
 };
 
-// ============================================================================
-// API SERVICE METHODS
-// ============================================================================
-
 const apiService = {
   get: <T = any>(endpoint: string, params?: any, options?: RequestOptions) =>
     apiRequest<T>('GET', endpoint, params, options),
@@ -294,7 +290,7 @@ const apiService = {
     apiRequest<T>('PATCH', endpoint, data, options),
 
   upload: <T = any>(endpoint: string, data: any) =>
-    apiRequest<T>('POST', endpoint, data, { isFormData: true }),
+    apiRequest<T>('POST', endpoint, data, {isFormData: true}),
 };
 
 // ============================================================================

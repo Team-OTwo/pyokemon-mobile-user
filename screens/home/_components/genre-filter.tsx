@@ -1,5 +1,5 @@
 import {ThemedText} from '../../../components/common';
-import {useThemeColor} from '../../../hooks';
+import {useThemeColor} from '../../../hooks/useThemeColor';
 import React from 'react';
 import {FlatList, StyleSheet, TouchableOpacity, View} from 'react-native';
 

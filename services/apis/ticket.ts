@@ -19,21 +19,27 @@ export const getDetailTicket = async (ticketId: string) => {
 };
 
 export const getListTicket = async (genre?: string, cursor?: string) => {
-  const params = {
-    genre: genre || '전체',
-    ...(cursor && { cursor }),
-  };
-  const response = await restful(
-    'GET',
-    `bff/api/app/bookings/my-tickets?${new URLSearchParams(params).toString()}`,
-    {},
-    {
-      isAuth: true,
-    },
-  );
+  try {
+    const params = {
+      genre: genre || '전체',
+      ...(cursor && {cursor}),
+    };
+    const response = await restful(
+      'GET',
+      `bff/api/app/bookings/my-tickets?${new URLSearchParams(
+        params,
+      ).toString()}`,
+      {},
+      {
+        isAuth: true,
+      },
+    );
 
-  if (response) {
-    return response;
+    // 응답이 있으면 반환
+    return response || {content: [], next_cursor: null, hasMore: false};
+  } catch (error) {
+    console.error('티켓 목록 조회 API 에러:', error);
+    // 에러 발생 시 기본값 반환
+    return {content: [], next_cursor: null, hasMore: false};
   }
-  throw new Error(response.message || '티켓 목록 조회에 실패했습니다');
 };

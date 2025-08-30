@@ -3,7 +3,7 @@ import {Ticket} from '../types/ticket';
 
 export interface PaginationResponse {
   tickets: Ticket[];
-  next_cursor: string | null;
+  nextCursor: string | null;
   hasMore: boolean;
 }
 
@@ -30,7 +30,7 @@ export const useTicketPagination = ({onLoadMore}: UseTicketPaginationProps) => {
         const response = await onLoadMore(undefined, genre);
 
         setTickets(response.tickets);
-        setNextCursor(response.next_cursor);
+        setNextCursor(response.nextCursor);
         setHasMore(response.hasMore);
       } catch (error) {
         console.error('초기 티켓 로딩 실패:', error);
@@ -51,7 +51,7 @@ export const useTicketPagination = ({onLoadMore}: UseTicketPaginationProps) => {
       const response = await onLoadMore(nextCursor, currentGenre || undefined);
 
       setTickets(prev => [...prev, ...response.tickets]);
-      setNextCursor(response.next_cursor);
+      setNextCursor(response.nextCursor);
       setHasMore(response.hasMore);
     } catch (error) {
       console.error('추가 티켓 로딩 실패:', error);

@@ -3,13 +3,13 @@ import {useThemeColor} from '../../../hooks/useThemeColor';
 import {Ticket} from '../../../types/ticket';
 import React, {useState} from 'react';
 import {StyleSheet, TouchableOpacity, View, Image} from 'react-native';
-// import {
-//   Calendar,
-//   MapPin,
-//   Shield,
-//   ChevronDown,
-//   ChevronUp,
-// } from 'lucide-react-native';
+import {
+  Calendar,
+  MapPin,
+  Shield,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react-native';
 
 interface TicketCardProps {
   ticket: Ticket;
@@ -74,11 +74,11 @@ export function TicketCard({ticket, onPress}: TicketCardProps) {
 
         {/* 확장/축소 버튼 */}
         <TouchableOpacity style={styles.expandButton} onPress={toggleExpand}>
-          {/* {isExpanded ? (
+          {isExpanded ? (
             <ChevronUp size={20} color="#FFFFFF" />
           ) : (
             <ChevronDown size={20} color="#FFFFFF" />
-          )} */}
+          )}
         </TouchableOpacity>
       </View>
 

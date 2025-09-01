@@ -26,6 +26,7 @@ import {
   initAgent,
   setupConnectionEventListeners,
   changeConnectionUrl,
+  sendAgentPublicDidToUser,
 } from '../../services/did/credo';
 import {Agent} from '@credo-ts/core';
 
@@ -173,6 +174,7 @@ export default function LoginScreen({navigation}: LoginScreenProps) {
               '⚠️ 일부 ACA-Py 연결에 실패했습니다. 부분적으로 작동할 수 있습니다.',
             );
           }
+          await sendAgentPublicDidToUser(agent, allConnections[1].id);
         } catch (walletError: any) {
           console.error('지갑 초기화 실패:', walletError);
           Alert.alert(

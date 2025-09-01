@@ -554,20 +554,44 @@ export const generateBatchConnections = async (
   }
 };
 
-// 메시지 전송 함수 (현재 사용하지 않음)
-// export const sendMessage = async (
-//   agent: Agent,
-//   connectionId: string,
-//   message: string,
-// ) => {
-//   try {
-//     await agent.basicMessages.sendMessage(connectionId, message);
-//     console.log('메시지 전송 완료:', connectionId);
-//   } catch (error) {
-//     console.log('메시지 전송 에러:', error);
-//     throw error;
-//   }
-// };
+// Agent의 public DID를 user-acy-py에게 comm 메시지로 보내는 함수
+export const sendAgentPublicDidToUser = async (
+  agent: Agent,
+  userConnectionId: string,
+) => {
+  try {
+    console.log('Agent의 public DID를 user-acy-py에게 전송 시작...');
+
+    const didResult = await agent.dids.create({
+      method: 'key',
+      options: {
+        keyType: 'ed25519',
+      },
+    });
+    console.log('새 DID 생성 결과:', didResult);
+
+    if (!didResult.didState.did) {
+      throw new Error('새 DID 생성에 실패했습니다.');
+    }
+
+    // User ACA-Py에 DID만 전송 (요구사항에 맞게 간소화)
+    const didValue = didResult.didState.did;
+    console.log('전송할 새 DID:', didValue);
+
+    // 요구사항에 맞게 content에 DID만 포함하여 전송 (did:key: 형식 확인)
+    if (!didValue.startsWith('did:key:')) {
+      console.warn('DID가 did:key: 형식이 아닙니다:', didValue);
+    }
+
+    await agent.basicMessages.sendMessage(userConnectionId, didValue);
+
+    console.log('✅ Agent DID를 user-acy-py에게 전송 완료');
+    return {did: didValue, keyType: 'ED25519'};
+  } catch (error) {
+    console.log('❌ Agent DID 정보를 user-acy-py에게 전송 실패:', error);
+    throw error;
+  }
+};
 
 export const saveConnectionInfo = async (
   allConnections: ConnectionRecord[],
@@ -576,58 +600,9 @@ export const saveConnectionInfo = async (
   try {
     // 여기에 연결 정보 저장 로직 구현
     console.log('Connection 정보 저장 완료:', allConnections.length);
+    return {success: true, count: allConnections.length};
   } catch (error) {
     console.log('Connection 정보 저장 에러:', error);
     throw error;
   }
 };
-
-// Agent DID 공개키 전송 함수 (현재 사용하지 않음)
-// export const sendAgentDidPublicKeyToUser = async (
-//   agent: Agent,
-//   userConnectionId: string,
-// ) => {
-//   try {
-//     console.log('Agent의 기존 DID 공개키를 User ACA-Py에게 전송 시작...');
-
-//     // Agent의 기존 DID 목록 가져오기
-//     const dids = await agent.dids.getCreatedDids();
-//     console.log('Agent DIDs:', dids);
-
-//     if (!dids || dids.length === 0) {
-//       throw new Error('Agent에 생성된 DID가 없습니다.');
-//     }
-
-//     // Key DID를 우선적으로 찾거나, 첫 번째 DID 사용
-//     let agentDidInfo = null;
-//     for (const did of dids) {
-//       if (did.did && did.did.startsWith('did:key:')) {
-//         agentDidInfo = did;
-//         break;
-//       }
-//     }
-
-//     if (!agentDidInfo) {
-//       agentDidInfo = dids[0];
-//     }
-
-//     if (!agentDidInfo || !agentDidInfo.did) {
-//       throw new Error('Agent DID 정보를 찾을 수 없습니다.');
-//     }
-
-//     console.log('전송할 Agent DID:', agentDidInfo.did);
-
-//     // User ACA-Py에게 Agent DID 문자열만 전송
-//     const userMessage = agentDidInfo.did;
-//     await agent.basicMessages.sendMessage(userConnectionId, userMessage);
-
-//     console.log('✅ Agent DID 공개키를 User ACA-Py에게 전송 완료');
-//     return {
-//       did: agentDidInfo.did,
-//       publicKey: agentDidInfo.did, // 간단하게 DID 자체를 publicKey로 반환
-//     };
-//   } catch (error) {
-//     console.log('❌ Agent DID 공개키를 User ACA-Py에게 전송 실패:', error);
-//     throw error;
-//   }
-// };

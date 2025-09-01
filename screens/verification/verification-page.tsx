@@ -9,11 +9,13 @@ import {
 import {AuthStackParamList} from '../../types/navigation';
 import {RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
+import DIDService from '../../services/did/did-service';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   Alert,
   Animated,
   KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -242,6 +244,11 @@ export default function VerificationScreen({
       if (messageType === 'FIRST_LOGIN') {
         // 본인인증을 했다고 가정하고 (첫 로그인)진행. 그외는 따로 본인인증을 진행한다고 가정
         await verifyUser(accessToken);
+
+        // DID 초기화는 로그인 시 useWallet 훅에서 처리하도록 변경
+        // 첫 로그인 시에는 본인인증 후 로그인 시 지갑 초기화 및 연결 진행
+        console.log('DID 초기화는 로그인 시 useWallet 훅에서 처리됩니다.');
+        // 본인인증 성공 후 로그인 페이지로 이동하면 로그인 시 자동으로 지갑 초기화
       }
 
       setCurrentStep(3);
@@ -322,11 +329,12 @@ export default function VerificationScreen({
   return (
     <ThemedView style={[styles.container, {backgroundColor}]}>
       <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView behavior={'height'} style={styles.keyboardAvoid}>
+        <KeyboardAvoidingView style={styles.keyboardAvoid}>
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}>
+            showsVerticalScrollIndicator={false}
+            keyboardDismissMode="on-drag">
             <View style={styles.content}>
               <Animated.View
                 style={[
@@ -402,6 +410,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: 'center',
   },
   content: {
     flex: 1,

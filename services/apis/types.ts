@@ -79,3 +79,13 @@ export interface ApiError {
   message: string;
   details?: Record<string, any>;
 }
+
+export interface InvitationResponse {
+  success: boolean;
+  message: string | null;
+  data: {
+    mediator_acapy_invi_url: string;
+    user_acapy_invi_url: string;
+  };
+  errorCode: string | null;
+}

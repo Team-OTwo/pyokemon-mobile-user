@@ -1,6 +1,9 @@
 import {useEffect, useState} from 'react';
 import {getDetailTicket} from '../../../services/apis/ticket';
-import type {TicketDetail} from '../../../types/ticket';
+import type {Ticket, TicketDetail} from '../../../types/ticket';
+// import {SAMPLE_TICKETS} from '@/data/ticket';
+// import TicketDetail from '../../../screens/ticket/ticket-detail-page';
+import {SAMPLE_TICKET_DETAILS} from '../../../data/ticket_detail';
 
 export enum QRStep {
   SCAN_VENUE_QR = 'SCAN_VENUE_QR',
@@ -28,7 +31,8 @@ export function useQRProcess(ticketId: string) {
   // 티켓 정보 로드
   useEffect(() => {
     const getTicket = async () => {
-      const ticket = await getDetailTicket(ticketId);
+      // const ticket = await getDetailTicket(ticketId);
+      const ticket = SAMPLE_TICKET_DETAILS;
       setTicket(ticket);
       setLoading(false);
     };

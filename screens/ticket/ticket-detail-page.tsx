@@ -19,6 +19,7 @@ import {
   Image,
   Animated,
 } from 'react-native';
+import {SAMPLE_TICKET_DETAILS} from '../../data/ticket_detail';
 
 type TicketDetailProps = {
   navigation: StackNavigationProp<MainStackParamList, 'TicketDetail'>;
@@ -40,6 +41,7 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
         setIsLoading(true);
         setError(null);
         const ticketData = await getDetailTicket(ticketId);
+        // const ticketData = SAMPLE_TICKET_DETAILS;
         setTicket(ticketData);
       } catch (err) {
         setError(

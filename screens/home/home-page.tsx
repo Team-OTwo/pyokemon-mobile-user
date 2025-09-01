@@ -1,14 +1,14 @@
 import React from 'react';
+import {useEffect, useState} from 'react';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {SafeAreaView, StatusBar, StyleSheet, View} from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {ThemedText, ThemedView} from '../../components/common';
+import {Bell, User} from 'lucide-react-native';
 import {useThemeColor, useTicketPagination, useNotification} from '../../hooks';
 import {MainStackParamList} from '../../types/navigation';
 import {Ticket} from '../../types/ticket';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {useEffect, useState} from 'react';
-import {SafeAreaView, StatusBar, StyleSheet, View} from 'react-native';
-import {useFocusEffect} from '@react-navigation/native';
 import {GenreFilter, TicketList} from './_components';
-import {Bell, User} from 'lucide-react-native';
 import {SAMPLE_TICKETS} from '../../data/ticket';
 import {getListTicket} from '../../services/apis/ticket';
 import {Badge} from '../../components/ui/badge';
@@ -32,7 +32,7 @@ const fetchTickets = async (cursor?: string, genre?: string) => {
     const hasMore =
       response.hasMore !== undefined ? response.hasMore : next_cursor !== null;
     return {
-      tickets,
+      tickets: tickets,
       nextCursor: next_cursor,
       hasMore,
     };

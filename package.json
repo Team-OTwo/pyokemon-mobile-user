@@ -10,6 +10,11 @@
     "test": "jest"
   },
   "dependencies": {
+    "@credo-ts/askar": "^0.5.15",
+    "@credo-ts/core": "^0.5.15",
+    "@credo-ts/react-native": "^0.5.15",
+    "@hyperledger/aries-askar-react-native": "^0.2.1",
+    "@react-native-async-storage/async-storage": "^1.24.0",
     "@react-native-firebase/app": "^22.2.0",
     "@react-native-firebase/messaging": "^22.2.0",
     "@react-native/gradle-plugin": "^0.72.11",
@@ -20,7 +25,9 @@
     "react": "18.2.0",
     "react-native": "0.72.0",
     "react-native-device-info": "10.13.0",
+    "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "~2.12.0",
+    "react-native-get-random-values": "^1.11.0",
     "react-native-keychain": "^8.1.2",
     "react-native-qrcode-svg": "6.2.0",
     "react-native-reanimated": "~3.3.0",

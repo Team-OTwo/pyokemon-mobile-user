@@ -66,15 +66,13 @@ export const VerificationInput: React.FC<VerificationInputProps> = ({
 
       {/* 첫 기기등록용: 휴대폰번호만 입력 */}
       {step.inputType === 'phone-number' && (
-        <>
-          <AuthInput
-            value={phoneNumber}
-            onChangeText={onPhoneNumberChange}
-            placeholder="휴대폰 번호 (예: 010-9960-0464)"
-            inputType="phone"
-            error={errors.phoneNumber}
-          />
-        </>
+        <AuthInput
+          value={phoneNumber}
+          onChangeText={onPhoneNumberChange}
+          placeholder="휴대폰 번호 (예: 010-9960-0464)"
+          inputType="phone"
+          error={errors.phoneNumber}
+        />
       )}
 
       {/* 인증번호 입력 */}

@@ -20,6 +20,14 @@ import {
 import {textUpper} from '../../common/text-common';
 import {AuthStackParamList} from '../../types/navigation';
 import useAuth from '../../hooks/useAuth';
+import {getInvitationUrls} from '../../services/apis/did';
+import {
+  generateBatchConnections,
+  initAgent,
+  setupConnectionEventListeners,
+  changeConnectionUrl,
+} from '../../services/did/credo';
+import {Agent} from '@credo-ts/core';
 
 type LoginScreenProps = {
   navigation: StackNavigationProp<AuthStackParamList, 'Login'>;
@@ -29,6 +37,7 @@ export default function LoginScreen({navigation}: LoginScreenProps) {
   const [loginId, setLoginId] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [agent, setAgent] = useState<Agent | null>(null);
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
   const {signIn} = useAuth();
 
@@ -67,6 +76,7 @@ export default function LoginScreen({navigation}: LoginScreenProps) {
       const response = await login(loginId, password, deviceNumber);
       // 디바이스 등록 여부가 없을 시 등록 과정
       const osType = textUpper(Platform.OS);
+      // Firebase v22 방식으로 업데이트
       const fcmToken = await messaging().getToken();
       if (response.deviceStatus === 'NOT_REGISTERED') {
         navigation.navigate('Verification', {
@@ -88,7 +98,89 @@ export default function LoginScreen({navigation}: LoginScreenProps) {
           refreshToken: response.refreshToken,
         });
       } else {
-        signIn(response.accessToken, response.refreshToken);
+        await signIn(
+          response.accessToken,
+          response.refreshToken,
+          response.accountId,
+        );
+
+        // 로그인 성공 후 지갑 초기화 시도
+        try {
+          console.log('로그인 성공 후 지갑 초기화 시도...');
+
+          // 1. 초대 URL 요청
+          console.log('초대 URL 요청 중...');
+          const invitationResponse = await getInvitationUrls(
+            response.accessToken,
+          );
+          console.log('invitationResponse', invitationResponse);
+
+          // 응답 데이터 검증
+          if (!invitationResponse?.data) {
+            throw new Error('초대 URL 응답 데이터가 없습니다');
+          }
+
+          if (
+            !invitationResponse.data.mediator_acapy_invi_url ||
+            !invitationResponse.data.user_acapy_invi_url
+          ) {
+            throw new Error(
+              '필수 초대 URL이 누락되었습니다 (Mediator: 8010, User: 8020)',
+            );
+          }
+
+          // 2. Agent 초기화
+          console.log('agent초기화 시작');
+          const agent = await initAgent(response.accountId);
+          console.log('agent초기화 완료');
+
+          // 연결 상태 변경 이벤트 리스너 설정
+          setupConnectionEventListeners(agent);
+
+          // 3. URL 변환 및 확인
+          console.log('원본 초대 URL:', {
+            mediator: invitationResponse.data.mediator_acapy_invi_url, // 8010 포트 (Mediator ACA-Py)
+            user: invitationResponse.data.user_acapy_invi_url, // 8020 포트 (User ACA-Py)
+          });
+
+          console.log('포트 확인 - mediator: 8010, user: 8020');
+
+          // URL 변환 (localhost, user:, mediator: 등을 실제 IP로 변환)
+          const invitationUrls = {
+            mediator: changeConnectionUrl(
+              invitationResponse.data.mediator_acapy_invi_url,
+            ), // 8010 포트 (Mediator ACA-Py)
+            user: changeConnectionUrl(
+              invitationResponse.data.user_acapy_invi_url,
+            ), // 8020 포트 (User ACA-Py)
+          };
+
+          console.log('변환된 초대 URL:', invitationUrls);
+
+          // 연결 생성 (User ACA-Py를 먼저, 그 다음 Mediator ACA-Py 순차적으로 연결)
+          console.log(
+            'User ACA-Py를 먼저 연결하고, 그 다음 Mediator ACA-Py 연결 시작...',
+          );
+          const {allConnections, allSuccess} = await generateBatchConnections(
+            agent,
+            invitationUrls,
+          );
+
+          if (allSuccess) {
+            console.log('🎉 두 ACA-Py 모두 성공적으로 연결되었습니다');
+          } else {
+            console.log(
+              '⚠️ 일부 ACA-Py 연결에 실패했습니다. 부분적으로 작동할 수 있습니다.',
+            );
+          }
+        } catch (walletError: any) {
+          console.error('지갑 초기화 실패:', walletError);
+          Alert.alert(
+            '알림',
+            '지갑 초기화 중 문제가 발생했습니다. 나중에 다시 시도해주세요.',
+          );
+          // 지갑 초기화 실패해도 로그인 프로세스는 계속 진행
+        }
       }
     } catch (error: any) {
       Alert.alert('로그인에 실패했습니다.', error.message);
@@ -98,7 +190,6 @@ export default function LoginScreen({navigation}: LoginScreenProps) {
 
   return (
     <ThemedView style={[styles.container, {backgroundColor}]}>
-      <StatusBar barStyle="default" />
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
           style={styles.keyboardAvoid}

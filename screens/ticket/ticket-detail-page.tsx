@@ -4,6 +4,7 @@ import {ThemedText, ThemedView} from '../../components/common';
 import PageHeader from '../../components/ui/header';
 import {useThemeColor} from '../../hooks/useThemeColor';
 import {getDetailTicket} from '../../services/apis/ticket';
+import DIDService from '../../services/did/did-service';
 import {MainStackParamList} from '../../types/navigation';
 import type {TicketDetail} from '../../types/ticket';
 import {RouteProp} from '@react-navigation/native';
@@ -18,8 +19,10 @@ import {
   View,
   Image,
   Animated,
+  Alert,
 } from 'react-native';
 import {SAMPLE_TICKET_DETAILS} from '../../data/ticket_detail';
+import {getCredential} from '../../services/apis/did';
 
 type TicketDetailProps = {
   navigation: StackNavigationProp<MainStackParamList, 'TicketDetail'>;
@@ -83,6 +86,32 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
     navigation.navigate('TicketQR', {
       ticketId: ticket?.bookingId || '',
     });
+  };
+
+  const handleGetCredential = async () => {
+    try {
+      // 1. VC 요청 - user-aca-py에 전달
+      const credential = await getCredential(ticket?.bookingId || '');
+      if (credential.success) {
+        // 2. VC가 요청되었으면 mediator-aca-py에서 폴링 시작
+        console.log('VC 요청 성공. Mediator에서 폴링 시작...');
+
+        // 3. Mediator에서 VC 폴링
+        const pollingResult = await DIDService.pollForCredentials(15, 2000);
+
+        if (pollingResult.success) {
+          console.log('VC 폴링 성공:', pollingResult);
+          Alert.alert('성공', 'VC를 성공적으로 받았습니다.');
+        } else {
+          console.log('VC 폴링 실패:', pollingResult);
+          Alert.alert('실패', 'VC를 받는데 실패했습니다.');
+        }
+      } else {
+        Alert.alert('실패', '서버에 VC 요청을 보내는데 실패했습니다.');
+      }
+    } catch (error) {
+      console.log('디지털 자격증서 처리 중 오류 발생:', error);
+    }
   };
 
   // 로딩 상태 처리
@@ -247,13 +276,7 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
               <AuthButton
                 isLoading={isVc}
                 title="VC 요청"
-                onPress={() => {
-                  setIsVc(true);
-                  setTimeout(() => {
-                    setIsVc(false);
-                    setVc(true);
-                  }, 1000);
-                }}
+                onPress={handleGetCredential}
                 // disabled={ticket.status !== 'active'}
               />
             )}

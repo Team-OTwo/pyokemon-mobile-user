@@ -25,7 +25,6 @@ import {
   generateBatchConnections,
   initAgent,
   setupConnectionEventListeners,
-  changeConnectionUrl,
   sendAgentPublicDidToUser,
 } from '../../services/did/credo';
 import {Agent} from '@credo-ts/core';
@@ -148,12 +147,10 @@ export default function LoginScreen({navigation}: LoginScreenProps) {
 
           // URL 변환 (localhost, user:, mediator: 등을 실제 IP로 변환)
           const invitationUrls = {
-            mediator: changeConnectionUrl(
-              invitationResponse.data.mediator_acapy_invi_url,
-            ), // 8010 포트 (Mediator ACA-Py)
-            user: changeConnectionUrl(
-              invitationResponse.data.user_acapy_invi_url,
-            ), // 8020 포트 (User ACA-Py)
+            mediator: invitationResponse.data.mediator_acapy_invi_url,
+            // 8010 포트 (Mediator ACA-Py)
+            user: invitationResponse.data.user_acapy_invi_url,
+            // 8020 포트 (User ACA-Py)
           };
 
           console.log('변환된 초대 URL:', invitationUrls);

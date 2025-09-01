@@ -4,6 +4,7 @@ import {
   generateBatchConnections,
   getBatchInvitations,
   sendAgentPublicDidToUser,
+  pollMediatorForCredentials,
 } from './credo';
 import {getInvitationUrls} from '../apis/did';
 
@@ -149,6 +150,39 @@ class DIDService {
       userConnectionId: this.userConnectionId,
       mediatorConnectionId: this.mediatorConnectionId,
     };
+  }
+
+  /**
+   * Mediator ACA-Py에서 VC 폴링
+   * @param maxAttempts 최대 시도 횟수
+   * @param intervalMs 폴링 간격 (밀리초)
+   */
+  async pollForCredentials(
+    maxAttempts: number = 10,
+    intervalMs: number = 2000,
+  ) {
+    try {
+      if (!this.agent) {
+        throw new Error('에이전트가 초기화되지 않았습니다.');
+      }
+
+      if (!this.mediatorConnectionId) {
+        throw new Error('Mediator 연결이 설정되지 않았습니다.');
+      }
+
+      console.log('Mediator ACA-Py에서 VC 폴링 시작...');
+      const result = await pollMediatorForCredentials(
+        this.agent,
+        this.mediatorConnectionId,
+        maxAttempts,
+        intervalMs,
+      );
+
+      return result;
+    } catch (error) {
+      console.error('VC 폴링 실패:', error);
+      throw error;
+    }
   }
 }
 

@@ -32,32 +32,6 @@ export const getBatchInvitations = async (
   }
 };
 
-export const changeConnectionUrl = (url: string) => {
-  // URL이 비어있거나 undefined인 경우 처리
-  if (!url) {
-    console.error('유효하지 않은 URL:', url);
-    return url;
-  }
-
-  // localhost, user, mediator를 서버 IP로 변환
-  try {
-    let convertedUrl = url;
-    console.log('원본 URL:', url);
-    // localhost => 192.168.0.239
-    convertedUrl = convertedUrl.replace('localhost', '192.168.0.239');
-    // user => 192.168.0.239
-    convertedUrl = convertedUrl.replace('user:', '192.168.0.239:');
-    // mediator => 192.168.0.239
-    convertedUrl = convertedUrl.replace('mediator:', '192.168.0.239:');
-
-    console.log(`URL 변환: ${url} => ${convertedUrl}`);
-    return convertedUrl;
-  } catch (error) {
-    console.error('URL 변환 중 오류 발생:', error);
-    return url;
-  }
-};
-
 // 전역 에이전트 변수 선언
 let agent: Agent;
 
@@ -605,4 +579,66 @@ export const saveConnectionInfo = async (
     console.log('Connection 정보 저장 에러:', error);
     throw error;
   }
+};
+
+/**
+ * Mediator ACA-Py에서 VC를 폴링하는 함수
+ * @param agent Credo 에이전트
+ * @param mediatorConnectionId Mediator 연결 ID
+ * @param maxAttempts 최대 시도 횟수
+ * @param intervalMs 폴링 간격 (밀리초)
+ */
+export const pollMediatorForCredentials = async (
+  agent: Agent,
+  mediatorConnectionId: string,
+  maxAttempts: number = 10,
+  intervalMs: number = 2000,
+) => {
+  console.log('Mediator ACA-Py에서 VC 폴링 시작...');
+
+  let attempts = 0;
+  let credentials = null;
+
+  while (attempts < maxAttempts) {
+    attempts++;
+    console.log(`폴링 시도 ${attempts}/${maxAttempts}...`);
+
+    try {
+      // 1. 메시지 폴링 요청 전송
+      await agent.basicMessages.sendMessage(
+        mediatorConnectionId,
+        JSON.stringify({
+          type: 'poll_credentials',
+          timestamp: new Date().toISOString(),
+        }),
+      );
+
+      // 2. 응답 대기 (실제로는 이벤트 리스너를 통해 처리해야 함)
+      // 이 예제에서는 간단히 대기 후 다음 폴링으로 진행
+      await new Promise(resolve => setTimeout(resolve, intervalMs));
+
+      // 3. 폴링 결과 확인 (이 부분은 실제 구현에서 이벤트 리스너로 처리)
+      // 여기서는 예시로 폴링 성공 여부를 로그만 출력
+      console.log(`폴링 ${attempts}번째 완료, 다음 폴링 대기 중...`);
+
+      // 실제 구현에서는 여기서 수신된 VC를 확인하고 처리
+      // credentials = ... 수신된 VC 처리
+
+      // 만약 VC를 받았다면 폴링 종료
+      // if (credentials) break;
+    } catch (error) {
+      console.error(
+        `폴링 중 오류 발생 (시도 ${attempts}/${maxAttempts}):`,
+        error,
+      );
+    }
+  }
+
+  if (attempts >= maxAttempts) {
+    console.log('최대 폴링 시도 횟수 도달. VC를 받지 못했습니다.');
+    return {success: false, message: '최대 폴링 시도 횟수 도달'};
+  }
+
+  console.log('Mediator로부터 VC 수신 완료');
+  return {success: true, credentials};
 };

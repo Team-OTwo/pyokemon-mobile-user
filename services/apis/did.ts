@@ -19,3 +19,23 @@ export const getInvitationUrls = async (accessToken: string) => {
     throw error;
   }
 };
+
+export const getCredential = async (booking_id: string) => {
+  try {
+    console.log('VC 요청 시작');
+    const response = await restful(
+      'POST',
+      'did/api/verifications/delegate-credential',
+      {
+        booking_id,
+      },
+      {
+        isAuth: true,
+      },
+    );
+    return response;
+  } catch (error) {
+    console.error('VC 요청 오류:', error);
+    throw error;
+  }
+};

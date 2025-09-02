@@ -28,8 +28,8 @@ export type MainStackParamList = {
   Splash: undefined;
   Profile: undefined;
   Notification: undefined;
-  TicketDetail: {ticketId: string};
-  TicketQR: {ticketId: string};
+  TicketDetail: {bookingId: string};
+  TicketQR: {bookingId: string; credential: string};
 };
 
 export type ProfileScreenProps = StackScreenProps<

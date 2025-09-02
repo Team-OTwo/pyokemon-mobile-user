@@ -12,16 +12,24 @@ import {
   OutOfBandModule,
   DidCommMimeType,
   MediationRecipientModule,
-  MediationRecord,
   CredentialsModule,
   CredentialState,
   AutoAcceptCredential,
+  ProofsModule,
+  KeyType,
+  SdJwtVcRecord,
+  CredentialExchangeRecord,
+  JwsService,
 } from '@credo-ts/core';
 import {AskarModule} from '@credo-ts/askar';
 import {agentDependencies} from '@credo-ts/react-native';
 import {ariesAskar} from '@hyperledger/aries-askar-react-native';
 import {getInvitationUrls} from '../apis/did';
 import {getWalletInfo, saveWalletInfo} from '../storage/walletStorage';
+import {
+  OpenId4VcHolderModule,
+  OpenId4VciCredentialFormatProfile,
+} from '@credo-ts/openid4vc';
 
 // 여러 개의 초대 URL을 한번에 요청하는 함수
 export const getBatchInvitations = async (
@@ -94,6 +102,7 @@ export const initAgent = async (
         aries: new AskarModule({ariesAskar}),
         mediationRecipient: new MediationRecipientModule(),
         basicMessages: new BasicMessagesModule(),
+        proofs: new ProofsModule(),
         credentials: new CredentialsModule({
           autoAcceptCredentials: AutoAcceptCredential.Always,
         }),
@@ -834,5 +843,147 @@ export const pollMediatorForCredentials = async (
   } catch (error) {
     console.error('VC 폴링 중 오류 발생:', error);
     return {success: false, message: '폴링 중 오류 발생', credentials: null};
+  }
+};
+
+export const signDidToJwt = async (
+  agent: Agent,
+  publicDid: string,
+  bookingId: string,
+): Promise<{success: boolean; message: string; jwt: string | null}> => {
+  try {
+    // 1. JwsService 인스턴스 생성
+    const jwsService = new JwsService();
+
+    // 2. 키 생성
+    const key = await agent.wallet.createKey({
+      keyType: KeyType.Ed25519,
+    });
+
+    // 4. JWT 생성 - 문자열로 직접 전달
+    const jws = await jwsService.createJws(agent.context, {
+      payload: `{"booking_id":"${bookingId}"}` as any,
+      key,
+      header: {
+        typ: 'JWT',
+        alg: 'EdDSA',
+        kid: publicDid,
+      },
+      protectedHeaderOptions: {
+        typ: 'JWT',
+        alg: 'EdDSA',
+        kid: publicDid,
+      },
+    });
+
+    console.log('✅ JWT 생성 성공:', JSON.stringify(jws));
+    const jwtString = `${jws.protected}.${jws.payload}.${jws.signature}`;
+
+    return {success: true, message: 'JWT 생성 성공', jwt: jwtString};
+  } catch (error: any) {
+    console.error('❌ JWT 생성 실패:', error);
+    return {
+      success: false,
+      message: `JWT 생성 실패: ${error}`,
+      jwt: null,
+    };
+  }
+};
+
+export const generateProof = async (
+  agent: Agent,
+  credentialId: string,
+  publicDid: string,
+  authorizationRequest: string, // Verifier가 제공한 OpenID4VP 요청 URI
+): Promise<{
+  success: boolean;
+  message: string;
+  presentation: string | null;
+}> => {
+  console.log('VP 생성 시작...', {
+    credentialId,
+    publicDid,
+    authorizationRequest,
+  });
+
+  try {
+    // 1. VC 조회
+    let credential: CredentialExchangeRecord | SdJwtVcRecord | undefined;
+    try {
+      credential = await agent.credentials.getById(credentialId);
+      console.log('W3C VC 조회 성공:', credentialId);
+    } catch (w3cError) {
+      console.log('W3C VC 조회 실패, SD-JWT VC 시도:', w3cError);
+      credential = await agent.sdJwtVc.getById(credentialId);
+      console.log('SD-JWT VC 조회 성공:', credentialId);
+    }
+
+    if (!credential) {
+      throw new Error(`VC를 찾을 수 없습니다: ${credentialId}`);
+    }
+
+    // 2. OpenID4VP 요청 파싱
+    console.log('OpenID4VP 요청 파싱 중...');
+    const resolvedRequest =
+      await agent.modules.openId4VcHolderModule.resolvePresentationRequest(
+        authorizationRequest,
+      );
+    console.log(
+      'OpenID4VP 요청 파싱 완료:',
+      JSON.stringify(resolvedRequest, null, 2),
+    );
+
+    // 3. VP 생성 및 JWT 서명
+    console.log('JWT VP 생성 시작...');
+    const jwsService = new JwsService();
+    const presentation =
+      await agent.modules.openId4VcHolderModule.acceptPresentationRequest(
+        resolvedRequest,
+        {
+          credentialsForRequest: {
+            0: {
+              credentials: [credential],
+              format:
+                credential instanceof SdJwtVcRecord
+                  ? OpenId4VciCredentialFormatProfile.SdJwtVc
+                  : 'jwt_vc_json',
+            },
+          },
+          proofSigner: async (input: {
+            data: Uint8Array;
+          }): Promise<Uint8Array> => {
+            const key = await agent.wallet.createKey({
+              keyType: KeyType.Ed25519,
+            });
+            const jws = await jwsService.createJws(agent.context, {
+              payload: input.data as any,
+              key,
+              header: {alg: 'EdDSA', kid: publicDid},
+              protectedHeaderOptions: {
+                alg: 'EdDSA',
+                kid: publicDid,
+              },
+            });
+            console.log('JWT 서명 완료:', jws);
+            // JWS 형식에서 서명 부분 추출
+            const jwsString = typeof jws === 'string' ? jws : jws.toString();
+            return Buffer.from(jwsString.split('.')[2], 'base64');
+          },
+        },
+      );
+
+    console.log('✅ JWT VP 생성 성공:', presentation);
+    return {
+      success: true,
+      message: 'VP 생성 성공',
+      presentation: presentation,
+    };
+  } catch (error: any) {
+    console.error('❌ VP 생성 실패:', error);
+    return {
+      success: false,
+      message: `VP 생성 실패: ${error.message}`,
+      presentation: null,
+    };
   }
 };

@@ -4,7 +4,7 @@ import {ThemedText, ThemedView} from '../../components/common';
 import PageHeader from '../../components/ui/header';
 import {useThemeColor} from '../../hooks/useThemeColor';
 import {getDetailTicket} from '../../services/apis/ticket';
-import {useAgent, useAgentStatus} from '../../contexts/agent-provider';
+import {useAgentStatus} from '../../contexts/agent-provider';
 import {MainStackParamList} from '../../types/navigation';
 import type {TicketDetail} from '../../types/ticket';
 import {RouteProp} from '@react-navigation/native';
@@ -30,11 +30,11 @@ type TicketDetailProps = {
 };
 
 export default function TicketDetail({navigation, route}: TicketDetailProps) {
-  const {ticketId} = route.params;
+  const {bookingId} = route.params;
   const {user} = useAuth();
   const {isInitialized, agent} = useAgentStatus();
-  const [vc, setVc] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [credential, setCredential] = useState<string | null>('asd');
   const [isVc, setIsVc] = useState(false);
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +45,7 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
       try {
         setIsLoading(true);
         setError(null);
-        const ticketData = await getDetailTicket(ticketId);
+        const ticketData = await getDetailTicket(bookingId);
         // const ticketData = SAMPLE_TICKET_DETAILS;
         setTicket(ticketData);
       } catch (err) {
@@ -58,7 +58,7 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
     };
 
     fetchTicket();
-  }, [ticketId]);
+  }, [bookingId]);
 
   // 애니메이션 값들
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -86,7 +86,8 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
 
   const handleGenerateQR = () => {
     navigation.navigate('TicketQR', {
-      ticketId: ticket?.bookingId || '',
+      bookingId: ticket?.bookingId || '',
+      credential: credential || '',
     });
   };
 
@@ -140,7 +141,7 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
 
         if (pollingResult.success) {
           console.log('VC 폴링 성공:', pollingResult);
-          setVc(true); // VC 상태 업데이트
+          setCredential(pollingResult.credentials); // VC 상태 업데이트
           Alert.alert('성공', 'VC를 성공적으로 받았습니다.');
         } else {
           console.log('VC 폴링 실패:', pollingResult);
@@ -309,7 +310,7 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
         {/* 하단 버튼 영역 */}
         <SafeAreaView style={styles.bottomSafeArea}>
           <View style={styles.buttonContainer}>
-            {vc ? (
+            {credential ? (
               <AuthButton
                 title="QR 생성"
                 onPress={handleGenerateQR}

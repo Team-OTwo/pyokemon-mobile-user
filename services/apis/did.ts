@@ -1,5 +1,4 @@
 import restful from './restful';
-import {InvitationResponse} from './types';
 
 export const getInvitationUrls = async (accessToken: string) => {
   try {

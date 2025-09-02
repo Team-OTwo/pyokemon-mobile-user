@@ -89,7 +89,7 @@ export default function HomeScreen({navigation}: HomeScreenProps) {
 
   const handleTicketPress = (ticket: Ticket) => {
     navigation.navigate('TicketDetail', {
-      ticketId: ticket.bookingId.toString(),
+      bookingId: ticket.bookingId.toString(),
     });
   };
 

@@ -31,7 +31,7 @@ type TicketQRScreenProps = {
 };
 
 export default function TicketQRPage({navigation, route}: TicketQRScreenProps) {
-  const {ticketId} = route.params;
+  const {bookingId} = route.params;
   const {hasPermission} = useCameraPermission();
 
   const {
@@ -40,9 +40,10 @@ export default function TicketQRPage({navigation, route}: TicketQRScreenProps) {
     currentStep,
     entryQRData,
     handleVenueQRScanned,
+    proceedToScan,
     resetToScanVenue,
     completeEntry,
-  } = useQRProcess(ticketId);
+  } = useQRProcess(bookingId);
 
   const backgroundColor = useThemeColor(
     {light: '#FFFFFF', dark: '#151718'},
@@ -123,6 +124,25 @@ export default function TicketQRPage({navigation, route}: TicketQRScreenProps) {
     <ThemedView style={[styles.container, {backgroundColor}]}>
       <StatusBar barStyle="default" />
       <SafeAreaView style={styles.safeArea}>
+        {currentStep === QRStep.SHOW_ENTRY_QR && entryQRData && (
+          <>
+            <PageHeader
+              title="입장 QR"
+              onBackPress={() => navigation.goBack()}
+            />
+            <QRDisplay
+              qrData={entryQRData}
+              title="입장용 QR 코드"
+              infoText="• 입장 시 게이트 담당자에게 보여주세요.\n• QR을 보여준 후 게이트 스캔을 진행하세요.\n• 게이트 스캔 후 자동으로 입장이 완료됩니다."
+              showTimer={true}
+              onTimeExpired={proceedToScan}
+            />
+            <View style={styles.buttonContainer}>
+              <AuthButton title="게이트 스캔하기" onPress={proceedToScan} />
+            </View>
+          </>
+        )}
+
         {currentStep === QRStep.SCAN_VENUE_QR && (
           <>
             <PageHeader
@@ -130,10 +150,6 @@ export default function TicketQRPage({navigation, route}: TicketQRScreenProps) {
               onBackPress={() => navigation.goBack()}
             />
             <QRScanner onQRScanned={handleVenueQRScanned} />
-            <TestButton
-              title="테스트용: QR 생성하기"
-              onPress={handleTestGenerateQR}
-            />
           </>
         )}
 
@@ -146,7 +162,7 @@ export default function TicketQRPage({navigation, route}: TicketQRScreenProps) {
             <QRDisplay
               qrData={entryQRData}
               title="입장용 QR 코드"
-              infoText="• 입장 시 게이트 담당자에게 보여주세요.\n• 담당자가 QR을 스캔하면 자동으로 입장이 완료됩니다.\n• 입장 완료 시 자동으로 다음 화면으로 이동합니다."
+              infoText="• 게이트 담당자가 QR을 스캔하면 자동으로 입장이 완료됩니다.\n• 입장 완료 시 자동으로 다음 화면으로 이동합니다.\n• 문제가 있으면 다시 스캔하기를 눌러주세요."
               showTimer={true}
               onTimeExpired={resetToScanVenue}
             />

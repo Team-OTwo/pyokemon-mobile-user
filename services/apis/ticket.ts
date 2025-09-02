@@ -1,6 +1,9 @@
 import restful from './restful';
+import type {TicketDetail} from '../../types/ticket';
 
-export const getDetailTicket = async (ticketId: string) => {
+export const getDetailTicket = async (
+  ticketId: string,
+): Promise<TicketDetail> => {
   const response = await restful(
     'GET',
     `bff/api/app/bookings/my-tickets/${ticketId}`,

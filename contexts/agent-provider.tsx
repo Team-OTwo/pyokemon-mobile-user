@@ -12,7 +12,11 @@ import {
   generateBatchConnections,
   sendAgentPublicDidToUser,
 } from '../services/did/credo';
-import {getWalletInfo, saveWalletInfo} from '../services/storage/walletStorage';
+import {
+  getWalletInfo,
+  saveWalletInfo,
+  updateDidPublicKey,
+} from '../services/storage/walletStorage';
 import useAuth from '../hooks/useAuth';
 
 // 1. Context 타입 정의
@@ -123,8 +127,17 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({children}) => {
 
       // 4. DID 전송 및 연결 정보 저장
       if (allConnections.length >= 2) {
-        await sendAgentPublicDidToUser(newAgent, allConnections[0].id);
-        await sendAgentPublicDidToUser(newAgent, allConnections[1].id);
+        const didResult = await sendAgentPublicDidToUser(
+          newAgent,
+          allConnections[0].id,
+        );
+
+        // DID 공개키 저장
+        if (didResult.did) {
+          setDidPublicKey(didResult.did);
+          await updateDidPublicKey(didResult.did);
+          console.log('✅ DID 공개키 저장 완료:', didResult.did);
+        }
 
         // 연결 정보 저장
         setUserConnectionId(allConnections[0].id);
@@ -137,6 +150,7 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({children}) => {
             ...savedWalletInfo,
             userConnectionId: allConnections[0].id,
             mediatorConnectionId: allConnections[1].id,
+            didPublicKey: didResult.did,
             savedAt: new Date().toISOString(),
           };
           await saveWalletInfo(updatedWalletInfo);

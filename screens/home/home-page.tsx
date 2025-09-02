@@ -13,6 +13,7 @@ import {SAMPLE_TICKETS} from '../../data/ticket';
 import {getListTicket} from '../../services/apis/ticket';
 import {Badge} from '../../components/ui/badge';
 import {getNotifications} from '../../services/apis/notification';
+import {useAgentStatus} from '../../contexts/agent-provider';
 
 type HomeScreenProps = {
   navigation: StackNavigationProp<MainStackParamList, 'Home'>;
@@ -64,6 +65,13 @@ const fetchUnreadNotificationCount = async () => {
 export default function HomeScreen({navigation}: HomeScreenProps) {
   const {unreadCount, setUnreadCount} = useNotification();
   const [activeGenre, setActiveGenre] = useState<string | null>(null);
+  const {
+    isInitialized,
+    agent,
+    userConnectionId,
+    mediatorConnectionId,
+    didPublicKey,
+  } = useAgentStatus();
 
   const {
     tickets,
@@ -98,6 +106,42 @@ export default function HomeScreen({navigation}: HomeScreenProps) {
   useEffect(() => {
     loadInitialTickets();
   }, [loadInitialTickets]);
+
+  // Agent 준비 상태 확인 (AgentProvider에서 관리)
+  useEffect(() => {
+    const checkAgentStatus = () => {
+      const isReady = isInitialized && userConnectionId && mediatorConnectionId;
+      const canRequestVC = isReady && didPublicKey;
+
+      console.log('홈 화면 - Agent 준비 상태 확인:', {
+        isInitialized,
+        isReady,
+        canRequestVC,
+        hasAgent: !!agent,
+        userConnectionId: userConnectionId || '없음',
+        mediatorConnectionId: mediatorConnectionId || '없음',
+        didPublicKey: didPublicKey ? '있음' : '없음',
+      });
+
+      if (!isInitialized) {
+        console.log(
+          'Agent가 초기화되지 않음 - AgentProvider에서 자동 초기화 예정',
+        );
+      } else if (canRequestVC) {
+        console.log('Agent가 준비됨 - VC 요청 가능');
+      } else if (isInitialized) {
+        console.log('Agent가 초기화됨 - 연결 설정 필요');
+      }
+    };
+
+    checkAgentStatus();
+  }, [
+    isInitialized,
+    agent,
+    userConnectionId,
+    mediatorConnectionId,
+    didPublicKey,
+  ]);
 
   // 홈화면에 포커스가 올 때마다 안 읽은 알림 개수 업데이트
   useFocusEffect(

@@ -4,7 +4,7 @@ import {ThemedText, ThemedView} from '../../components/common';
 import PageHeader from '../../components/ui/header';
 import {useThemeColor} from '../../hooks/useThemeColor';
 import {getDetailTicket} from '../../services/apis/ticket';
-import DIDService from '../../services/did/did-service';
+import {useAgent, useAgentStatus} from '../../contexts/agent-provider';
 import {MainStackParamList} from '../../types/navigation';
 import type {TicketDetail} from '../../types/ticket';
 import {RouteProp} from '@react-navigation/native';
@@ -21,8 +21,8 @@ import {
   Animated,
   Alert,
 } from 'react-native';
-import {SAMPLE_TICKET_DETAILS} from '../../data/ticket_detail';
 import {getCredential} from '../../services/apis/did';
+import useAuth from '../../hooks/useAuth';
 
 type TicketDetailProps = {
   navigation: StackNavigationProp<MainStackParamList, 'TicketDetail'>;
@@ -31,6 +31,8 @@ type TicketDetailProps = {
 
 export default function TicketDetail({navigation, route}: TicketDetailProps) {
   const {ticketId} = route.params;
+  const {user} = useAuth();
+  const {isInitialized, agent} = useAgentStatus();
   const [vc, setVc] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isVc, setIsVc] = useState(false);
@@ -90,17 +92,55 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
 
   const handleGetCredential = async () => {
     try {
+      setIsVc(true);
+
+      // 사용자 정보 확인
+      console.log('VC 요청 시작 - 사용자 정보 확인...');
+      if (!user) {
+        Alert.alert(
+          '사용자 정보 없음',
+          '사용자 정보가 없습니다. 다시 로그인해주세요.',
+          [{text: '확인'}],
+        );
+        return;
+      }
+
+      // Agent 전역 상태 확인
+      console.log('Agent 전역 상태 확인 중...');
+      console.log('Agent 초기화 상태:', isInitialized);
+      console.log('Agent 인스턴스:', agent ? '있음' : '없음');
+
+      // Agent가 초기화되지 않았으면 에러
+      if (!isInitialized || !agent) {
+        console.log('❌ Agent가 초기화되지 않음');
+        Alert.alert(
+          'Agent 초기화 필요',
+          'DID Agent가 초기화되지 않았습니다. 홈 화면에서 지갑을 먼저 초기화해주세요.',
+          [{text: '확인'}],
+        );
+        return;
+      }
+
+      // Agent 상태 확인
+      const DIDService = await import('../../services/did/did-service');
+
       // 1. VC 요청 - user-aca-py에 전달
+      console.log('VC 요청 시작');
       const credential = await getCredential(ticket?.bookingId || '');
       if (credential.success) {
         // 2. VC가 요청되었으면 mediator-aca-py에서 폴링 시작
         console.log('VC 요청 성공. Mediator에서 폴링 시작...');
 
         // 3. Mediator에서 VC 폴링
-        const pollingResult = await DIDService.pollForCredentials(15, 2000);
+        const pollingResult = await DIDService.default.pollForCredentials(
+          agent,
+          15,
+          2000,
+        );
 
         if (pollingResult.success) {
           console.log('VC 폴링 성공:', pollingResult);
+          setVc(true); // VC 상태 업데이트
           Alert.alert('성공', 'VC를 성공적으로 받았습니다.');
         } else {
           console.log('VC 폴링 실패:', pollingResult);
@@ -111,6 +151,9 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
       }
     } catch (error) {
       console.log('디지털 자격증서 처리 중 오류 발생:', error);
+      Alert.alert('오류', 'VC 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsVc(false);
     }
   };
 
@@ -272,10 +315,22 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
                 onPress={handleGenerateQR}
                 // disabled={ticket.status !== 'active'}
               />
+            ) : !isInitialized ? (
+              <AuthButton
+                title="Agent 초기화 필요"
+                onPress={() => {
+                  Alert.alert(
+                    'Agent 초기화 필요',
+                    'DID Agent가 초기화되지 않았습니다. 홈 화면에서 지갑을 먼저 초기화해주세요.',
+                    [{text: '확인'}],
+                  );
+                }}
+                disabled={true}
+              />
             ) : (
               <AuthButton
                 isLoading={isVc}
-                title="VC 요청"
+                title="디지털 티켓 발급"
                 onPress={handleGetCredential}
                 // disabled={ticket.status !== 'active'}
               />

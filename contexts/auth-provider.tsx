@@ -1,5 +1,11 @@
 // import { AuthContext } from '@/';
-import React, {createContext, useEffect, useMemo, useState} from 'react';
+import React, {
+  createContext,
+  useEffect,
+  useMemo,
+  useState,
+  useContext,
+} from 'react';
 import type {AuthContextType} from '../types/auth';
 import SplashScreen from '../screens/splash/splash-page';
 import {

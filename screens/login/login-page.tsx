@@ -4,7 +4,7 @@ import {useThemeColor} from '../../hooks/useThemeColor';
 import {login} from '../../services/apis/account';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {getUniqueId} from 'react-native-device-info';
-import messaging from '@react-native-firebase/messaging';
+import {getMessaging, getToken} from '@react-native-firebase/messaging';
 import React, {useState} from 'react';
 import {
   Alert,
@@ -12,7 +12,6 @@ import {
   Platform,
   SafeAreaView,
   ScrollView,
-  StatusBar,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -20,14 +19,8 @@ import {
 import {textUpper} from '../../common/text-common';
 import {AuthStackParamList} from '../../types/navigation';
 import useAuth from '../../hooks/useAuth';
-import {getInvitationUrls} from '../../services/apis/did';
-import {
-  generateBatchConnections,
-  initAgent,
-  setupConnectionEventListeners,
-  sendAgentPublicDidToUser,
-} from '../../services/did/credo';
-import {Agent} from '@credo-ts/core';
+import {useInitializeAgentForNewUser} from '../../contexts/agent-provider';
+import {getWalletInfo} from '../../services/storage/walletStorage';
 
 type LoginScreenProps = {
   navigation: StackNavigationProp<AuthStackParamList, 'Login'>;
@@ -37,17 +30,15 @@ export default function LoginScreen({navigation}: LoginScreenProps) {
   const [loginId, setLoginId] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [agent, setAgent] = useState<Agent | null>(null);
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
   const {signIn} = useAuth();
+  const initializeAgentForNewUser = useInitializeAgentForNewUser();
 
   const tintColor = useThemeColor({light: '#807F7F', dark: '#2E5BFF'}, 'tint');
   const backgroundColor = useThemeColor(
     {light: '#FFFFFF', dark: '#151718'},
     'background',
   );
-
-  const statusBarHeight = 0;
 
   const validateForm = (): boolean => {
     const newErrors: {email?: string; password?: string} = {};
@@ -77,7 +68,7 @@ export default function LoginScreen({navigation}: LoginScreenProps) {
       // 디바이스 등록 여부가 없을 시 등록 과정
       const osType = textUpper(Platform.OS);
       // Firebase v22 방식으로 업데이트
-      const fcmToken = await messaging().getToken();
+      const fcmToken = await getToken(getMessaging());
       if (response.deviceStatus === 'NOT_REGISTERED') {
         navigation.navigate('Verification', {
           messageType: 'FIRST_LOGIN',
@@ -104,81 +95,30 @@ export default function LoginScreen({navigation}: LoginScreenProps) {
           response.accountId,
         );
 
-        // 로그인 성공 후 지갑 초기화 시도
+        // 최초 지갑 생성 시에만 Agent 초기화
         try {
-          console.log('로그인 성공 후 지갑 초기화 시도...');
+          console.log('로그인 성공 후 최초 지갑 생성 확인...');
+          const savedWalletInfo = await getWalletInfo();
 
-          // 1. 초대 URL 요청
-          console.log('초대 URL 요청 중...');
-          const invitationResponse = await getInvitationUrls(
-            response.accessToken,
-          );
-          console.log('invitationResponse', invitationResponse);
-
-          // 응답 데이터 검증
-          if (!invitationResponse?.data) {
-            throw new Error('초대 URL 응답 데이터가 없습니다');
-          }
-
-          if (
-            !invitationResponse.data.mediator_acapy_invi_url ||
-            !invitationResponse.data.user_acapy_invi_url
-          ) {
-            throw new Error(
-              '필수 초대 URL이 누락되었습니다 (Mediator: 8010, User: 8020)',
+          if (!savedWalletInfo || !savedWalletInfo.createdAt) {
+            console.log('🆕 최초 사용자 - Agent 초기화 시작...');
+            await initializeAgentForNewUser(
+              response.accountId,
+              response.accessToken,
             );
-          }
-
-          // 2. Agent 초기화
-          console.log('agent초기화 시작');
-          const agent = await initAgent(response.accountId);
-          console.log('agent초기화 완료');
-
-          // 연결 상태 변경 이벤트 리스너 설정
-          setupConnectionEventListeners(agent);
-
-          // 3. URL 변환 및 확인
-          console.log('원본 초대 URL:', {
-            mediator: invitationResponse.data.mediator_acapy_invi_url, // 8010 포트 (Mediator ACA-Py)
-            user: invitationResponse.data.user_acapy_invi_url, // 8020 포트 (User ACA-Py)
-          });
-
-          console.log('포트 확인 - mediator: 8010, user: 8020');
-
-          // URL 변환 (localhost, user:, mediator: 등을 실제 IP로 변환)
-          const invitationUrls = {
-            mediator: invitationResponse.data.mediator_acapy_invi_url,
-            // 8010 포트 (Mediator ACA-Py)
-            user: invitationResponse.data.user_acapy_invi_url,
-            // 8020 포트 (User ACA-Py)
-          };
-
-          console.log('변환된 초대 URL:', invitationUrls);
-
-          // 연결 생성 (User ACA-Py를 먼저, 그 다음 Mediator ACA-Py 순차적으로 연결)
-          console.log(
-            'User ACA-Py를 먼저 연결하고, 그 다음 Mediator ACA-Py 연결 시작...',
-          );
-          const {allConnections, allSuccess} = await generateBatchConnections(
-            agent,
-            invitationUrls,
-          );
-
-          if (allSuccess) {
-            console.log('🎉 두 ACA-Py 모두 성공적으로 연결되었습니다');
+            console.log('✅ 최초 사용자 Agent 초기화 완료');
           } else {
             console.log(
-              '⚠️ 일부 ACA-Py 연결에 실패했습니다. 부분적으로 작동할 수 있습니다.',
+              '✅ 기존 사용자 - AgentProvider에서 자동으로 Agent 관리됩니다.',
             );
           }
-          await sendAgentPublicDidToUser(agent, allConnections[1].id);
         } catch (walletError: any) {
-          console.error('지갑 초기화 실패:', walletError);
+          console.error('Agent 초기화 실패:', walletError);
           Alert.alert(
             '알림',
-            '지갑 초기화 중 문제가 발생했습니다. 나중에 다시 시도해주세요.',
+            'Agent 초기화 중 문제가 발생했습니다. 나중에 다시 시도해주세요.',
           );
-          // 지갑 초기화 실패해도 로그인 프로세스는 계속 진행
+          // Agent 초기화 실패해도 로그인 프로세스는 계속 진행
         }
       }
     } catch (error: any) {

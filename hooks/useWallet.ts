@@ -1,7 +1,5 @@
 import {useCallback, useEffect, useState} from 'react';
 import useAuth from './useAuth';
-import DIDService from '../services/did/did-service';
-import {getTokens} from '../services/storage/securStorage';
 import {
   getWalletInfo,
   saveWalletInfo,
@@ -17,6 +15,11 @@ export interface WalletInfo {
   createdAt: string;
   lastAccess: string;
   migrated?: boolean;
+  // 연결 정보 (선택적)
+  userConnectionId?: string;
+  mediatorConnectionId?: string;
+  didPublicKey?: string;
+  savedAt?: string;
 }
 
 /**
@@ -30,7 +33,7 @@ export const useWallet = () => {
   const [error, setError] = useState<string | null>(null);
 
   /**
-   * 지갑 초기화 및 DID 연결
+   * 지갑 초기화 (단순화된 버전 - Agent 관련 로직 제거)
    */
   const initializeWallet = useCallback(async () => {
     if (!user) {
@@ -53,11 +56,15 @@ export const useWallet = () => {
           ...savedWalletInfo,
           lastAccess: new Date().toISOString(),
         };
+
+        // lastAccess 업데이트된 지갑 정보 저장
+        await saveWalletInfo(info);
+        console.log('✅ 기존 지갑 정보 업데이트 완료');
       } else {
         // 지갑 정보 생성
         console.log('새로운 지갑 정보를 생성합니다.');
-        const walletId = `wallet-${user}`;
-        const walletKey = `key-${user}`;
+        const walletId = `wallet-${user}-${Date.now()}`;
+        const walletKey = `key-${user}-${Date.now()}`;
         const now = new Date().toISOString();
 
         info = {
@@ -66,50 +73,13 @@ export const useWallet = () => {
           createdAt: now,
           lastAccess: now,
         };
+
+        // 새로운 지갑 정보 저장
+        await saveWalletInfo(info);
+        console.log('✅ 새로운 지갑 정보 생성 완료');
       }
 
-      // 지갑 정보 저장
-      await saveWalletInfo(info);
       setWalletInfo(info);
-
-      // DID 에이전트 초기화
-      console.log('DID 에이전트 초기화 시작 (useWallet)...');
-
-      // 저장된 지갑 정보로 에이전트 초기화
-      await DIDService.initializeAgent(user, info.walletId, info.walletKey);
-      console.log('DID 에이전트 초기화 완료 (useWallet)');
-
-      // 토큰 가져오기
-      const tokens = await getTokens();
-      if (!tokens || !tokens.accessToken) {
-        throw new Error('액세스 토큰이 없습니다.');
-      }
-
-      // DID 초대 URL 가져오기 및 연결
-      console.log('DID 초대 URL 요청 중...');
-      try {
-        const invitationUrls = await DIDService.getInvitationUrls(
-          tokens.accessToken,
-        );
-        console.log('DID 초대 URL 가져오기 완료', invitationUrls);
-
-        try {
-          // user-aca-py에만 연결하고 public key 전송
-          console.log('DID 서비스 연결 중...');
-          await DIDService.connectToDIDServices(
-            invitationUrls.mediatorInvitationUrl,
-            invitationUrls.userAcaPyInvitationUrl,
-          );
-          console.log('DID 서비스 초기화 및 연결 완료');
-        } catch (didError) {
-          console.error('DID 서비스 연결 실패:', didError);
-          // DID 연결 실패해도 지갑 초기화는 성공으로 처리
-        }
-      } catch (urlError) {
-        console.error('DID 초대 URL 가져오기 실패:', urlError);
-        // URL 가져오기 실패해도 지갑 초기화는 성공으로 처리
-      }
-
       setIsInitialized(true);
       return true;
     } catch (err: any) {
@@ -177,10 +147,12 @@ export const useWallet = () => {
   }, []);
 
   /**
-   * DID 공개키 조회
+   * DID 공개키 조회 (AgentProvider에서 관리)
    */
   const getDidPublicKey = useCallback(() => {
-    return DIDService.getDidPublicKey();
+    // AgentProvider에서 관리하므로 여기서는 null 반환
+    console.log('DID 공개키는 AgentProvider에서 관리됩니다.');
+    return null;
   }, []);
 
   /**

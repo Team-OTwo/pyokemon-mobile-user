@@ -1,182 +1,68 @@
 import {Agent} from '@credo-ts/core';
-import {
-  initAgent,
-  generateBatchConnections,
-  getBatchInvitations,
-  sendAgentPublicDidToUser,
-  pollMediatorForCredentials,
-} from './credo';
-import {getInvitationUrls} from '../apis/did';
+import {pollMediatorForCredentials} from './credo';
 
 /**
- * DID 서비스 클래스
- * Credo 에이전트와 연결 관리를 담당
+ * DID 서비스 클래스 (단순화된 도우미 클래스)
+ * AgentProvider에서 전역 관리하므로 여기서는 VC 폴링 등 도우미 기능만 제공
  */
 class DIDService {
-  private agent: Agent | null = null;
-  private userConnectionId: string | null = null;
-  private mediatorConnectionId: string | null = null;
-  private didPublicKey: string | null = null;
+  private static instance: DIDService;
+
+  private constructor() {}
 
   /**
-   * 에이전트 초기화
-   * @param accountId 계정 ID
-   * @param walletId 지갑 ID
-   * @param walletKey 지갑 키
+   * 싱글톤 인스턴스 반환
    */
-  async initializeAgent(
-    accountId: string,
-    walletId?: string,
-    walletKey?: string,
-  ) {
-    try {
-      console.log('DID 에이전트 초기화 시작...');
-      this.agent = await initAgent(accountId);
-      console.log('DID 에이전트 초기화 완료');
-      return this.agent;
-    } catch (error) {
-      console.error('DID 에이전트 초기화 실패:', error);
-      throw error;
+  public static getInstance(): DIDService {
+    if (!DIDService.instance) {
+      DIDService.instance = new DIDService();
     }
+    return DIDService.instance;
   }
 
   /**
-   * DID 초대 URL 가져오기
-   * @param accessToken 액세스 토큰
-   * @returns 초대 URL 객체
+   * VC 폴링을 위한 도우미 메서드
+   * AgentProvider에서 관리하는 agent와 연결 정보를 사용
    */
-  async getInvitationUrls(accessToken: string) {
-    try {
-      const response = await getInvitationUrls(accessToken);
-      return {
-        mediatorInvitationUrl: response.mediatorInvitationUrl,
-        userAcaPyInvitationUrl: response.userAcaPyInvitationUrl,
-      };
-    } catch (error) {
-      console.error('DID 초대 URL 가져오기 실패:', error);
-      throw error;
-    }
-  }
 
   /**
-   * DID 서비스에 연결
-   * @param mediatorUrl 미디에이터 URL
-   * @param userUrl 사용자 URL
-   */
-  async connectToDIDServices(mediatorUrl: string, userUrl: string) {
-    try {
-      if (!this.agent) {
-        throw new Error('에이전트가 초기화되지 않았습니다.');
-      }
-
-      console.log('DID 서비스 연결 시작...');
-      const result = await generateBatchConnections(this.agent, {
-        mediator: mediatorUrl,
-        user: userUrl,
-      });
-
-      if (result.userConnection) {
-        this.userConnectionId = result.userConnection.id;
-        console.log('User 연결 ID 저장:', this.userConnectionId);
-      }
-
-      if (result.mediatorConnection) {
-        this.mediatorConnectionId = result.mediatorConnection.id;
-        console.log('Mediator 연결 ID 저장:', this.mediatorConnectionId);
-      }
-
-      // 연결이 성공하면 agent의 public DID를 user-acy-py에게 전송
-      if (this.userConnectionId) {
-        await this.sendPublicDid();
-      }
-
-      return result;
-    } catch (error) {
-      console.error('DID 서비스 연결 실패:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Agent의 public DID를 user-acy-py에게 전송
-   */
-  async sendPublicDid() {
-    try {
-      if (!this.agent) {
-        throw new Error('에이전트가 초기화되지 않았습니다.');
-      }
-
-      if (!this.userConnectionId) {
-        throw new Error('User 연결이 설정되지 않았습니다.');
-      }
-
-      console.log('Agent의 public DID를 user-acy-py에게 전송 시작...');
-      const didInfo = await sendAgentPublicDidToUser(
-        this.agent,
-        this.userConnectionId,
-      );
-
-      if (didInfo && didInfo.did) {
-        this.didPublicKey = didInfo.did;
-        console.log('DID 공개키 저장:', this.didPublicKey);
-      }
-
-      return didInfo;
-    } catch (error) {
-      console.error('Agent DID 전송 실패:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 저장된 DID 공개키 가져오기
-   */
-  getDidPublicKey() {
-    return this.didPublicKey;
-  }
-
-  /**
-   * 에이전트 가져오기
-   */
-  getAgent() {
-    return this.agent;
-  }
-
-  /**
-   * 연결 ID 가져오기
-   */
-  getConnectionIds() {
-    return {
-      userConnectionId: this.userConnectionId,
-      mediatorConnectionId: this.mediatorConnectionId,
-    };
-  }
-
-  /**
-   * Mediator ACA-Py에서 VC 폴링
+   * Mediator ACA-Py에서 VC 폴링 (AgentProvider에서 관리하는 agent 사용)
+   * @param agent AgentProvider에서 관리하는 agent
    * @param maxAttempts 최대 시도 횟수
    * @param intervalMs 폴링 간격 (밀리초)
    */
   async pollForCredentials(
+    agent: Agent,
     maxAttempts: number = 10,
     intervalMs: number = 2000,
   ) {
     try {
-      if (!this.agent) {
-        throw new Error('에이전트가 초기화되지 않았습니다.');
-      }
+      console.log('🔍 VC 폴링 시작 - AgentProvider에서 관리하는 Agent 사용');
+      console.log('- Agent 초기화:', agent ? '✅' : '❌');
 
-      if (!this.mediatorConnectionId) {
-        throw new Error('Mediator 연결이 설정되지 않았습니다.');
+      if (!agent) {
+        throw new Error('Agent가 제공되지 않았습니다.');
       }
 
       console.log('Mediator ACA-Py에서 VC 폴링 시작...');
       const result = await pollMediatorForCredentials(
-        this.agent,
-        this.mediatorConnectionId,
+        agent,
         maxAttempts,
         intervalMs,
       );
+
+      // 결과 처리
+      if (result.success && result.credentials) {
+        console.log('✅ VC 폴링 성공!');
+        console.log('수신된 VC:', {
+          id: result.credentials.id,
+          state: result.credentials.state,
+          threadId: result.credentials.threadId,
+        });
+      } else {
+        console.log('⚠️ VC 폴링 실패 또는 VC 없음');
+        console.log('실패 이유:', result.message);
+      }
 
       return result;
     } catch (error) {
@@ -187,4 +73,4 @@ class DIDService {
 }
 
 // 싱글톤 인스턴스 생성 및 내보내기
-export default new DIDService();
+export default DIDService.getInstance();

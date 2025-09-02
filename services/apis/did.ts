@@ -35,7 +35,7 @@ export const getCredential = async (booking_id: string) => {
     );
     return response;
   } catch (error) {
-    console.error('VC 요청 오류:', error);
+    console.error('VC가 존재하지 않습니다. 오류:', error);
     throw error;
   }
 };

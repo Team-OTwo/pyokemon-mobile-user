@@ -34,7 +34,7 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
   const {user} = useAuth();
   const {isInitialized, agent} = useAgentStatus();
   const [isLoading, setIsLoading] = useState(true);
-  const [credential, setCredential] = useState<string | null>('asd');
+  const [credential, setCredential] = useState<string | null>('ㅁㄴ');
   const [isVc, setIsVc] = useState(false);
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +46,6 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
         setIsLoading(true);
         setError(null);
         const ticketData = await getDetailTicket(bookingId);
-        // const ticketData = SAMPLE_TICKET_DETAILS;
         setTicket(ticketData);
       } catch (err) {
         setError(

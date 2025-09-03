@@ -29,6 +29,7 @@ export function useQRProcess(bookingId: string) {
   const [venueCode, setVenueCode] = useState<string | null>(null);
   const [entryQRData, setEntryQRData] = useState<string | null>(null);
   const [entryId, setEntryId] = useState<string | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<string>('');
   const agent = useAgent();
 
   // 티켓 정보 로드
@@ -62,7 +63,7 @@ export function useQRProcess(bookingId: string) {
         throw new Error('Agent가 초기화되지 않았습니다.');
       }
 
-      const result = await signDidToJwt(agent, publicDid, ticketData.bookingId);
+      const result = await signDidToJwt(agent, publicDid);
 
       // result.presentation 대신 result.jwt 사용 (presentation 속성 없음)
       if (result.success && result.jwt) {
@@ -104,9 +105,71 @@ export function useQRProcess(bookingId: string) {
     setCurrentStep(QRStep.GENERATE_ENTRY_QR);
   };
 
-  const handleVenueQRScanned = (data: string) => {
+  // invitation_url을 통한 agent 연결 시도
+  const handleInvitationUrlConnection = async (invitationUrl: string) => {
     try {
-      // 실제로는 서버에서 검증해야 함
+      setConnectionStatus('연결 시도 중...');
+
+      if (!agent) {
+        throw new Error('Agent가 초기화되지 않았습니다.');
+      }
+
+      // venue invitation URL을 통한 연결 시도
+      const {generateVenueConnection} = await import(
+        '../../../services/did/credo'
+      );
+
+      console.log('🎯 Venue invitation URL로 연결 시도:', invitationUrl);
+
+      const result = await generateVenueConnection(agent, invitationUrl);
+
+      if (result.success && result.connectionRecord) {
+        console.log('✅ Venue agent 연결 성공:', result.connectionRecord.id);
+        setConnectionStatus('연결 성공!');
+
+        // 연결 성공 후 venue 코드로 QR 생성
+        const venueCode = `venue_${Date.now()}`;
+        setVenueCode(venueCode);
+        generateEntryQR(venueCode);
+
+        return true;
+      } else {
+        throw new Error('Venue agent 연결에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('❌ Venue agent 연결 실패:', error);
+      setConnectionStatus('연결 실패');
+      throw error;
+    }
+  };
+
+  const handleVenueQRScanned = async (data: string) => {
+    try {
+      // invitation_url인지 확인
+      if (data.includes('invitation_url') || data.includes('http')) {
+        console.log('🔗 Invitation URL 감지:', data);
+
+        let invitationUrl = data;
+
+        // JSON 형태로 감싸져 있는 경우 파싱
+        try {
+          const parsedData = JSON.parse(data);
+          if (parsedData.invitation_url) {
+            invitationUrl = parsedData.invitation_url;
+          } else if (parsedData.url) {
+            invitationUrl = parsedData.url;
+          }
+        } catch (parseError) {
+          // 파싱 실패 시 원본 데이터 사용
+          console.log('JSON 파싱 실패, 원본 데이터 사용');
+        }
+
+        // agent 연결 시도
+        await handleInvitationUrlConnection(invitationUrl);
+        return;
+      }
+
+      // 기존 venue QR 처리 로직
       const scannedData = JSON.parse(data);
       if (scannedData.type === 'venue') {
         setVenueCode(scannedData.venueCode);
@@ -116,6 +179,7 @@ export function useQRProcess(bookingId: string) {
       }
     } catch (error) {
       // 단순 문자열인 경우 (테스트용)
+      console.log('단순 문자열 처리:', data);
       setVenueCode(data);
       generateEntryQR(data);
     }
@@ -130,6 +194,7 @@ export function useQRProcess(bookingId: string) {
     setVenueCode(null);
     setEntryQRData(null);
     setEntryId(null);
+    setConnectionStatus('');
   };
 
   const completeEntry = () => {
@@ -142,6 +207,7 @@ export function useQRProcess(bookingId: string) {
     currentStep,
     venueCode,
     entryQRData,
+    connectionStatus,
     handleVenueQRScanned,
     proceedToScan,
     resetToScanVenue,

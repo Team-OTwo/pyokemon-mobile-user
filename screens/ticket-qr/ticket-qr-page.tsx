@@ -39,6 +39,7 @@ export default function TicketQRPage({navigation, route}: TicketQRScreenProps) {
     ticket,
     currentStep,
     entryQRData,
+    connectionStatus,
     handleVenueQRScanned,
     proceedToScan,
     resetToScanVenue,
@@ -67,7 +68,6 @@ export default function TicketQRPage({navigation, route}: TicketQRScreenProps) {
       completeEntry();
     }
   };
-
   // 로딩 상태
   if (loading) {
     return (
@@ -150,6 +150,13 @@ export default function TicketQRPage({navigation, route}: TicketQRScreenProps) {
               onBackPress={() => navigation.goBack()}
             />
             <QRScanner onQRScanned={handleVenueQRScanned} />
+            {connectionStatus && (
+              <View style={styles.connectionStatusContainer}>
+                <ThemedText style={styles.connectionStatusText}>
+                  {connectionStatus}
+                </ThemedText>
+              </View>
+            )}
           </>
         )}
 
@@ -242,5 +249,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     opacity: 0.7,
+  },
+  connectionStatusContainer: {
+    padding: 16,
+    marginHorizontal: 20,
+    marginTop: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  connectionStatusText: {
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });

@@ -1,42 +1,19 @@
-import React, {useEffect, useState, useCallback} from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  Linking,
-  TouchableOpacity,
-  ActivityIndicator, // 로딩 상태 표시를 위해 추가
-} from 'react-native';
-// v2에서는 필요한 훅과 Camera 객체를 import합니다.
-import {Camera, useCameraDevices} from 'react-native-vision-camera';
+import React, {useEffect, useState} from 'react';
+import {StyleSheet, Text, View, Linking, TouchableOpacity} from 'react-native';
+import {Camera, Frame, useCameraDevices} from 'react-native-vision-camera';
 
 interface QRScannerProps {
   onQRScanned: (data: string) => void;
 }
 
 export default function QRScanner({onQRScanned}: QRScannerProps) {
-  // 1. Permission을 useState로 직접 관리합니다.
   const [hasPermission, setHasPermission] = useState(false);
   const [isCameraActive, setIsCameraActive] = useState(false);
 
-  // 2. useCameraDevice 대신 useCameraDevices 훅을 사용합니다.
   const devices = useCameraDevices();
   const device = devices.back;
 
-  // 3. onCodeScanned 콜백 함수를 직접 정의합니다. (useCodeScanner 훅 대체)
-  const onCodeScannedCallback = useCallback(
-    (codes: any) => {
-      if (codes.length > 0 && codes[0]?.value) {
-        // 스캔 성공 시 카메라 비활성화하여 중복 스캔 방지
-        setIsCameraActive(false);
-        onQRScanned(codes[0].value);
-      }
-    },
-    [onQRScanned],
-  );
-
   useEffect(() => {
-    // 4. useCameraPermission 훅 대신 static 함수로 권한을 요청합니다.
     (async () => {
       const status = await Camera.getCameraPermissionStatus();
       if (status === 'not-determined') {
@@ -50,12 +27,15 @@ export default function QRScanner({onQRScanned}: QRScannerProps) {
 
   // 컴포넌트가 화면에 보일 때 카메라를 활성화합니다.
   useEffect(() => {
-    // TODO: React Navigation 사용 시 focus/blur 이벤트 리스너를 사용하는 것이 더 좋습니다.
     setIsCameraActive(true);
     return () => {
       setIsCameraActive(false);
     };
   }, []);
+
+  const handleFrame = (frame: Frame) => {
+    console.log('frame', frame);
+  };
 
   // 기기를 찾는 중이거나 권한 확인 중일 때 로딩 화면을 보여줍니다.
   if (device == null || !hasPermission) {
@@ -75,7 +55,6 @@ export default function QRScanner({onQRScanned}: QRScannerProps) {
     // 기기 로딩 중
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
         <Text>카메라를 준비 중입니다...</Text>
       </View>
     );
@@ -87,22 +66,22 @@ export default function QRScanner({onQRScanned}: QRScannerProps) {
       <Text style={styles.text}>QR을 스캔하면 입장이 완료됩니다.</Text>
       <View style={styles.scanContainer}>
         <Camera
+          frameProcessor={handleFrame}
           style={StyleSheet.absoluteFill}
           device={device}
           isActive={isCameraActive}
-          // 5. codeScanner prop 대신 onCodeScanned prop을 사용합니다.
-          // onCodeScanned={onCodeScannedCallback}
-          // v2에서는 codeScannerOptions prop으로 스캔 타입을 지정합니다.
-          // codeScannerOptions={{
-          //   codeTypes: ['qr'],
-          // }}
         />
+        <View style={styles.scanOverlay}>
+          <View style={styles.scanFrame} />
+        </View>
       </View>
+      <Text style={styles.instructionText}>
+        QR 코드를 프레임 안에 맞춰주세요
+      </Text>
     </View>
   );
 }
 
-// (styles 코드는 이전과 동일)
 const styles = StyleSheet.create({
   stepTitle: {
     fontSize: 24,
@@ -119,13 +98,37 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 20,
+    position: 'relative',
+  },
+  scanOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scanFrame: {
+    width: 200,
+    height: 200,
+    borderWidth: 2,
+    borderColor: '#fff',
+    borderRadius: 12,
+    backgroundColor: 'transparent',
+  },
+  instructionText: {
+    textAlign: 'center',
+    fontSize: 14,
+    color: '#666',
+    marginTop: 10,
   },
   container: {
     gap: 20,
     marginTop: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    flex: 1, // 전체 화면을 사용하도록 추가
+    flex: 1,
   },
   permissionText: {
     fontSize: 16,

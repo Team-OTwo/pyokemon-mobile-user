@@ -20,16 +20,19 @@ import {
   SdJwtVcRecord,
   CredentialExchangeRecord,
   JwsService,
+  MessagePickupModule,
+  MediatorPickupStrategy,
+  WsOutboundTransport,
+  W3cCredentialsModule,
+  V2CredentialProtocol,
+  JsonLdCredentialFormatService,
 } from '@credo-ts/core';
 import {AskarModule} from '@credo-ts/askar';
 import {agentDependencies} from '@credo-ts/react-native';
 import {ariesAskar} from '@hyperledger/aries-askar-react-native';
 import {getInvitationUrls} from '../apis/did';
 import {getWalletInfo, saveWalletInfo} from '../storage/walletStorage';
-import {
-  OpenId4VcHolderModule,
-  OpenId4VciCredentialFormatProfile,
-} from '@credo-ts/openid4vc';
+import {OpenId4VciCredentialFormatProfile} from '@credo-ts/openid4vc';
 
 // 여러 개의 초대 URL을 한번에 요청하는 함수
 export const getBatchInvitations = async (
@@ -103,9 +106,16 @@ export const initAgent = async (
         mediationRecipient: new MediationRecipientModule(),
         basicMessages: new BasicMessagesModule(),
         proofs: new ProofsModule(),
+        w3cVc: new W3cCredentialsModule(),
         credentials: new CredentialsModule({
           autoAcceptCredentials: AutoAcceptCredential.Always,
+          credentialProtocols: [
+            new V2CredentialProtocol({
+              credentialFormats: [new JsonLdCredentialFormatService()],
+            }),
+          ],
         }),
+        messagePickup: new MessagePickupModule(),
       },
     });
 
@@ -125,6 +135,7 @@ export const initAgent = async (
 
     // HTTP 전송 레이어 등록
     agent.registerOutboundTransport(new HttpOutboundTransport());
+    agent.registerOutboundTransport(new WsOutboundTransport());
 
     agent.events.on(AgentEventTypes.AgentMessageReceived, event => {
       console.log(
@@ -244,272 +255,40 @@ export const setupConnectionEventListeners = (agent: Agent) => {
 export const generateConnection = async (
   agent: Agent,
   invitationUrl: string,
-): Promise<{connectionRecord: ConnectionRecord | undefined}> => {
-  console.log('연결 요청 시작...');
-  try {
-    // 1. 초대 URL 검증
-    console.log('초대 URL 검증 중...');
-    if (!invitationUrl || !invitationUrl.includes('?oob=')) {
-      console.error('❌ 유효하지 않은 초대 URL 형식:', invitationUrl);
-      throw new Error('유효하지 않은 초대 URL 형식');
-    }
+) => {
+  const result = await agent.oob.receiveInvitationFromUrl(invitationUrl, {
+    autoAcceptConnection: true,
+  });
 
-    // URL에서 oob 부분 추출
-    const oobPart = invitationUrl.split('?oob=')[1];
-    console.log('OOB 부분 추출됨:', oobPart ? '성공' : '실패');
-
-    // 2. 네트워크 연결 테스트
-    console.log('네트워크 연결 테스트 중...');
-    try {
-      const baseUrl = invitationUrl.split('?')[0];
-      console.log('베이스 URL:', baseUrl);
-      const testResponse = await fetch(baseUrl, {method: 'HEAD'});
-      console.log(
-        '네트워크 연결 테스트 결과:',
-        testResponse.ok ? '성공' : '실패',
-        testResponse.status,
-      );
-    } catch (networkError) {
-      console.error('❌ 네트워크 연결 테스트 실패:', networkError);
-      // 테스트 실패해도 계속 진행
-    }
-
-    // 3. 초대 URL 파싱 및 연결 설정
-    console.log('초대 URL 파싱 중...');
-
-    // 연결 시간 측정 시작
-    const startTime = Date.now();
-
-    // 에이전트 설정 확인 (이미 초기화 시 설정됨)
-    console.log('DIDComm 메시지 타입:', agent.config.didCommMimeType);
-
-    // 초대 수락 및 연결 생성 (단계별 처리)
-    console.log('초대 수락 및 연결 생성 시작...');
-
-    // 메시지 형식 설정 확인
-    console.log('메시지 형식 확인 중...');
-
-    // 초대 URL 디코딩 및 검증
-    try {
-      const oobData = decodeURIComponent(oobPart);
-      console.log('OOB 데이터 디코딩 성공');
-
-      // 디코딩된 데이터가 유효한 JSON인지 확인
-      const parsedData = JSON.parse(oobData);
-      console.log('OOB 데이터 구조:', JSON.stringify(parsedData, null, 2));
-
-      if (parsedData['@type']) {
-        console.log('유효한 DIDComm 메시지 형식 확인:', parsedData['@type']);
-      } else {
-        console.log(
-          '경고: @type 필드가 없습니다. 호환성 문제가 발생할 수 있습니다.',
-        );
-
-        // @type 필드 없는 경우 처리 시도
-        if (parsedData.services && Array.isArray(parsedData.services)) {
-          console.log('서비스 엔드포인트 확인:', parsedData.services.length);
-          parsedData.services.forEach((service: any, index: number) => {
-            console.log(`서비스 ${index}:`, service);
-          });
-        }
-      }
-    } catch (parseError) {
-      console.log('OOB 데이터 파싱 실패, 계속 진행합니다:', parseError);
-    }
-
-    // 초대 URL 처리 (표준 방식 사용)
-    console.log('초대 URL 처리 시작...');
-
-    // 초대 수락 및 연결 생성 (ACA-Py 호환성 모드)
-    console.log('ACA-Py 호환성 모드로 초대 처리 시작...');
-
-    // 1. URL에서 초대장 추출
-    const outOfBandInvitation = await agent.oob.parseInvitation(invitationUrl);
-    console.log('초대장 추출 성공:', {
-      id: outOfBandInvitation.id,
-      label: outOfBandInvitation.label,
-    });
-
-    // 2. 초대장 수락 설정
-    const receiveOptions = {
-      autoAcceptInvitation: true,
-      autoAcceptConnection: true,
-      reuseConnection: true,
-    };
-
-    // 3. 초대장 수락 및 연결 생성
-    console.log('초대장 수락 시작...');
-
-    // 초대장 형식 확인 및 로깅
-    console.log('초대장 상세 정보:', {
-      type: outOfBandInvitation.type,
-      goalCode: outOfBandInvitation.goalCode,
-      goal: outOfBandInvitation.goal,
-      accept: outOfBandInvitation.accept,
-      handshakeProtocols: outOfBandInvitation.handshakeProtocols,
-    });
-
-    // 메시지 형식 확인
-    console.log('현재 메시지 형식 설정:', agent.config.didCommMimeType);
-
-    const receiveResult = await agent.oob.receiveInvitation(
-      outOfBandInvitation,
-      receiveOptions,
-    );
-
-    const {connectionRecord, outOfBandRecord} = receiveResult;
-
-    console.log('초대 수락 완료:', {
-      outOfBandId: outOfBandRecord?.id,
-      connectionId: connectionRecord?.id,
-      connectionState: connectionRecord?.state,
-    });
-
-    // 결과 확인
-    const receivedOutOfBandRecord = outOfBandRecord;
-
-    // 연결 시간 측정 종료
-    const connectionTime = Date.now() - startTime;
-    console.log(`연결 처리 시간: ${connectionTime}ms`);
-
-    console.log('초대 수신 결과:', {
-      connectionRecord: connectionRecord
-        ? {
-            id: connectionRecord.id,
-            state: connectionRecord.state,
-            theirLabel: connectionRecord.theirLabel,
-          }
-        : '없음',
-      outOfBandRecord: receivedOutOfBandRecord
-        ? {
-            id: receivedOutOfBandRecord.id,
-            state: receivedOutOfBandRecord.state,
-          }
-        : '없음',
-    });
-
-    if (!connectionRecord) {
-      console.error('❌ 연결 레코드가 생성되지 않음');
-      return {connectionRecord: undefined};
-    }
-
-    console.log('✅ 연결 레코드 생성됨:', {
-      id: connectionRecord.id,
-      state: connectionRecord.state,
-      theirLabel: connectionRecord.theirLabel,
-    });
-
-    // 4. 연결 완료 대기 (연결 상태 확인)
-    console.log('연결 설정 대기 중...');
-
-    // 연결 상태 확인을 위한 Promise 생성
-    if (connectionRecord) {
-      try {
-        console.log('연결 상태 확인 시작:', connectionRecord.state);
-
-        // 연결 상태가 완료될 때까지 대기 (최대 15초)
-        let waitTime = 0;
-        const maxWaitTime = 15000; // 15초
-        const checkInterval = 1000; // 1초마다 확인
-
-        // 연결 상태 변경 이벤트 리스너 설정
-        const eventListener = ({payload}: ConnectionStateChangedEvent) => {
-          if (
-            payload.connectionRecord.id === connectionRecord.id &&
-            (payload.connectionRecord.state === 'completed' ||
-              payload.connectionRecord.state === 'abandoned')
-          ) {
-            console.log(
-              `이벤트 리스너: 연결 상태 변경 감지 - ${payload.connectionRecord.state}`,
-            );
-            // 리스너 제거는 폴링 루프에서 처리
-          }
-        };
-
-        // 이벤트 리스너 등록
-        agent.events.on<ConnectionStateChangedEvent>(
-          ConnectionEventTypes.ConnectionStateChanged,
-          eventListener,
-        );
-
-        // 타임아웃 설정
-        setTimeout(() => {
-          // 타임아웃 시 리스너 제거는 폴링 루프에서 처리
-          console.log('연결 대기 타임아웃 발생');
-        }, maxWaitTime);
-
-        // 폴링 방식과 이벤트 리스너 방식 병행
-        while (waitTime < maxWaitTime) {
-          // 현재 연결 상태 확인
-          const currentConnection = await agent.connections.findById(
-            connectionRecord.id,
-          );
-          if (currentConnection) {
-            console.log(
-              `연결 상태 확인 (${waitTime / 1000}초): ${
-                currentConnection.state
-              }`,
-            );
-
-            // 연결이 완료되었거나 실패했으면 대기 종료
-            if (
-              currentConnection.state === 'completed' ||
-              currentConnection.state === 'abandoned'
-            ) {
-              console.log(`연결 상태 변경 감지: ${currentConnection.state}`);
-              break;
-            }
-          }
-
-          // 1초 대기
-          await new Promise(resolve => setTimeout(resolve, checkInterval));
-          waitTime += checkInterval;
-        }
-
-        console.log(`연결 대기 완료 (${waitTime / 1000}초 경과)`);
-      } catch (waitError) {
-        console.error('연결 대기 중 오류:', waitError);
-      }
-    } else {
-      console.log('연결 레코드가 없어 대기 건너뜀');
-      await new Promise(resolve => setTimeout(resolve, 3000));
-    }
-
-    // 5. 최종 연결 상태 확인
-    try {
-      const updatedConnection = await agent.connections.findById(
-        connectionRecord.id,
-      );
-      if (updatedConnection) {
-        console.log('최종 연결 상태:', {
-          id: updatedConnection.id,
-          state: updatedConnection.state,
-          theirLabel: updatedConnection.theirLabel,
-          createdAt: updatedConnection.createdAt,
-        });
-      }
-    } catch (checkError) {
-      console.error('연결 상태 확인 실패:', checkError);
-    }
-
-    // 6. 연결 메타데이터 설정 (선택 사항)
-    try {
-      // 메타데이터 직접 설정 대신 로깅만 수행
-      console.log('연결 메타데이터 정보:', {
-        connectionType: connectionRecord.theirLabel?.includes('mediator')
-          ? 'mediator'
-          : 'user',
-        connectedAt: new Date().toISOString(),
-      });
-    } catch (metadataError) {
-      console.error('메타데이터 처리 실패:', metadataError);
-    }
-
-    return {connectionRecord};
-  } catch (error) {
-    console.error('❌ 연결 요청 실패:', error);
-    throw error;
+  if (!result || !result.connectionRecord) {
+    throw new Error('User-py 연결에 실패했습니다: connectionRecord가 없음');
   }
+
+  const {connectionRecord} = result;
+
+  // 타임아웃과 함께 연결 완료 대기
+  const completedConnection = await agent.connections.returnWhenIsConnected(
+    connectionRecord.id,
+  );
+
+  // 5. 최종 연결 상태 확인
+  try {
+    const updatedConnection = await agent.connections.findById(
+      connectionRecord.id,
+    );
+    if (updatedConnection) {
+      console.log('최종 연결 상태:', {
+        id: updatedConnection.id,
+        state: updatedConnection.state,
+        theirLabel: updatedConnection.theirLabel,
+        createdAt: updatedConnection.createdAt,
+      });
+    }
+  } catch (checkError) {
+    console.error('연결 상태 확인 실패:', checkError);
+  }
+
+  return {connectionRecord: completedConnection};
 };
 
 /**
@@ -523,20 +302,20 @@ export const generateMediatorConnection = async (
   console.log('중개자 연결 요청 시작...');
   try {
     // 1. 초대장 수락 및 연결
-    const {connectionRecord} = await agent.oob.receiveInvitationFromUrl(
-      invitationUrl,
-      {
-        autoAcceptConnection: true,
-      },
-    );
+    const result = await agent.oob.receiveInvitationFromUrl(invitationUrl, {
+      autoAcceptConnection: true,
+    });
 
-    if (!connectionRecord) throw new Error('중개자 연결에 실패했습니다.');
+    if (!result || !result.connectionRecord) {
+      throw new Error('중개자 연결에 실패했습니다: connectionRecord가 없음');
+    }
 
-    // 2. 연결이 'completed' 상태가 될 때까지 대기
+    const {connectionRecord} = result;
+
+    // 2. 타임아웃과 함께 연결이 'completed' 상태가 될 때까지 대기
     const completedConnection = await agent.connections.returnWhenIsConnected(
       connectionRecord.id,
     );
-    console.log(`✅ 중개자 연결 완료: ${completedConnection.state}`);
 
     // 3. 해당 연결을 기본 중개자로 프로비저닝 (요청과 설정이 한번에 처리됨)
     const mediationRecord = await agent.mediationRecipient.provision(
@@ -546,8 +325,7 @@ export const generateMediatorConnection = async (
 
     return {connectionRecord: completedConnection, mediationRecord};
   } catch (error) {
-    console.error('❌ 중계자 연결 요청 실패:', error);
-    throw error;
+    console.error(`❌ 중개자 연결 시도 실패:`, error);
   }
 };
 
@@ -573,11 +351,49 @@ export const generateBatchConnections = async (
     let mediatorConnection: ConnectionRecord | undefined = undefined;
     let allConnections: ConnectionRecord[] = [];
 
-    // 1. User ACA-Py 연결 시도 (8020 포트)
-    console.log('=== 1단계: User ACA-Py 연결 시도 (8020 포트) ===');
-    console.log('User ACA-Py URL:', invitationUrls.user);
+    // 1. Mediator 연결 시도 (8010 포트)
+    console.log('=== 1단계: Mediator 연결 시도 (8010 포트) ===');
+    console.log('Mediator ACA-Py URL:', invitationUrls.mediator);
+    console.log('연결 시작 전 3초 대기...');
+    await new Promise(resolve => setTimeout(resolve, 3000));
     try {
+      // mediator 연결 시도
+      const mediatorResult = await generateMediatorConnection(
+        agent,
+        invitationUrls.mediator,
+      );
+      if (!mediatorResult) {
+        throw new Error('Mediator 연결 결과가 없음');
+      }
+      mediatorConnection = mediatorResult.connectionRecord;
+
+      if (mediatorConnection) {
+        console.log('✅ Mediator 연결 성공:', {
+          id: mediatorConnection.id,
+          state: mediatorConnection.state,
+          theirLabel: mediatorConnection.theirLabel,
+        });
+        allConnections.push(mediatorConnection);
+
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        await agent.mediationRecipient.initiateMessagePickup();
+        // 연결이 성공하면 잠시 대기 (연결 안정화)
+      } else {
+        console.log('⚠️ Mediator 연결 실패: 연결 레코드가 없음');
+      }
+    } catch (mediatorError) {
+      console.log('⚠️ Mediator 연결 시도 중 에러:', mediatorError);
+      // 에러가 발생해도 계속 진행
+    }
+
+    try {
+      console.log('User 연결 시작...');
+      // user aca-py 연결
       const userResult = await generateConnection(agent, invitationUrls.user);
+      if (!userResult) {
+        console.log('⚠️ User 연결 결과가 없음');
+        throw new Error('User 연결 결과가 없음');
+      }
       userConnection = userResult.connectionRecord;
 
       if (userConnection) {
@@ -589,41 +405,13 @@ export const generateBatchConnections = async (
         allConnections.push(userConnection);
 
         // 연결이 성공하면 잠시 대기 (연결 안정화)
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        console.log('User 연결 안정화를 위해 5초 대기...');
+        await new Promise(resolve => setTimeout(resolve, 5000));
       } else {
         console.log('⚠️ User ACA-Py 연결 실패: 연결 레코드가 없음');
       }
     } catch (userError) {
       console.log('⚠️ User ACA-Py 연결 시도 중 에러:', userError);
-      // 에러가 발생해도 계속 진행
-    }
-
-    // 2. Mediator 연결 시도 (8010 포트)
-    console.log('=== 2단계: Mediator 연결 시도 (8010 포트) ===');
-    console.log('Mediator ACA-Py URL:', invitationUrls.mediator);
-    try {
-      const mediatorResult = await generateMediatorConnection(
-        agent,
-        invitationUrls.mediator,
-      );
-      mediatorConnection = mediatorResult.connectionRecord;
-      // const mediationRecord = mediatorResult.mediationRecord;
-
-      if (mediatorConnection) {
-        console.log('✅ Mediator 연결 성공:', {
-          id: mediatorConnection.id,
-          state: mediatorConnection.state,
-          theirLabel: mediatorConnection.theirLabel,
-        });
-        allConnections.push(mediatorConnection);
-
-        // 연결이 성공하면 잠시 대기 (연결 안정화)
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      } else {
-        console.log('⚠️ Mediator 연결 실패: 연결 레코드가 없음');
-      }
-    } catch (mediatorError) {
-      console.log('⚠️ Mediator 연결 시도 중 에러:', mediatorError);
       // 에러가 발생해도 계속 진행
     }
 
@@ -849,7 +637,6 @@ export const pollMediatorForCredentials = async (
 export const signDidToJwt = async (
   agent: Agent,
   publicDid: string,
-  bookingId: string,
 ): Promise<{success: boolean; message: string; jwt: string | null}> => {
   try {
     // 1. JwsService 인스턴스 생성
@@ -860,19 +647,20 @@ export const signDidToJwt = async (
       keyType: KeyType.Ed25519,
     });
 
+    const kid = `${publicDid}#${publicDid.split(':')[2]}`;
     // 4. JWT 생성 - 문자열로 직접 전달
     const jws = await jwsService.createJws(agent.context, {
-      payload: `{"booking_id":"${bookingId}"}` as any,
+      payload: `{"did":"${publicDid}"}` as any,
       key,
       header: {
         typ: 'JWT',
         alg: 'EdDSA',
-        kid: publicDid,
+        kid: kid,
       },
       protectedHeaderOptions: {
         typ: 'JWT',
         alg: 'EdDSA',
-        kid: publicDid,
+        kid: kid,
       },
     });
 
@@ -984,6 +772,54 @@ export const generateProof = async (
       success: false,
       message: `VP 생성 실패: ${error.message}`,
       presentation: null,
+    };
+  }
+};
+
+// venue invitation URL을 통한 연결 함수
+export const generateVenueConnection = async (
+  agent: Agent,
+  invitationUrl: string,
+) => {
+  try {
+    console.log('🎯 Venue 연결 프로세스 시작...');
+    console.log('Venue invitation URL:', invitationUrl);
+
+    // venue 연결 시도
+    const venueResult = await generateConnection(agent, invitationUrl);
+    if (!venueResult) {
+      throw new Error('Venue 연결 결과가 없음');
+    }
+
+    const venueConnection = venueResult.connectionRecord;
+
+    if (venueConnection) {
+      console.log('✅ Venue 연결 성공:', {
+        id: venueConnection.id,
+        state: venueConnection.state,
+        theirLabel: venueConnection.theirLabel,
+      });
+
+      // 연결 안정화를 위해 대기
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      return {
+        connectionRecord: venueConnection,
+        success: true,
+      };
+    } else {
+      console.log('⚠️ Venue 연결 실패: 연결 레코드가 없음');
+      return {
+        connectionRecord: undefined,
+        success: false,
+      };
+    }
+  } catch (error) {
+    console.error('❌ Venue 연결 실패:', error);
+    return {
+      connectionRecord: undefined,
+      success: false,
+      error: error,
     };
   }
 };

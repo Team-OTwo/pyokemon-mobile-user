@@ -103,8 +103,8 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({children}) => {
 
       // 3. 연결 생성
       const invitationUrls = {
-        mediator: invitationResponse.data.user_acapy_invi_url,
-        user: invitationResponse.data.mediator_acapy_invi_url,
+        mediator: invitationResponse.data.mediator_acapy_invi_url,
+        user: invitationResponse.data.user_acapy_invi_url,
       };
 
       console.log('변환된 초대 URL:', invitationUrls);
@@ -126,36 +126,34 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({children}) => {
       }
 
       // 4. DID 전송 및 연결 정보 저장
-      if (allConnections.length >= 2) {
-        const didResult = await sendAgentPublicDidToUser(
-          newAgent,
-          allConnections[0].id,
-        );
+      const didResult = await sendAgentPublicDidToUser(
+        newAgent,
+        allConnections[1].id,
+      );
 
-        // DID 공개키 저장
-        if (didResult.did) {
-          setDidPublicKey(didResult.did);
-          await updateDidPublicKey(didResult.did);
-          console.log('✅ DID 공개키 저장 완료:', didResult.did);
-        }
+      // DID 공개키 저장
+      if (didResult.did) {
+        setDidPublicKey(didResult.did);
+        await updateDidPublicKey(didResult.did);
+        console.log('✅ DID 공개키 저장 완료:', didResult.did);
+      }
 
-        // 연결 정보 저장
-        setUserConnectionId(allConnections[0].id);
-        setMediatorConnectionId(allConnections[1].id);
+      // 연결 정보 저장
+      setUserConnectionId(allConnections[0].id);
+      setMediatorConnectionId(allConnections[1].id);
 
-        // 지갑 정보에 연결 정보 저장
-        const savedWalletInfo = await getWalletInfo();
-        if (savedWalletInfo) {
-          const updatedWalletInfo = {
-            ...savedWalletInfo,
-            userConnectionId: allConnections[0].id,
-            mediatorConnectionId: allConnections[1].id,
-            didPublicKey: didResult.did,
-            savedAt: new Date().toISOString(),
-          };
-          await saveWalletInfo(updatedWalletInfo);
-          console.log('✅ 연결 정보를 지갑 정보에 저장 완료');
-        }
+      // 지갑 정보에 연결 정보 저장
+      const savedWalletInfo = await getWalletInfo();
+      if (savedWalletInfo) {
+        const updatedWalletInfo = {
+          ...savedWalletInfo,
+          userConnectionId: allConnections[0].id,
+          mediatorConnectionId: allConnections[1].id,
+          didPublicKey: didResult.did,
+          savedAt: new Date().toISOString(),
+        };
+        await saveWalletInfo(updatedWalletInfo);
+        console.log('✅ 연결 정보를 지갑 정보에 저장 완료');
       }
 
       // 5. Agent 설정

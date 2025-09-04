@@ -66,3 +66,14 @@ yarn-error.log
 /coverage
 
 android/app/google-services.json
+
+android/app/build/outputs/
+android/app/release/
+*.apk
+*.aab
+
+android/gradle/wrapper/gradle-wrapper.jar
+android/gradle/wrapper/gradle-wrapper.properties
+
+android/.idea/
+android/local.properties

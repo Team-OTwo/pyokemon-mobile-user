@@ -1,5 +1,5 @@
 import * as Keychain from 'react-native-keychain';
-import {KEYCHAIN_SERVICE} from './securStorage';
+import {KEYCHAIN_SERVICE} from './secureStorage';
 import {WalletInfo} from '../../hooks/useWallet';
 
 /**

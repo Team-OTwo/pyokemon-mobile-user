@@ -10,6 +10,7 @@ import {
   Dimensions,
   Animated,
 } from 'react-native';
+import {showErrorAlert, showConfirmAlert} from '../../../components/common';
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 
@@ -44,7 +45,7 @@ export default function QRScanner({onQRScanned}: QRScannerProps) {
 
       switch (result) {
         case RESULTS.UNAVAILABLE:
-          Alert.alert('오류', '카메라를 사용할 수 없습니다.');
+          showErrorAlert('오류', '카메라를 사용할 수 없습니다.');
           setHasPermission(false);
           break;
         case RESULTS.DENIED:
@@ -56,13 +57,13 @@ export default function QRScanner({onQRScanned}: QRScannerProps) {
           setHasPermission(true);
           break;
         case RESULTS.BLOCKED:
-          Alert.alert(
+          showConfirmAlert(
             '권한 필요',
             '카메라 권한이 차단되었습니다. 설정에서 권한을 허용해주세요.',
-            [
-              {text: '취소', style: 'cancel'},
-              {text: '설정', onPress: () => Linking.openSettings()},
-            ],
+            () => Linking.openSettings(),
+            undefined,
+            '설정',
+            '취소',
           );
           setHasPermission(false);
           break;

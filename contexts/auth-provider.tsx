@@ -12,7 +12,7 @@ import {
   setTokens,
   removeTokens,
   getTokens,
-} from '../services/storage/securStorage';
+} from '../services/storage/secureStorage';
 import {logout} from '../services/apis';
 export const AuthContext = createContext<AuthContextType | undefined>({
   user: null,

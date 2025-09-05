@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import NotificationItem from '../../screens/notification/_components/notification-item';
 import PageHeader from '../../components/ui/header';
+import Loading from '../../components/ui/loading';
 import {
   getNotifications,
   readNotification,
@@ -106,12 +107,7 @@ export default function Notification({navigation}: NotificationProps) {
         <StatusBar barStyle="default" />
         <SafeAreaView style={styles.safeArea}>
           <PageHeader title="알림" onBackPress={() => navigation.goBack()} />
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={tintColor} />
-            <ThemedText style={styles.loadingText}>
-              알림을 불러오는 중...
-            </ThemedText>
-          </View>
+          <Loading message="알림을 불러오는 중..." />
         </SafeAreaView>
       </ThemedView>
     );

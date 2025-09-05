@@ -4,6 +4,7 @@ import {TicketCard} from './ticket-card';
 import {Ticket} from '../../../types/ticket';
 import React, {useState, useRef, useCallback} from 'react';
 import {ActivityIndicator, FlatList, StyleSheet, View} from 'react-native';
+import Loading from '../../../components/ui/loading';
 
 interface TicketListProps {
   tickets: Ticket[];
@@ -62,14 +63,7 @@ export function TicketList({
   }, []);
 
   if (isLoading) {
-    return (
-      <View style={[styles.loadingContainer, {backgroundColor}]}>
-        <ActivityIndicator size="large" color={tintColor} />
-        <ThemedText style={styles.loadingText}>
-          티켓을 불러오는 중...
-        </ThemedText>
-      </View>
-    );
+    return <Loading message="티켓을 불러오는 중..." />;
   }
 
   if (tickets.length === 0) {

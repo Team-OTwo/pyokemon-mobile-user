@@ -51,7 +51,6 @@ export const useWallet = () => {
 
       if (savedWalletInfo) {
         // 저장된 지갑 정보가 있으면 사용
-        console.log('저장된 지갑 정보를 사용합니다:', savedWalletInfo);
         info = {
           ...savedWalletInfo,
           lastAccess: new Date().toISOString(),
@@ -59,10 +58,8 @@ export const useWallet = () => {
 
         // lastAccess 업데이트된 지갑 정보 저장
         await saveWalletInfo(info);
-        console.log('✅ 기존 지갑 정보 업데이트 완료');
       } else {
         // 지갑 정보 생성
-        console.log('새로운 지갑 정보를 생성합니다.');
         const walletId = `wallet-${user}-${Date.now()}`;
         const walletKey = `key-${user}-${Date.now()}`;
         const now = new Date().toISOString();
@@ -76,7 +73,6 @@ export const useWallet = () => {
 
         // 새로운 지갑 정보 저장
         await saveWalletInfo(info);
-        console.log('✅ 새로운 지갑 정보 생성 완료');
       }
 
       setWalletInfo(info);

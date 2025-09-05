@@ -5,6 +5,7 @@ import RootNavigator from './navigation/root-navigator';
 import AuthProvider from './contexts/auth-provider';
 import {NotificationProvider} from './contexts/notification-provider';
 import {AgentProvider} from './contexts/agent-provider';
+import {GlobalAlertModal} from './components/common';
 
 function App(): JSX.Element {
   return (
@@ -15,6 +16,7 @@ function App(): JSX.Element {
             <NavigationContainer>
               <RootNavigator />
             </NavigationContainer>
+            <GlobalAlertModal />
           </NotificationProvider>
         </AgentProvider>
       </AuthProvider>

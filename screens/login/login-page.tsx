@@ -1,5 +1,10 @@
 import {AuthButton, AuthInput} from '../../components/auth';
-import {ThemedText, ThemedView} from '../../components/common';
+import {
+  ThemedText,
+  ThemedView,
+  showErrorAlert,
+  showConfirmAlert,
+} from '../../components/common';
 import {useThemeColor} from '../../hooks/useThemeColor';
 import {login} from '../../services/apis/account';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -52,15 +57,10 @@ export default function LoginScreen({navigation}: LoginScreenProps) {
 
           switch (result) {
             case RESULTS.UNAVAILABLE:
-              Alert.alert(
+              showErrorAlert(
                 '알람 권한 오류',
                 '이 기기에서는 알람 권한을 사용할 수 없습니다.',
-                [
-                  {
-                    text: '확인',
-                    onPress: () => BackHandler.exitApp(),
-                  },
-                ],
+                () => BackHandler.exitApp(),
               );
               break;
             case RESULTS.DENIED:
@@ -68,50 +68,33 @@ export default function LoginScreen({navigation}: LoginScreenProps) {
                 PERMISSIONS.ANDROID.POST_NOTIFICATIONS,
               );
               if (requestResult !== RESULTS.GRANTED) {
-                Alert.alert(
+                showConfirmAlert(
                   '알람 권한 필요',
                   '앱 사용을 위해 알람 권한이 필요합니다. 권한을 허용해주세요.',
-                  [
-                    {
-                      text: '설정으로 이동',
-                      onPress: () => BackHandler.exitApp(),
-                    },
-                    {
-                      text: '앱 종료',
-                      onPress: () => BackHandler.exitApp(),
-                    },
-                  ],
+                  () => BackHandler.exitApp(),
+                  () => BackHandler.exitApp(),
+                  '설정으로 이동',
+                  '앱 종료',
                 );
               }
               break;
             case RESULTS.BLOCKED:
-              Alert.alert(
+              showErrorAlert(
                 '알람 권한 차단됨',
                 '설정에서 알람 권한을 허용해주세요.',
-                [
-                  {
-                    text: '앱 종료',
-                    onPress: () => BackHandler.exitApp(),
-                  },
-                ],
+                () => BackHandler.exitApp(),
               );
               break;
             case RESULTS.LIMITED:
             case RESULTS.GRANTED:
-              console.log('알람 권한이 허용되었습니다.');
               break;
           }
         } catch (error) {
           console.error('알람 권한 확인 중 오류:', error);
-          Alert.alert(
+          showErrorAlert(
             '권한 확인 오류',
             '알람 권한을 확인하는 중 오류가 발생했습니다.',
-            [
-              {
-                text: '앱 종료',
-                onPress: () => BackHandler.exitApp(),
-              },
-            ],
+            () => BackHandler.exitApp(),
           );
         }
       }
@@ -202,7 +185,7 @@ export default function LoginScreen({navigation}: LoginScreenProps) {
         }
       }
     } catch (error: any) {
-      Alert.alert('로그인에 실패했습니다.', error.message);
+      showErrorAlert('로그인 실패', error.message);
     }
     setIsLoading(false);
   };

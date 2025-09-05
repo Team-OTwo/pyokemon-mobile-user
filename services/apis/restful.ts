@@ -1,7 +1,8 @@
 import {useAuth} from '../../hooks';
 import axios, {AxiosError, AxiosRequestConfig, AxiosResponse} from 'axios';
 import {Alert} from 'react-native';
-import {getTokens, setAccessToken} from '../storage/securStorage';
+import {getTokens, setAccessToken} from '../storage/secureStorage';
+import {showErrorAlert} from '../../components/common';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
@@ -80,7 +81,7 @@ const refreshAuthToken = async (refreshToken: string): Promise<string> => {
   );
 
   if (!response.success || !response.data?.accessToken) {
-    Alert.alert('재로그인 해주시기 바랍니다');
+    showErrorAlert('재로그인 필요', '재로그인 해주시기 바랍니다');
     await useAuth().signOut();
   }
   await setAccessToken(response.data.accessToken);

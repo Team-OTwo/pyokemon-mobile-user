@@ -1,5 +1,5 @@
 import {AuthButton, AuthInput, DatePicker} from '../../components/auth';
-import {ThemedText, ThemedView} from '../../components/common';
+import {ThemedText, ThemedView, showErrorAlert} from '../../components/common';
 import {useThemeColor} from '../../hooks/useThemeColor';
 import {signup} from '../../services/apis/account';
 import {AuthStackParamList} from '../../types/navigation';
@@ -65,14 +65,14 @@ export default function SignupPage({navigation}: SignupScreenProps) {
       // API 요청 수행
       await signup(loginId, password, passwordCheck, name, phone, birth);
 
-      Alert.alert(
+      showErrorAlert(
         '회원가입 성공',
         '회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.',
-        [{text: '확인', onPress: () => navigation.navigate('Login')}],
+        () => navigation.navigate('Login'),
       );
     } catch (error: any) {
       console.error('회원가입 오류:', error);
-      Alert.alert(
+      showErrorAlert(
         '회원가입 실패',
         error.message || '회원가입 중 오류가 발생했습니다.',
       );

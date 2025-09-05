@@ -1,4 +1,10 @@
-import {ThemedText, ThemedView} from '../../components/common';
+import {
+  ThemedText,
+  ThemedView,
+  showErrorAlert,
+  showSuccessAlert,
+  showConfirmAlert,
+} from '../../components/common';
 import useAuth from '../../hooks/useAuth';
 import {useThemeColor} from '../../hooks/useThemeColor';
 import {
@@ -158,7 +164,7 @@ export default function VerificationScreen({
       setCurrentStep(2);
       startTimer();
     } catch (error: any) {
-      Alert.alert(
+      showErrorAlert(
         '오류',
         error.message || '인증번호 발송 중 오류가 발생했습니다.',
       );
@@ -188,9 +194,9 @@ export default function VerificationScreen({
     try {
       // await sendVerificationCode(phoneNumber, requestType, accessToken);
       startTimer();
-      Alert.alert('알림', '인증번호가 재발송되었습니다.');
+      showSuccessAlert('알림', '인증번호가 재발송되었습니다.');
     } catch (error: any) {
-      Alert.alert(
+      showErrorAlert(
         '오류',
         error.message || '인증번호 재발송 중 오류가 발생했습니다.',
       );
@@ -254,12 +260,15 @@ export default function VerificationScreen({
       setCurrentStep(3);
       stopTimer();
       if (messageType === 'DIFFERENT_DEVICE') {
-        Alert.alert('성공', '기기변경이 완료되었습니다! 다시 로그인해주세요.');
+        showSuccessAlert(
+          '성공',
+          '기기변경이 완료되었습니다! 다시 로그인해주세요.',
+        );
       } else {
-        Alert.alert('성공', '인증이 완료되었습니다! 다시 로그인해주세요.');
+        showSuccessAlert('성공', '인증이 완료되었습니다! 다시 로그인해주세요.');
       }
     } catch (error: any) {
-      Alert.alert(
+      showErrorAlert(
         '오류',
         error.message || '인증번호 확인 중 오류가 발생했습니다.',
       );
@@ -289,7 +298,7 @@ export default function VerificationScreen({
     try {
       navigation.goBack();
     } catch (error) {
-      Alert.alert('오류', '로그인 중 오류가 발생했습니다.');
+      showErrorAlert('오류', '로그인 중 오류가 발생했습니다.');
     }
   }, [signIn, accessToken, refreshToken, messageType, navigation]);
 

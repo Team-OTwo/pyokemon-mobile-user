@@ -1,5 +1,8 @@
 import {Agent} from '@credo-ts/core';
-import {syncCredentialsFromMediator} from './credo';
+import {
+  syncCredentialsFromMediator,
+  processDelegatedCredentials,
+} from './credo';
 
 /**
  * DID 서비스 클래스 (단순화된 도우미 클래스)
@@ -28,16 +31,11 @@ class DIDService {
    */
   async pollForCredentials(agent: Agent) {
     try {
-      console.log('🔍 VC 폴링 시작 - AgentProvider에서 관리하는 Agent 사용');
-      console.log('- Agent 초기화:', agent ? '✅' : '❌');
-
       if (!agent) {
         throw new Error('Agent가 제공되지 않았습니다.');
       }
 
-      console.log('Mediator ACA-Py에서 VC 폴링 시작...');
       const result = await syncCredentialsFromMediator(agent);
-
       return result;
     } catch (error) {
       console.error('VC 폴링 실패:', error);

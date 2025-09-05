@@ -14,7 +14,12 @@ import {RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 
 import {AuthButton} from '../../components/auth';
-import {ThemedText, ThemedView} from '../../components/common';
+import {
+  ThemedText,
+  ThemedView,
+  showErrorAlert,
+  showSuccessAlert,
+} from '../../components/common';
 import PageHeader from '../../components/ui/header';
 import {useThemeColor} from '../../hooks/useThemeColor';
 import {useAgentStatus} from '../../contexts/agent-provider';
@@ -32,7 +37,7 @@ const ANIMATION_CONFIG = {
 } as const;
 
 const VC_POLLING_CONFIG = {
-  MAX_ATTEMPTS: 15,
+  MAX_ATTEMPTS: 5,
   INTERVAL: 2000,
 } as const;
 
@@ -136,10 +141,9 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
       return {
         title: 'Agent 초기화 필요',
         onPress: () => {
-          Alert.alert(
+          showErrorAlert(
             'Agent 초기화 필요',
             'DID Agent가 초기화되지 않았습니다. 홈 화면에서 지갑을 먼저 초기화해주세요.',
-            [{text: '확인'}],
           );
         },
         disabled: true,
@@ -160,62 +164,83 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
     try {
       setIsVc(true);
 
-      // 사용자 정보 확인
-      if (!user) {
-        Alert.alert(
-          '사용자 정보 없음',
-          '사용자 정보가 없습니다. 다시 로그인해주세요.',
-          [{text: '확인'}],
-        );
-        return;
-      }
-
-      // Agent 초기화 상태 확인
-      if (!isInitialized || !agent) {
-        Alert.alert(
-          'Agent 초기화 필요',
-          'DID Agent가 초기화되지 않았습니다. 홈 화면에서 지갑을 먼저 초기화해주세요.',
-          [{text: '확인'}],
+      // 기본 검증
+      if (!user || !isInitialized || !agent) {
+        showErrorAlert(
+          '오류',
+          '사용자 정보 또는 Agent가 초기화되지 않았습니다.',
         );
         return;
       }
 
       const DIDService = await import('../../services/did/did-service');
+      const {processDelegatedCredentials} = await import(
+        '../../services/did/credo'
+      );
 
-      // VC 요청 (한 번만)
+      // 1. 위임받은 credentials 확인
+      const delegatedResult = await processDelegatedCredentials(agent);
+
+      if (
+        delegatedResult.success &&
+        delegatedResult.newCredentials.length > 0
+      ) {
+        const credentialData = delegatedResult.newCredentials[0].credentialData;
+        const bookingId =
+          credentialData.credentialSubject?.booking_id ||
+          credentialData.credentialSubject?.bookingId ||
+          credentialData.booking_id ||
+          credentialData.bookingId;
+
+        if (bookingId === ticket?.bookingId) {
+          setCredential(JSON.stringify(credentialData));
+          showSuccessAlert('성공', '위임받은 VC를 성공적으로 사용했습니다.');
+          return;
+        }
+      }
+
+      // 2. 새로운 VC 요청 및 폴링
       if (!hasRequestedVC) {
         await getCredential(ticket?.bookingId || '');
         setHasRequestedVC(true);
       }
 
-      let pollingResult = null;
+      // 폴링으로 VC 대기
       let attempts = 0;
-      const maxAttempts = VC_POLLING_CONFIG.MAX_ATTEMPTS;
-
-      while (attempts < maxAttempts && !pollingResult?.success) {
+      while (attempts < VC_POLLING_CONFIG.MAX_ATTEMPTS) {
         attempts++;
-        console.log(`VC 폴링 시도 ${attempts}/${maxAttempts}`);
+        const pollingResult = await DIDService.default.pollForCredentials(
+          agent,
+        );
 
-        pollingResult = await DIDService.default.pollForCredentials(agent);
+        if (pollingResult.success && pollingResult.newCredentials?.[0]) {
+          const credentialData =
+            (pollingResult.newCredentials[0] as any).credentialData ||
+            pollingResult.newCredentials[0];
+          const bookingId =
+            credentialData.credentialSubject?.booking_id ||
+            credentialData.credentialSubject?.bookingId ||
+            credentialData.booking_id ||
+            credentialData.bookingId;
 
-        if (!pollingResult.success && attempts < maxAttempts) {
-          console.log(`${VC_POLLING_CONFIG.INTERVAL}ms 후 재시도...`);
+          if (bookingId === ticket?.bookingId) {
+            setCredential(JSON.stringify(credentialData));
+            showSuccessAlert('성공', 'VC를 성공적으로 받았습니다.');
+            return;
+          }
+        }
+
+        if (attempts < VC_POLLING_CONFIG.MAX_ATTEMPTS) {
           await new Promise(resolve =>
             setTimeout(resolve, VC_POLLING_CONFIG.INTERVAL),
           );
         }
       }
 
-      if (pollingResult?.success) {
-        const firstCredential = pollingResult.newCredentials?.[0];
-        setCredential(firstCredential ? JSON.stringify(firstCredential) : null);
-        Alert.alert('성공', 'VC를 성공적으로 받았습니다.');
-      } else {
-        Alert.alert('실패', `VC를 받는데 실패했습니다. (${attempts}회 시도)`);
-      }
+      showErrorAlert('실패', `VC를 받는데 실패했습니다. (${attempts}회 시도)`);
     } catch (error) {
       console.error('VC 처리 중 오류:', error);
-      Alert.alert('오류', 'VC 처리 중 오류가 발생했습니다.');
+      showErrorAlert('오류', 'VC 처리 중 오류가 발생했습니다.');
     } finally {
       setIsVc(false);
     }
@@ -409,6 +434,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   errorText: {
+    marginTop: 20,
     fontSize: 16,
     color: '#FF5959',
     textAlign: 'center',

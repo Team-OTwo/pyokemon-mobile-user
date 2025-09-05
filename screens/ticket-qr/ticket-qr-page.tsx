@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState, useRef, useEffect, useCallback} from 'react';
 import {AuthButton} from '../../components/auth';
 import {ThemedText, ThemedView} from '../../components/common';
 import {useThemeColor} from '../../hooks/useThemeColor';
@@ -11,6 +11,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
+  Animated,
 } from 'react-native';
 
 // Components
@@ -24,6 +25,8 @@ import TestButton from './_components/test-button';
 import {useCameraPermission} from './hooks/useCameraPermission';
 import {QRStep, useQRProcess} from './hooks/useQRProcess';
 import {MainStackParamList} from '../../types/navigation';
+import {useAgentStatus} from '../../contexts/agent-provider';
+import {ProofEventTypes, ProofState} from '@credo-ts/core';
 
 type TicketQRScreenProps = {
   navigation: StackNavigationProp<MainStackParamList, 'TicketQR'>;
@@ -33,6 +36,12 @@ type TicketQRScreenProps = {
 export default function TicketQRPage({navigation, route}: TicketQRScreenProps) {
   const {bookingId} = route.params;
   const {hasPermission} = useCameraPermission();
+  const [isAgentLoading, setIsAgentLoading] = useState(false);
+  const [agentConnectionId, setAgentConnectionId] = useState<string | null>(
+    null,
+  );
+  const progressAnimation = useRef(new Animated.Value(0)).current;
+  const {agent} = useAgentStatus();
 
   const {
     loading,
@@ -60,14 +69,150 @@ export default function TicketQRPage({navigation, route}: TicketQRScreenProps) {
     );
   };
 
-  const handleTestEntryComplete = () => {
+  const handleEntryComplete = () => {
     // 테스트용: 바로 입장 완료로 이동
     if (entryQRData) {
       // 실제로는 서버에 입장 완료 요청
-      // console.log('테스트: 입장 완료');
+      console.log('입장 완료');
       completeEntry();
     }
   };
+
+  // Agent 이벤트 리스너 설정
+  useEffect(() => {
+    if (!agent) return;
+
+    const handleProofStateChanged = ({payload}: any) => {
+      if (payload.proofRecord.state === ProofState.Done) {
+        console.log('🎉 최종 인증 성공!');
+        handleEntryComplete();
+        // 인증 성공 시 추가 로직
+      }
+    };
+
+    // 이벤트 리스너 등록
+    agent.events.on(ProofEventTypes.ProofStateChanged, handleProofStateChanged);
+
+    // 클린업 함수
+    return () => {
+      agent.events.off(
+        ProofEventTypes.ProofStateChanged,
+        handleProofStateChanged,
+      );
+    };
+  }, [agent]);
+
+  // Agent 연결 애니메이션 관리
+  const startAgentAnimation = useCallback(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(progressAnimation, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: false,
+        }),
+        Animated.timing(progressAnimation, {
+          toValue: 0,
+          duration: 1500,
+          useNativeDriver: false,
+        }),
+      ]),
+    ).start();
+  }, [progressAnimation]);
+
+  const stopAgentAnimation = useCallback(() => {
+    progressAnimation.stopAnimation();
+  }, [progressAnimation]);
+
+  // Agent 연결 처리
+  const handleAgentConnection = useCallback(
+    async (qrData: string) => {
+      if (!agent) {
+        throw new Error('Agent가 초기화되지 않았습니다.');
+      }
+
+      setIsAgentLoading(true);
+      startAgentAnimation();
+
+      try {
+        console.log('티켓입장 시도 중...');
+        console.log('Agent 연결 시도 중...');
+
+        const result = await agent.oob.receiveInvitationFromUrl(qrData, {
+          autoAcceptInvitation: true,
+          autoAcceptConnection: true,
+        });
+
+        console.log('Agent 연결 결과:', result);
+        setAgentConnectionId(result.connectionRecord?.id || null);
+
+        return result;
+      } catch (error) {
+        console.error('Agent 연결 실패:', error);
+        throw error;
+      } finally {
+        setIsAgentLoading(false);
+        stopAgentAnimation();
+      }
+    },
+    [agent, startAgentAnimation, stopAgentAnimation],
+  );
+
+  const handleVenueQRScannedWithAgent = async (qrData: string) => {
+    if (qrData.startsWith('http://') || qrData.startsWith('https://')) {
+      try {
+        await handleAgentConnection(qrData);
+        // Agent 연결 성공 시 추가 처리
+        console.log('Agent 연결 성공');
+        handleEntryComplete();
+      } catch (error) {
+        console.error('Agent 연결 실패, 일반 처리로 전환:', error);
+        // Agent 연결 실패 시 일반 처리로 전환
+        handleVenueQRScanned(qrData);
+      }
+    } else {
+      // URL이 아닌 경우 바로 처리
+      handleVenueQRScanned(qrData);
+    }
+  };
+  // Agent 연결 로딩 상태
+  if (isAgentLoading) {
+    return (
+      <ThemedView style={[styles.container, {backgroundColor}]}>
+        <StatusBar barStyle="default" />
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.agentLoadingContainer}>
+            <View style={styles.ticketIcon}>
+              <ThemedText style={styles.ticketIconText}>🎫</ThemedText>
+            </View>
+            <ThemedText style={styles.agentLoadingTitle}>
+              티켓 입장 확인중
+            </ThemedText>
+            <ThemedText style={styles.agentLoadingSubtitle}>
+              잠시만 기다려주세요...
+            </ThemedText>
+            <View style={styles.progressBar}>
+              <Animated.View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: progressAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0%', '100%'],
+                    }),
+                  },
+                ]}
+              />
+            </View>
+            <ThemedText style={styles.agentLoadingStep}>
+              Agent 연결 중...
+            </ThemedText>
+          </View>
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
+
   // 로딩 상태
   if (loading) {
     return (
@@ -149,7 +294,7 @@ export default function TicketQRPage({navigation, route}: TicketQRScreenProps) {
               title="입장 게이트 스캔"
               onBackPress={() => navigation.goBack()}
             />
-            <QRScanner onQRScanned={handleVenueQRScanned} />
+            <QRScanner onQRScanned={handleVenueQRScannedWithAgent} />
             {connectionStatus && (
               <View style={styles.connectionStatusContainer}>
                 <ThemedText style={styles.connectionStatusText}>
@@ -182,10 +327,6 @@ export default function TicketQRPage({navigation, route}: TicketQRScreenProps) {
                 </ThemedText>
               </TouchableOpacity>
             </View>
-            <TestButton
-              title="테스트용: 입장 완료"
-              onPress={handleTestEntryComplete}
-            />
           </>
         )}
 
@@ -236,7 +377,7 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     paddingHorizontal: 40,
-    paddingBottom: Platform.OS === 'android' ? 24 : 0,
+    paddingBottom: 24,
   },
   secondaryButton: {
     padding: 16,
@@ -261,6 +402,62 @@ const styles = StyleSheet.create({
   connectionStatusText: {
     fontSize: 14,
     fontWeight: '500',
+    textAlign: 'center',
+  },
+  agentLoadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  ticketIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#00ff88',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 30,
+    shadowColor: '#00ff88',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  ticketIconText: {
+    fontSize: 40,
+  },
+  agentLoadingTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  agentLoadingSubtitle: {
+    fontSize: 16,
+    opacity: 0.7,
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  progressBar: {
+    width: 200,
+    height: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    borderRadius: 3,
+    marginBottom: 20,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#00ff88',
+    borderRadius: 3,
+  },
+  agentLoadingStep: {
+    fontSize: 14,
+    opacity: 0.6,
     textAlign: 'center',
   },
 });

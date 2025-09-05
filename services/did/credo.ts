@@ -26,6 +26,17 @@ import {
   W3cCredentialsModule,
   V2CredentialProtocol,
   JsonLdCredentialFormatService,
+  V2MessagePickupProtocol,
+  AutoAcceptProof,
+  V1MessagePickupProtocol,
+  DefaultMessagePickupProtocols,
+  CredentialEventTypes,
+  CredentialStateChangedEvent,
+  KeyDidResolver,
+  ConsoleLogger,
+  LogLevel,
+  PeerDidResolver,
+  Ed25519Signature2020,
 } from '@credo-ts/core';
 import {AskarModule} from '@credo-ts/askar';
 import {agentDependencies} from '@credo-ts/react-native';
@@ -62,8 +73,6 @@ export const initAgent = async (
     let finalWalletId = walletId || `wallet-${accountId}`;
     let finalWalletKey = walletKey || `key-${accountId}`;
 
-    console.log('지갑 설정:', {accountId, finalWalletId, finalWalletKey});
-
     const walletInfo = await getWalletInfo();
     if (walletInfo) {
       finalWalletId = walletInfo.walletId;
@@ -88,7 +97,8 @@ export const initAgent = async (
       autoUpdateStorageOnStartup: true,
       // 두 ACA-Py 모두 연결할 수 있도록 엔드포인트 설정
       // DIDComm 메시지 타입 설정 (ACA-Py와 호환성 보장)
-      didCommMimeType: DidCommMimeType.V0,
+      didCommMimeType: DidCommMimeType.V1,
+      logger: new ConsoleLogger(LogLevel.debug),
       // 자동 수락 설정은 ConnectionsModule에서 설정
     };
 
@@ -101,21 +111,34 @@ export const initAgent = async (
           autoAcceptConnections: true,
         }),
         outOfBand: new OutOfBandModule(),
-        dids: new DidsModule(),
+        dids: new DidsModule({
+          resolvers: [new KeyDidResolver(), new PeerDidResolver()],
+        }),
         aries: new AskarModule({ariesAskar}),
-        mediationRecipient: new MediationRecipientModule(),
         basicMessages: new BasicMessagesModule(),
-        proofs: new ProofsModule(),
-        w3cVc: new W3cCredentialsModule(),
+        proofs: new ProofsModule({
+          autoAcceptProofs: AutoAcceptProof.Always,
+        }),
+        w3cVc: new W3cCredentialsModule({}),
         credentials: new CredentialsModule({
           autoAcceptCredentials: AutoAcceptCredential.Always,
           credentialProtocols: [
             new V2CredentialProtocol({
-              credentialFormats: [new JsonLdCredentialFormatService()],
+              credentialFormats: [
+                new JsonLdCredentialFormatService(), // W3C VC 지원
+              ],
             }),
           ],
         }),
-        messagePickup: new MessagePickupModule(),
+        mediationRecipient: new MediationRecipientModule({
+          mediatorPickupStrategy: MediatorPickupStrategy.Implicit,
+        }),
+        messagePickup: new MessagePickupModule<DefaultMessagePickupProtocols>({
+          protocols: [
+            new V1MessagePickupProtocol(),
+            new V2MessagePickupProtocol(),
+          ],
+        }),
       },
     });
 
@@ -143,109 +166,118 @@ export const initAgent = async (
         JSON.stringify(event.payload, null, 2),
       );
     });
+
     agent.events.on(AgentEventTypes.AgentMessageProcessed, ({payload}) => {
-      console.log('🔓 복호화된 메시지:', payload.message);
-
-      // VC 관련 메시지 확인
       const message = payload.message as any;
-      if (message && message['@type']) {
-        const messageType = message['@type'] as string;
-        console.log('📋 메시지 타입:', messageType);
-
-        // VC 관련 메시지 타입 확인
-        if (
-          messageType.includes('issue-credential') ||
-          messageType.includes('present-proof') ||
-          messageType.includes('credential')
-        ) {
-          console.log('🎉 VC 관련 메시지 감지!');
-          console.log('VC 메시지 내용:', JSON.stringify(message, null, 2));
-        }
+      if (message['@type'].includes('offer-credential')) {
+        console.log(
+          '📝 Offer Message formats:',
+          JSON.stringify(message.formats, null, 2),
+        );
+        console.log(
+          '📝 Offer Message attaches:',
+          JSON.stringify(message['offers~attach'], null, 2),
+        );
       }
     });
 
-    // Credential 관련 이벤트 리스너 추가
-    agent.events.on('CredentialStateChanged', event => {
-      console.log('🎫 Credential 상태 변경:', event.payload);
+    agent.events.on<CredentialStateChangedEvent>(
+      CredentialEventTypes.CredentialStateChanged,
+      async ({payload}) => {
+        const {credentialRecord} = payload;
 
-      // VC 수신 감지
-      if (event.payload && typeof event.payload === 'object') {
-        const payload = event.payload as any;
-        if (
-          payload.credentialRecord &&
-          payload.credentialRecord.state === 'credential-received'
-        ) {
-          console.log('🎉 VC 수신 감지!');
-          console.log('VC 상세 정보:', {
-            id: payload.credentialRecord.id,
-            state: payload.credentialRecord.state,
-            threadId: payload.credentialRecord.threadId,
-          });
+        switch (credentialRecord.state) {
+          case CredentialState.OfferReceived:
+            console.log(
+              `[EVENT] Offer received for credentialId=${credentialRecord.id}`,
+            );
+            try {
+              await agent.credentials.acceptOffer({
+                credentialRecordId: credentialRecord.id,
+                credentialFormats: {
+                  jsonld: {
+                    options: {
+                      proofType: 'Ed25519Signature2020',
+                      proofPurpose: 'assertionMethod',
+                    },
+                  },
+                },
+              });
+            } catch (err) {
+              console.error(`Accept offer 실패: ${err}`);
+            }
+            // Holder가 제안을 수락하고 Request를 발송
+            break;
+          case CredentialState.RequestSent:
+            console.log(
+              `[EVENT] Request sent for credentialId=${credentialRecord.id}. Waiting for credential...`,
+            );
+            break;
+          case CredentialState.CredentialReceived:
+            console.log(
+              `[EVENT] Credential received for credentialId=${credentialRecord.id}`,
+            );
+            try {
+              await agent.credentials.acceptCredential({
+                credentialRecordId: credentialRecord.id,
+              });
+            } catch (error) {
+              console.error(
+                `[ERROR] Accept 실패: ${
+                  error instanceof Error ? error.message : String(error)
+                }`,
+              );
+            }
+            // W3C VC 형식으로 수신된 VC 처리
+            try {
+              await agent.credentials.acceptCredential({
+                credentialRecordId: credentialRecord.id,
+              });
+            } catch (error) {
+              console.error(
+                `[ERROR] Failed to accept credential: ${
+                  error instanceof Error ? error.message : String(error)
+                }`,
+              );
+            }
+            // Holder가 받은 VC를 지갑에 저장
+            break;
+          case CredentialState.Done:
+            console.log(
+              `[EVENT] Credential exchange completed for credentialId=${credentialRecord.id}`,
+            );
+            break;
+
+          case CredentialState.Abandoned:
+            console.log(
+              `[EVENT] Credential exchange abandoned for credentialId=${credentialRecord.id}`,
+            );
+            break;
+
+          default:
+            console.log(`[EVENT] State changed: ${credentialRecord.state}`);
         }
-      }
-    });
+      },
+    );
 
-    agent.events.on('CredentialExchangeStateChanged', event => {
-      console.log('🔄 Credential Exchange 상태 변경:', event.payload);
-
-      // Credential Exchange 완료 감지
-      if (event.payload && typeof event.payload === 'object') {
-        const payload = event.payload as any;
-        if (
-          payload.credentialExchangeRecord &&
-          payload.credentialExchangeRecord.state === 'credential-issued'
-        ) {
-          console.log('🎉 Credential Exchange 완료!');
-          console.log('Exchange 상세 정보:', {
-            id: payload.credentialExchangeRecord.id,
-            state: payload.credentialExchangeRecord.state,
-            role: payload.credentialExchangeRecord.role,
-          });
-        }
-      }
-    });
-
-    agent.events.on('CredentialStateChanged', event => {
-      if (
-        event.payload &&
-        typeof event.payload === 'object' &&
-        'credentialRecord' in event.payload &&
-        typeof (event.payload as any).credentialRecord === 'object' &&
-        (event.payload as any).credentialRecord !== null
-      ) {
-        const credentialRecord = (event.payload as any).credentialRecord;
-        console.log('🎫 Credential 상태 변경:', credentialRecord.state);
-
-        // VC가 최종적으로 지갑에 저장되었을 때의 상태는 'Done' 입니다.
-        if (credentialRecord.state === CredentialState.Done) {
-          console.log('🎉 VC 수신 및 저장 완료!');
-          console.log('VC 상세 정보:', event.payload.credentialRecord);
-          // 여기서 React Native의 상태(State)를 업데이트하여 UI에 반영합니다.
-        }
-      }
-    });
+    agent.events.on<ConnectionStateChangedEvent>(
+      ConnectionEventTypes.ConnectionStateChanged,
+      event => {
+        console.log('Connection state changed:', {
+          connectionId: event.payload.connectionRecord.id,
+          previousState: event.payload.previousState,
+          newState: event.payload.connectionRecord.state,
+        });
+      },
+    );
 
     await agent.initialize();
-    console.log('Agent 초기화 완료:', accountId);
 
     return agent;
   } catch (error) {
     console.log('Agent 초기화 에러:', error);
     throw error;
   }
-};
-
-export const setupConnectionEventListeners = (agent: Agent) => {
-  agent.events.on<ConnectionStateChangedEvent>(
-    ConnectionEventTypes.ConnectionStateChanged,
-    event => {
-      console.log('Connection state changed:', {
-        connectionId: event.payload.connectionRecord.id,
-        previousState: event.payload.previousState,
-        newState: event.payload.connectionRecord.state,
-      });
-    },
-  );
 };
 
 /**
@@ -291,10 +323,6 @@ export const generateConnection = async (
   return {connectionRecord: completedConnection};
 };
 
-/**
- * Credo 공식 문서에 따른 중계자 연결 함수
- * @see https://credo.js.org/
- */
 export const generateMediatorConnection = async (
   agent: Agent,
   invitationUrl: string,
@@ -384,6 +412,7 @@ export const generateBatchConnections = async (
     } catch (mediatorError) {
       console.log('⚠️ Mediator 연결 시도 중 에러:', mediatorError);
       // 에러가 발생해도 계속 진행
+      throw mediatorError;
     }
 
     try {
@@ -412,6 +441,7 @@ export const generateBatchConnections = async (
       }
     } catch (userError) {
       console.log('⚠️ User ACA-Py 연결 시도 중 에러:', userError);
+      throw userError;
       // 에러가 발생해도 계속 진행
     }
 
@@ -537,100 +567,73 @@ export const saveConnectionInfo = async (
     throw error;
   }
 };
-
-/**
- * Mediator ACA-Py에서 VC를 폴링하는 함수
- * @param agent Credo 에이전트
- * @param maxAttempts 최대 시도 횟수
- * @param intervalMs 폴링 간격 (밀리초)
- */
-export const pollMediatorForCredentials = async (
+// polling credentials from mediator
+export const syncCredentialsFromMediator = async (
   agent: Agent,
-  maxAttempts: number = 10,
-  intervalMs: number = 2000,
-): Promise<{success: boolean; message: string; credentials: any}> => {
-  console.log('Mediator ACA-Py에서 VC 폴링 시작...');
+): Promise<{success: boolean; newCredentials: CredentialExchangeRecord[]}> => {
+  console.log('[VC 동기화 시작] 중개자로부터 새로운 VC를 확인합니다...');
 
   try {
-    // 1. 기본 Mediator 확인 (Credo.js 표준 방식)
-    const defaultMediator =
-      await agent.mediationRecipient.findDefaultMediator();
-    if (!defaultMediator) {
-      console.log('⚠️ 기본 Mediator가 설정되지 않았습니다.');
-      return {
-        success: false,
-        message: 'Mediator가 설정되지 않음',
-        credentials: null,
-      };
+    // 1. Mediator가 있는지 확인합니다.
+    const mediators = await agent.mediationRecipient.getMediators();
+    if (mediators.length === 0) {
+      console.warn('⚠️ 활성 Mediator가 없습니다.');
+      return {success: false, newCredentials: []};
     }
+    console.log(`✅ 활성 Mediator 확인: ${mediators[0].id}`);
 
-    console.log('기본 Mediator 확인됨:', {
-      id: defaultMediator.id,
-      state: defaultMediator.state,
+    // 2. 확인 전, 현재 VC 목록의 상태를 Map에 저장합니다. (비교 기준)
+    const beforeCredentials = await agent.credentials.getAll();
+    const beforeCredentialStateMap = new Map<string, CredentialState>();
+    beforeCredentials.forEach(cred => {
+      beforeCredentialStateMap.set(cred.id, cred.state);
+    });
+    console.log('동기화 전 VC 개수:', beforeCredentials.length);
+
+    // 3. 중개자에게 쌓인 메시지를 모두 가져옵니다.
+    // await agent.mediationRecipient.initiateMessagePickup();
+    await agent.messagePickup.pickupMessages({
+      protocolVersion: 'v2', // Use v2; your config is v1 but pickup can override
+      connectionId: mediators[0].connectionId!,
+      batchSize: 100, // Optional: Increase if many messages
     });
 
-    // 2. 메시지 픽업 요청 (Credo.js 표준 방식)
-    console.log('메시지 픽업을 시작합니다...');
-    await agent.mediationRecipient.initiateMessagePickup();
+    console.log('📨 메시지 픽업 완료. 처리 대기 중...');
 
-    // 3. 폴링 방식으로 VC 확인 (Credo.js 권장 방식)
-    let attempts = 0;
-    let credentials = null;
+    // 4. 에이전트가 수신한 메시지를 처리(복호화, 상태 업데이트 등)할 시간을 줍니다. (중요!)
+    await new Promise(resolve => setTimeout(resolve, 5000));
 
-    while (attempts < maxAttempts) {
-      attempts++;
-      console.log(`VC 폴링 시도 ${attempts}/${maxAttempts}...`);
+    // 5. 메시지 처리 후, 전체 VC 목록을 다시 가져옵니다.
+    const afterCredentials = await agent.credentials.getAll();
+    const newlyCompletedCredentials: CredentialExchangeRecord[] = [];
 
-      try {
-        // 현재 Credential 목록 확인 (Credo.js 표준 API)
-        const allCredentials = await agent.credentials.getAll();
-        console.log('현재 Credential 개수:', allCredentials.length);
+    // 6. 'After' 목록을 순회하며 'Before'와 비교하여 새로 완료된 VC를 찾습니다.
+    for (const credential of afterCredentials) {
+      // 조건 1: 현재 상태가 'Done'이어야 함
+      if (credential.state === CredentialState.Done) {
+        const beforeState = beforeCredentialStateMap.get(credential.id);
 
-        if (allCredentials.length > 0) {
-          // 가장 최근 Credential 확인
-          const latestCredential = allCredentials[allCredentials.length - 1];
-          console.log('최신 Credential 상태:', {
-            id: latestCredential.id,
-            state: latestCredential.state,
-            threadId: latestCredential.threadId,
-          });
-
-          // Credential이 완료된 상태인지 확인 (Credo.js 표준 상태)
-          if (latestCredential.state === CredentialState.Done) {
-            console.log('🎉 VC 수신 완료!');
-            credentials = latestCredential;
-            break;
-          }
+        // 조건 2: 이전에는 없었거나(undefined), 이전 상태가 'Done'이 아니어야 함
+        if (!beforeState || beforeState !== CredentialState.Done) {
+          newlyCompletedCredentials.push(credential);
         }
-
-        // 다음 시도 전 대기
-        if (attempts < maxAttempts) {
-          console.log(`${intervalMs}ms 대기 중...`);
-          await new Promise(resolve => setTimeout(resolve, intervalMs));
-        }
-      } catch (pollError) {
-        console.error(`폴링 시도 ${attempts} 중 오류:`, pollError);
       }
     }
 
-    if (credentials) {
-      console.log('✅ VC 폴링 성공!');
-      return {
-        success: true,
-        message: 'VC 수신 성공',
-        credentials: credentials,
-      };
+    // 7. 결과를 출력합니다.
+    if (newlyCompletedCredentials.length > 0) {
+      console.log(
+        `🎉 총 ${newlyCompletedCredentials.length}개의 새로운 VC를 발견했습니다!`,
+        newlyCompletedCredentials.map(c => ({id: c.id, state: c.state})),
+      );
     } else {
-      console.log('⚠️ VC 폴링 완료 - VC 없음');
-      return {
-        success: false,
-        message: 'VC를 받지 못했습니다',
-        credentials: null,
-      };
+      console.log('✅ 새로운 VC가 없습니다. 지갑은 이미 최신 상태입니다.');
     }
+
+    return {success: true, newCredentials: newlyCompletedCredentials};
   } catch (error) {
-    console.error('VC 폴링 중 오류 발생:', error);
-    return {success: false, message: '폴링 중 오류 발생', credentials: null};
+    console.error('VC 동기화 중 오류 발생:', error);
+    return {success: false, newCredentials: []};
   }
 };
 
@@ -776,7 +779,6 @@ export const generateProof = async (
   }
 };
 
-// venue invitation URL을 통한 연결 함수
 export const generateVenueConnection = async (
   agent: Agent,
   invitationUrl: string,

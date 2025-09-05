@@ -1,15 +1,10 @@
 import {ThemedText} from '../../../components/common';
 import {useThemeColor} from '../../../hooks/useThemeColor';
 import {Ticket} from '../../../types/ticket';
-import React, {useState} from 'react';
+import React from 'react';
 import {StyleSheet, TouchableOpacity, View, Image} from 'react-native';
-import {
-  Calendar,
-  MapPin,
-  Shield,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react-native';
+import {Calendar, MapPin, Shield} from 'lucide-react-native';
+import {formatDate} from '../../../utils/format.utils';
 
 interface TicketCardProps {
   ticket: Ticket;
@@ -17,20 +12,10 @@ interface TicketCardProps {
 }
 
 export function TicketCard({ticket, onPress}: TicketCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
   const cardBgColor = useThemeColor(
     {light: '#FFFFFF', dark: '#1E2022'},
     'background',
   );
-  const borderColor = useThemeColor(
-    {light: '#E5E9F0', dark: '#2C3235'},
-    'text',
-  );
-
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
-  };
 
   const handleCardPress = () => {
     if (onPress) {
@@ -40,7 +25,7 @@ export function TicketCard({ticket, onPress}: TicketCardProps) {
 
   return (
     <TouchableOpacity
-      style={[styles.container, {backgroundColor: cardBgColor, borderColor}]}
+      style={[styles.container, {backgroundColor: cardBgColor}]}
       onPress={handleCardPress}
       activeOpacity={0.7}>
       {/* 이미지가 메인인 카드 디자인 */}
@@ -71,15 +56,6 @@ export function TicketCard({ticket, onPress}: TicketCardProps) {
             </ThemedText>
           </View> */}
         </View>
-
-        {/* 확장/축소 버튼 */}
-        <TouchableOpacity style={styles.expandButton} onPress={toggleExpand}>
-          {isExpanded ? (
-            <ChevronUp size={20} color="#FFFFFF" />
-          ) : (
-            <ChevronDown size={20} color="#FFFFFF" />
-          )}
-        </TouchableOpacity>
       </View>
 
       {/* 기본 정보 */}
@@ -90,7 +66,7 @@ export function TicketCard({ticket, onPress}: TicketCardProps) {
 
         <View>
           <View style={styles.infoItem}>
-            {/* <MapPin size={14} color="#646568" /> */}
+            <MapPin size={14} color="#646568" />
             <ThemedText
               type="defaultSemiBold"
               style={styles.infoText}
@@ -99,25 +75,16 @@ export function TicketCard({ticket, onPress}: TicketCardProps) {
             </ThemedText>
           </View>
           <View style={styles.infoItem}>
-            {/* <Calendar size={14} color="#646568" /> */}
+            <Calendar size={14} color="#646568" />
             <ThemedText
               type="defaultSemiBold"
               style={styles.infoText}
               numberOfLines={1}>
-              {ticket.eventDate}
+              {formatDate(ticket.eventDate)}
             </ThemedText>
           </View>
         </View>
       </View>
-
-      {/* 확장된 정보 (VC가 있을 때만) */}
-      {isExpanded && (
-        <View style={styles.expandedContent}>
-          <View style={styles.issuerContainer}>
-            <ThemedText style={styles.issuer}>{ticket.tenantName}</ThemedText>
-          </View>
-        </View>
-      )}
     </TouchableOpacity>
   );
 }
@@ -125,7 +92,6 @@ export function TicketCard({ticket, onPress}: TicketCardProps) {
 const styles = StyleSheet.create({
   container: {
     borderRadius: 16,
-    borderWidth: 1,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
@@ -172,14 +138,6 @@ const styles = StyleSheet.create({
   vcInactiveText: {
     color: '#FFFFFF',
   },
-  expandButton: {
-    position: 'absolute',
-    bottom: 12,
-    left: 12,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: 20,
-    padding: 8,
-  },
   infoContainer: {
     padding: 12,
   },
@@ -198,17 +156,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#6B7280',
     flex: 1,
-  },
-  expandedContent: {
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-  },
-  issuerContainer: {
-    alignItems: 'center',
-  },
-  issuer: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    fontWeight: '500',
   },
 });

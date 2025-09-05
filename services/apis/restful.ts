@@ -31,7 +31,7 @@ export class ApiError extends Error {
   }
 }
 
-const API_BASE_URL = 'http://192.168.0.239:8087/';
+const API_BASE_URL = 'http://192.168.75.85:8087/';
 const DEFAULT_TIMEOUT = 30000;
 const RETRY_DELAY = 1000;
 
@@ -83,7 +83,7 @@ const refreshAuthToken = async (refreshToken: string): Promise<string> => {
     Alert.alert('재로그인 해주시기 바랍니다');
     await useAuth().signOut();
   }
-  setAccessToken(response.data.accessToken);
+  await setAccessToken(response.data.accessToken);
 
   return response.data.accessToken;
 };

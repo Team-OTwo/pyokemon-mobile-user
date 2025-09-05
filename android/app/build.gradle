@@ -72,6 +72,7 @@ def jscFlavor = 'org.webkit:android-jsc:+'
 android {
     ndkVersion rootProject.ext.ndkVersion
 
+    buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdkVersion rootProject.ext.compileSdkVersion
 
 
@@ -84,6 +85,7 @@ android {
         minSdkVersion 23
         targetSdkVersion 34
         multiDexEnabled true
+        missingDimensionStrategy 'react-native-camera', 'general'
     }
     
     compileOptions {

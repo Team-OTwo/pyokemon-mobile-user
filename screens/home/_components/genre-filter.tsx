@@ -56,7 +56,7 @@ export function GenreFilter({activeGenre, onGenreChange}: GenreFilterProps) {
 
 const styles = StyleSheet.create({
   filterContainer: {
-    paddingVertical: 16,
+    paddingVertical: 10,
   },
   filterList: {
     paddingHorizontal: 16,

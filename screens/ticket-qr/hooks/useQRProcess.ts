@@ -1,8 +1,7 @@
 import {useEffect, useState} from 'react';
 import {getDetailTicket} from '../../../services/apis/ticket';
-import type {Ticket, TicketDetail} from '../../../types/ticket';
-import {SAMPLE_TICKET_DETAILS} from '../../../data/ticket_detail';
-import {generateProof, signDidToJwt} from '../../../services/did/credo';
+import type {TicketDetail} from '../../../types/ticket';
+import {signDidToJwt} from '../../../services/did/credo';
 import {useAgent} from '../../../contexts/agent-provider';
 import {getWalletInfo} from '../../../services/storage/walletStorage';
 
@@ -36,6 +35,7 @@ export function useQRProcess(bookingId: string) {
   useEffect(() => {
     const getTicket = async () => {
       const ticket = await getDetailTicket(bookingId);
+      // const ticket = SAMPLE_TICKET_DETAILS;
       setTicket(ticket);
       setLoading(false);
 
@@ -88,17 +88,11 @@ export function useQRProcess(bookingId: string) {
   const generateEntryQR = (venueCode: string) => {
     if (!ticket) return;
 
-    const entryId = `entry_${ticket.bookingId}_${venueCode}_${Date.now()}`;
-    const entryData: EntryData = {
-      entryId: entryId,
-      ticketId: ticket.bookingId,
-      venueCode: venueCode,
-      timestamp: Date.now(),
-      type: 'venue',
-      signature: `entry_${ticket.bookingId}_${venueCode}_${Date.now()}`,
-    };
+    console.log(venueCode);
 
-    const entryQRString = JSON.stringify(entryData);
+    const entryQRString = JSON.stringify({
+      venueCode: venueCode,
+    });
     console.log('venue entryQRString', entryQRString);
     setEntryQRData(entryQRString);
     setEntryId(entryId);
@@ -146,46 +140,50 @@ export function useQRProcess(bookingId: string) {
   const handleVenueQRScanned = async (data: string) => {
     try {
       // invitation_url인지 확인
-      if (data.includes('invitation_url') || data.includes('http')) {
-        console.log('🔗 Invitation URL 감지:', data);
+      // if (data.includes('invitation_url') || data.includes('http')) {
+      //   console.log('🔗 Invitation URL 감지:', data);
+      console.log('data', data);
+      // let invitationUrl = data;
 
-        let invitationUrl = data;
-
-        // JSON 형태로 감싸져 있는 경우 파싱
-        try {
-          const parsedData = JSON.parse(data);
-          if (parsedData.invitation_url) {
-            invitationUrl = parsedData.invitation_url;
-          } else if (parsedData.url) {
-            invitationUrl = parsedData.url;
-          }
-        } catch (parseError) {
-          // 파싱 실패 시 원본 데이터 사용
-          console.log('JSON 파싱 실패, 원본 데이터 사용');
-        }
-
-        // agent 연결 시도
-        await handleInvitationUrlConnection(invitationUrl);
-        return;
+      // JSON 형태로 감싸져 있는 경우 파싱
+      try {
+        // const parsedData = JSON.parse(data);
+        // if (parsedData.invitation_url) {
+        //   invitationUrl = parsedData.invitation_url;
+        // } else if (parsedData.url) {
+        //   invitationUrl = parsedData.url;
+        // }
+      } catch (parseError) {
+        // 파싱 실패 시 원본 데이터 사용
+        console.log('JSON 파싱 실패, 원본 데이터 사용');
       }
+
+      // agent 연결 시도
+      // await handleInvitationUrlConnection(invitationUrl);
+      // return;
+      // }
 
       // 기존 venue QR 처리 로직
-      const scannedData = JSON.parse(data);
-      if (scannedData.type === 'venue') {
-        setVenueCode(scannedData.venueCode);
-        generateEntryQR(scannedData.venueCode);
-      } else {
-        throw new Error('Invalid venue QR');
-      }
+      //   const scannedData = JSON.parse(data);
+      //   if (scannedData.type === 'venue') {
+      //     setVenueCode(scannedData.venueCode);
+      //     generateEntryQR(scannedData.venueCode);
+      //   } else {
+      //     throw new Error('Invalid venue QR');
+      //   }
+      // } catch (error) {
+      //   // 단순 문자열인 경우 (테스트용)
+      //   console.log('단순 문자열 처리:', data);
+      //   setVenueCode(data);
+      //   generateEntryQR(data);
+      // }
     } catch (error) {
-      // 단순 문자열인 경우 (테스트용)
-      console.log('단순 문자열 처리:', data);
-      setVenueCode(data);
-      generateEntryQR(data);
+      console.error('❌ Venue QR 처리 실패:', error);
     }
   };
 
   const proceedToScan = () => {
+    console.log('proceedToScan');
     setCurrentStep(QRStep.SCAN_VENUE_QR);
   };
 

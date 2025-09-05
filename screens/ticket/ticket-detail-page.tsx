@@ -1,15 +1,4 @@
-import React from 'react';
-import {AuthButton} from '../../components/auth';
-import {ThemedText, ThemedView} from '../../components/common';
-import PageHeader from '../../components/ui/header';
-import {useThemeColor} from '../../hooks/useThemeColor';
-import {getDetailTicket} from '../../services/apis/ticket';
-import {useAgentStatus} from '../../contexts/agent-provider';
-import {MainStackParamList} from '../../types/navigation';
-import type {TicketDetail} from '../../types/ticket';
-import {RouteProp} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {useState, useRef, useEffect} from 'react';
+import React, {useState, useRef, useEffect, useMemo} from 'react';
 import {
   Platform,
   SafeAreaView,
@@ -21,8 +10,31 @@ import {
   Animated,
   Alert,
 } from 'react-native';
+import {RouteProp} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
+
+import {AuthButton} from '../../components/auth';
+import {ThemedText, ThemedView} from '../../components/common';
+import PageHeader from '../../components/ui/header';
+import {useThemeColor} from '../../hooks/useThemeColor';
+import {useAgentStatus} from '../../contexts/agent-provider';
+import {getDetailTicket} from '../../services/apis/ticket';
 import {getCredential} from '../../services/apis/did';
 import useAuth from '../../hooks/useAuth';
+import {MainStackParamList} from '../../types/navigation';
+import type {TicketDetail} from '../../types/ticket';
+
+// 상수 정의
+const ANIMATION_CONFIG = {
+  SCROLL_THRESHOLD: 150,
+  IMAGE_HEIGHT_RANGE: [250, 120] as number[],
+  OPACITY_RANGE: [1, 0.7] as number[],
+} as const;
+
+const VC_POLLING_CONFIG = {
+  MAX_ATTEMPTS: 15,
+  INTERVAL: 2000,
+} as const;
 
 type TicketDetailProps = {
   navigation: StackNavigationProp<MainStackParamList, 'TicketDetail'>;
@@ -33,11 +45,29 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
   const {bookingId} = route.params;
   const {user} = useAuth();
   const {isInitialized, agent} = useAgentStatus();
+
+  // 상태 관리
   const [isLoading, setIsLoading] = useState(true);
-  const [credential, setCredential] = useState<string | null>('ㅁㄴ');
+  const [credential, setCredential] = useState<string | null>(null);
   const [isVc, setIsVc] = useState(false);
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hasRequestedVC, setHasRequestedVC] = useState(false);
+
+  // 공연일 체크 로직
+  const isEventToday = useMemo(() => {
+    if (!ticket?.event?.eventDate) return false;
+
+    const today = new Date();
+    const eventDate = new Date(ticket.event.eventDate);
+
+    // 날짜만 비교 (시간 제외)
+    return (
+      today.getFullYear() === eventDate.getFullYear() &&
+      today.getMonth() === eventDate.getMonth() &&
+      today.getDate() === eventDate.getDate()
+    );
+  }, [ticket?.event?.eventDate]);
 
   // 티켓 데이터 페칭
   useEffect(() => {
@@ -62,17 +92,18 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
   // 애니메이션 값들
   const scrollY = useRef(new Animated.Value(0)).current;
   const imageHeight = scrollY.interpolate({
-    inputRange: [0, 150],
-    outputRange: [250, 120],
+    inputRange: [0, ANIMATION_CONFIG.SCROLL_THRESHOLD],
+    outputRange: ANIMATION_CONFIG.IMAGE_HEIGHT_RANGE,
     extrapolate: 'clamp',
   });
 
   const imageOpacity = scrollY.interpolate({
-    inputRange: [0, 150],
-    outputRange: [1, 0.7],
+    inputRange: [0, ANIMATION_CONFIG.SCROLL_THRESHOLD],
+    outputRange: ANIMATION_CONFIG.OPACITY_RANGE,
     extrapolate: 'clamp',
   });
 
+  // 테마 색상
   const backgroundColor = useThemeColor(
     {light: '#FFFFFF', dark: '#1E2022'},
     'background',
@@ -90,12 +121,46 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
     });
   };
 
+  // 버튼 상태 결정
+  const getButtonConfig = () => {
+    if (credential) {
+      return {
+        title: 'QR 생성',
+        onPress: handleGenerateQR,
+        disabled: !isEventToday,
+        isLoading: false,
+      };
+    }
+
+    if (!isInitialized) {
+      return {
+        title: 'Agent 초기화 필요',
+        onPress: () => {
+          Alert.alert(
+            'Agent 초기화 필요',
+            'DID Agent가 초기화되지 않았습니다. 홈 화면에서 지갑을 먼저 초기화해주세요.',
+            [{text: '확인'}],
+          );
+        },
+        disabled: true,
+        isLoading: false,
+      };
+    }
+
+    return {
+      title: isEventToday ? '디지털 티켓 발급' : '공연개최일이 아닙니다',
+      onPress: handleGetCredential,
+      disabled: !isEventToday,
+      isLoading: isVc,
+    };
+  };
+
+  // VC 발급 처리
   const handleGetCredential = async () => {
     try {
       setIsVc(true);
 
       // 사용자 정보 확인
-      console.log('VC 요청 시작 - 사용자 정보 확인...');
       if (!user) {
         Alert.alert(
           '사용자 정보 없음',
@@ -105,14 +170,8 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
         return;
       }
 
-      // Agent 전역 상태 확인
-      console.log('Agent 전역 상태 확인 중...');
-      console.log('Agent 초기화 상태:', isInitialized);
-      console.log('Agent 인스턴스:', agent ? '있음' : '없음');
-
-      // Agent가 초기화되지 않았으면 에러
+      // Agent 초기화 상태 확인
       if (!isInitialized || !agent) {
-        console.log('❌ Agent가 초기화되지 않음');
         Alert.alert(
           'Agent 초기화 필요',
           'DID Agent가 초기화되지 않았습니다. 홈 화면에서 지갑을 먼저 초기화해주세요.',
@@ -121,36 +180,41 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
         return;
       }
 
-      // Agent 상태 확인
       const DIDService = await import('../../services/did/did-service');
 
-      // 1. VC 요청 - user-aca-py에 전달
-      console.log('VC 요청 시작');
-      const credential = await getCredential(ticket?.bookingId || '');
-      if (credential.success) {
-        // 2. VC가 요청되었으면 mediator-aca-py에서 폴링 시작
-        console.log('VC 요청 성공. Mediator에서 폴링 시작...');
+      // VC 요청 (한 번만)
+      if (!hasRequestedVC) {
+        await getCredential(ticket?.bookingId || '');
+        setHasRequestedVC(true);
+      }
 
-        // 3. Mediator에서 VC 폴링
-        const pollingResult = await DIDService.default.pollForCredentials(
-          agent,
-          15,
-          2000,
-        );
+      let pollingResult = null;
+      let attempts = 0;
+      const maxAttempts = VC_POLLING_CONFIG.MAX_ATTEMPTS;
 
-        if (pollingResult.success) {
-          console.log('VC 폴링 성공:', pollingResult);
-          setCredential(pollingResult.credentials); // VC 상태 업데이트
-          Alert.alert('성공', 'VC를 성공적으로 받았습니다.');
-        } else {
-          console.log('VC 폴링 실패:', pollingResult);
-          Alert.alert('실패', 'VC를 받는데 실패했습니다.');
+      while (attempts < maxAttempts && !pollingResult?.success) {
+        attempts++;
+        console.log(`VC 폴링 시도 ${attempts}/${maxAttempts}`);
+
+        pollingResult = await DIDService.default.pollForCredentials(agent);
+
+        if (!pollingResult.success && attempts < maxAttempts) {
+          console.log(`${VC_POLLING_CONFIG.INTERVAL}ms 후 재시도...`);
+          await new Promise(resolve =>
+            setTimeout(resolve, VC_POLLING_CONFIG.INTERVAL),
+          );
         }
+      }
+
+      if (pollingResult?.success) {
+        const firstCredential = pollingResult.newCredentials?.[0];
+        setCredential(firstCredential ? JSON.stringify(firstCredential) : null);
+        Alert.alert('성공', 'VC를 성공적으로 받았습니다.');
       } else {
-        Alert.alert('실패', '서버에 VC 요청을 보내는데 실패했습니다.');
+        Alert.alert('실패', `VC를 받는데 실패했습니다. (${attempts}회 시도)`);
       }
     } catch (error) {
-      console.log('디지털 자격증서 처리 중 오류 발생:', error);
+      console.error('VC 처리 중 오류:', error);
       Alert.alert('오류', 'VC 처리 중 오류가 발생했습니다.');
     } finally {
       setIsVc(false);
@@ -309,35 +373,7 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
         {/* 하단 버튼 영역 */}
         <SafeAreaView style={styles.bottomSafeArea}>
           <View style={styles.buttonContainer}>
-            {credential ? (
-              <AuthButton
-                title="QR 생성"
-                onPress={handleGenerateQR}
-                // disabled={ticket.status !== 'active'}
-              />
-            ) : !isInitialized ? (
-              <AuthButton
-                title="Agent 초기화 필요"
-                onPress={() => {
-                  Alert.alert(
-                    'Agent 초기화 필요',
-                    'DID Agent가 초기화되지 않았습니다. 홈 화면에서 지갑을 먼저 초기화해주세요.',
-                    [{text: '확인'}],
-                  );
-                }}
-                disabled={true}
-              />
-            ) : (
-              <AuthButton
-                isLoading={isVc}
-                title="디지털 티켓 발급"
-                onPress={handleGetCredential}
-                // disabled={ticket.status !== 'active'}
-              />
-            )}
-            <TouchableOpacity style={styles.cancelContainer}>
-              <ThemedText style={styles.cancelText}>예매취소</ThemedText>
-            </TouchableOpacity>
+            <AuthButton {...getButtonConfig()} />
           </View>
         </SafeAreaView>
       </SafeAreaView>

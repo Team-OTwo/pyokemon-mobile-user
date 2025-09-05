@@ -1,4 +1,3 @@
-import { getUniqueId } from 'react-native-device-info';
 import restful from './restful';
 
 // 앱 로그인

@@ -32,7 +32,7 @@ export function TicketList({
 
   const tintColor = useThemeColor({light: '#75B8FF', dark: '#75B8FF'}, 'tint');
   const backgroundColor = useThemeColor(
-    {light: '#F5F7FA', dark: '#151718'},
+    {light: '#FFF', dark: '#151718'},
     'background',
   );
 

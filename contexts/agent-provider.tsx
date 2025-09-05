@@ -6,7 +6,7 @@ import React, {
   ReactNode,
 } from 'react';
 import {Agent} from '@credo-ts/core';
-import {initAgent, setupConnectionEventListeners} from '../services/did/credo';
+import {initAgent} from '../services/did/credo';
 import {getInvitationUrls} from '../services/apis/did';
 import {
   generateBatchConnections,
@@ -98,9 +98,6 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({children}) => {
       const newAgent = await initAgent(accountId);
       console.log('agent초기화 완료');
 
-      // 연결 상태 변경 이벤트 리스너 설정
-      setupConnectionEventListeners(newAgent);
-
       // 3. 연결 생성
       const invitationUrls = {
         mediator: invitationResponse.data.mediator_acapy_invi_url,
@@ -112,10 +109,14 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({children}) => {
         'User ACA-Py를 먼저 연결하고, 그 다음 Mediator ACA-Py 연결 시작...',
       );
 
-      const {allConnections, allSuccess} = await generateBatchConnections(
-        newAgent,
-        invitationUrls,
-      );
+      const {allConnections, mediatorConnection, userConnection, allSuccess} =
+        await generateBatchConnections(newAgent, invitationUrls);
+
+      if (!allSuccess || !userConnection || !mediatorConnection) {
+        throw new Error(
+          '필수 에이전트(Mediator 또는 User)와의 연결에 실패했습니다.',
+        );
+      }
 
       if (allSuccess) {
         console.log('🎉 두 ACA-Py 모두 성공적으로 연결되었습니다');
@@ -128,7 +129,7 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({children}) => {
       // 4. DID 전송 및 연결 정보 저장
       const didResult = await sendAgentPublicDidToUser(
         newAgent,
-        allConnections[1].id,
+        userConnection?.id || '',
       );
 
       // DID 공개키 저장
@@ -139,16 +140,16 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({children}) => {
       }
 
       // 연결 정보 저장
-      setUserConnectionId(allConnections[0].id);
-      setMediatorConnectionId(allConnections[1].id);
+      setMediatorConnectionId(mediatorConnection?.id || null);
+      setUserConnectionId(userConnection?.id || null);
 
       // 지갑 정보에 연결 정보 저장
       const savedWalletInfo = await getWalletInfo();
       if (savedWalletInfo) {
         const updatedWalletInfo = {
           ...savedWalletInfo,
-          userConnectionId: allConnections[0].id,
-          mediatorConnectionId: allConnections[1].id,
+          mediatorConnectionId: mediatorConnection?.id,
+          userConnectionId: userConnection?.id,
           didPublicKey: didResult.did,
           savedAt: new Date().toISOString(),
         };

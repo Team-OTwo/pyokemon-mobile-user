@@ -1,48 +1,121 @@
-import React, {useEffect, useState} from 'react';
-import {StyleSheet, Text, View, Linking, TouchableOpacity} from 'react-native';
-import {Camera, Frame, useCameraDevices} from 'react-native-vision-camera';
+import React, {useEffect, useState, useRef} from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Alert,
+  Linking,
+  Platform,
+  Dimensions,
+  Animated,
+} from 'react-native';
+import QRCodeScanner from 'react-native-qrcode-scanner';
+import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+
+const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
 
 interface QRScannerProps {
   onQRScanned: (data: string) => void;
 }
 
 export default function QRScanner({onQRScanned}: QRScannerProps) {
-  const [hasPermission, setHasPermission] = useState(false);
-  const [isCameraActive, setIsCameraActive] = useState(false);
-
-  const devices = useCameraDevices();
-  const device = devices.back;
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [isActive, setIsActive] = useState(true);
+  const scannerRef = useRef<QRCodeScanner>(null);
 
   useEffect(() => {
-    (async () => {
-      const status = await Camera.getCameraPermissionStatus();
-      if (status === 'not-determined') {
-        const permission = await Camera.requestCameraPermission();
-        setHasPermission(permission === 'authorized');
-      } else {
-        setHasPermission(status === 'authorized');
+    checkCameraPermission();
+  }, []);
+
+  const checkCameraPermission = async () => {
+    try {
+      const permission = Platform.select({
+        ios: PERMISSIONS.IOS.CAMERA,
+        android: PERMISSIONS.ANDROID.CAMERA,
+      });
+
+      if (!permission) {
+        setHasPermission(false);
+        return;
       }
-    })();
-  }, []);
 
-  // 컴포넌트가 화면에 보일 때 카메라를 활성화합니다.
-  useEffect(() => {
-    setIsCameraActive(true);
-    return () => {
-      setIsCameraActive(false);
-    };
-  }, []);
+      const result = await check(permission);
 
-  const handleFrame = (frame: Frame) => {
-    console.log('frame', frame);
+      switch (result) {
+        case RESULTS.UNAVAILABLE:
+          Alert.alert('오류', '카메라를 사용할 수 없습니다.');
+          setHasPermission(false);
+          break;
+        case RESULTS.DENIED:
+          const requestResult = await request(permission);
+          setHasPermission(requestResult === RESULTS.GRANTED);
+          break;
+        case RESULTS.LIMITED:
+        case RESULTS.GRANTED:
+          setHasPermission(true);
+          break;
+        case RESULTS.BLOCKED:
+          Alert.alert(
+            '권한 필요',
+            '카메라 권한이 차단되었습니다. 설정에서 권한을 허용해주세요.',
+            [
+              {text: '취소', style: 'cancel'},
+              {text: '설정', onPress: () => Linking.openSettings()},
+            ],
+          );
+          setHasPermission(false);
+          break;
+        default:
+          setHasPermission(false);
+          break;
+      }
+    } catch (error) {
+      console.error('Permission check error:', error);
+      setHasPermission(false);
+    }
   };
 
-  // 기기를 찾는 중이거나 권한 확인 중일 때 로딩 화면을 보여줍니다.
-  if (device == null || !hasPermission) {
-    // 권한 거부 상태를 별도로 처리
-    if (!hasPermission) {
-      return (
-        <View style={styles.container}>
+  const onSuccess = (e: any) => {
+    if (!isActive) return;
+
+    console.log('QR 스캔됨:', e.data);
+
+    // URL인지 확인
+    if (e.data.startsWith('http://') || e.data.startsWith('https://')) {
+      onQRScanned(e.data);
+    } else {
+      // URL이 아닌 경우 바로 처리
+      setIsActive(false);
+      onQRScanned(e.data);
+
+      // 2초 후 다시 스캔 가능하게
+      setTimeout(() => {
+        setIsActive(true);
+        scannerRef.current?.reactivate();
+      }, 2000);
+    }
+  };
+
+  const reactivateScanner = () => {
+    setIsActive(true);
+    scannerRef.current?.reactivate();
+  };
+
+  if (hasPermission === null) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.centerContent}>
+          <Text style={styles.permissionText}>카메라 권한 확인 중...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!hasPermission) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.centerContent}>
           <Text style={styles.permissionText}>카메라 권한이 필요합니다.</Text>
           <TouchableOpacity
             style={styles.button}
@@ -50,99 +123,202 @@ export default function QRScanner({onQRScanned}: QRScannerProps) {
             <Text style={styles.buttonText}>설정으로 이동</Text>
           </TouchableOpacity>
         </View>
-      );
-    }
-    // 기기 로딩 중
-    return (
-      <View style={styles.container}>
-        <Text>카메라를 준비 중입니다...</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.stepTitle}>입장 티켓을 스캔해주세요</Text>
-      <Text style={styles.text}>QR을 스캔하면 입장이 완료됩니다.</Text>
-      <View style={styles.scanContainer}>
-        <Camera
-          frameProcessor={handleFrame}
-          style={StyleSheet.absoluteFill}
-          device={device}
-          isActive={isCameraActive}
-        />
-        <View style={styles.scanOverlay}>
-          <View style={styles.scanFrame} />
-        </View>
+      <View style={styles.header}>
+        <Text style={styles.stepTitle}>입장 티켓을 스캔해주세요</Text>
+        <Text style={styles.text}>QR을 스캔하면 입장이 완료됩니다.</Text>
       </View>
-      <Text style={styles.instructionText}>
-        QR 코드를 프레임 안에 맞춰주세요
-      </Text>
+
+      <View style={styles.scanArea}>
+        <QRCodeScanner
+          ref={scannerRef}
+          onRead={onSuccess}
+          reactivate={isActive}
+          reactivateTimeout={2000}
+          showMarker={false}
+          cameraStyle={styles.camera}
+          containerStyle={styles.scannerContainer}
+          topViewStyle={styles.topView}
+          bottomViewStyle={styles.bottomView}
+          customMarker={
+            <View style={styles.customMarker}>
+              <View style={styles.cornerTopLeft} />
+              <View style={styles.cornerTopRight} />
+              <View style={styles.cornerBottomLeft} />
+              <View style={styles.cornerBottomRight} />
+            </View>
+          }
+        />
+      </View>
+
+      <View style={styles.footer}>
+        <Text style={styles.instructionText}>
+          📱 QR 코드를 프레임 안에 맞춰주세요
+        </Text>
+        {!isActive && (
+          <TouchableOpacity
+            style={styles.reactivateButton}
+            onPress={reactivateScanner}>
+            <Text style={styles.reactivateButtonText}>다시 스캔하기</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
 
+const CAMERA_SIZE = Math.min(screenWidth * 0.8, 300);
+
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  header: {
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    marginBottom: 40,
+  },
   stepTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
+    color: '#fff',
+    marginBottom: 8,
   },
   text: {
     textAlign: 'center',
     fontSize: 16,
+    color: '#ccc',
+    lineHeight: 22,
   },
-  scanContainer: {
-    width: 300,
-    height: 300,
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 20,
-    position: 'relative',
-  },
-  scanOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+  scanArea: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  scanFrame: {
-    width: 200,
-    height: 200,
-    borderWidth: 2,
-    borderColor: '#fff',
-    borderRadius: 12,
+  scannerContainer: {
+    backgroundColor: 'transparent',
+    flex: 0,
+    height: CAMERA_SIZE,
+    width: CAMERA_SIZE,
+  },
+  camera: {
+    height: CAMERA_SIZE,
+    width: CAMERA_SIZE,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  topView: {
+    flex: 0,
     backgroundColor: 'transparent',
   },
-  instructionText: {
-    textAlign: 'center',
-    fontSize: 14,
-    color: '#666',
-    marginTop: 10,
+  bottomView: {
+    flex: 0,
+    backgroundColor: 'transparent',
   },
-  container: {
-    gap: 20,
-    marginTop: 50,
+  customMarker: {
+    width: CAMERA_SIZE,
+    height: CAMERA_SIZE,
+    position: 'relative',
+  },
+  cornerTopLeft: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    width: 35,
+    height: 35,
+    borderTopWidth: 4,
+    borderLeftWidth: 4,
+    borderColor: '#00ff88',
+  },
+  cornerTopRight: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    width: 35,
+    height: 35,
+    borderTopWidth: 4,
+    borderRightWidth: 4,
+    borderColor: '#00ff88',
+  },
+  cornerBottomLeft: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    width: 35,
+    height: 35,
+    borderBottomWidth: 4,
+    borderLeftWidth: 4,
+    borderColor: '#00ff88',
+  },
+  cornerBottomRight: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 35,
+    height: 35,
+    borderBottomWidth: 4,
+    borderRightWidth: 4,
+    borderColor: '#00ff88',
+  },
+  footer: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 40,
+  },
+  instructionText: {
+    fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  centerContent: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    flex: 1,
+    paddingHorizontal: 20,
   },
   permissionText: {
     fontSize: 16,
     marginBottom: 20,
+    color: '#fff',
+    textAlign: 'center',
   },
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#00ff88',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    shadowColor: '#00ff88',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  buttonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  reactivateButton: {
+    backgroundColor: '#333',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#00ff88',
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  reactivateButtonText: {
+    color: '#00ff88',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

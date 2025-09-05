@@ -1,7 +1,7 @@
 import React from 'react';
 import {useEffect, useState} from 'react';
 import {StackNavigationProp} from '@react-navigation/stack';
-import {SafeAreaView, StatusBar, StyleSheet, View} from 'react-native';
+import {SafeAreaView, StatusBar, StyleSheet, View, Alert} from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
 import {ThemedText, ThemedView} from '../../components/common';
 import {Bell, User} from 'lucide-react-native';
@@ -14,10 +14,21 @@ import {getListTicket} from '../../services/apis/ticket';
 import {Badge} from '../../components/ui/badge';
 import {getNotifications} from '../../services/apis/notification';
 import {useAgentStatus} from '../../contexts/agent-provider';
+import {CredentialExchangeRecord, W3cCredentialRecord} from '@credo-ts/core';
 
 type HomeScreenProps = {
   navigation: StackNavigationProp<MainStackParamList, 'Home'>;
 };
+
+// VC 타입 정의
+interface VirtualCredential {
+  id: string;
+  state: string;
+  threadId?: string;
+  credential?: {
+    credentialSubject?: any;
+  };
+}
 
 // API 호출 함수 (실제 구현은 사용자가 할 예정)
 const fetchTickets = async (cursor?: string, genre?: string) => {
@@ -65,6 +76,10 @@ const fetchUnreadNotificationCount = async () => {
 export default function HomeScreen({navigation}: HomeScreenProps) {
   const {unreadCount, setUnreadCount} = useNotification();
   const [activeGenre, setActiveGenre] = useState<string | null>(null);
+  const [virtualCredentials, setVirtualCredentials] = useState<
+    VirtualCredential[]
+  >([]);
+  const [isLoadingVC, setIsLoadingVC] = useState<boolean>(false);
   const {
     isInitialized,
     agent,
@@ -102,6 +117,29 @@ export default function HomeScreen({navigation}: HomeScreenProps) {
     changeGenre(genre);
   };
 
+  // Agent가 보유한 VC 조회 함수
+  const fetchVirtualCredentials = async () => {
+    if (!isInitialized || !agent) {
+      console.log('Agent가 초기화되지 않아 VC 조회를 건너뜁니다.');
+      return;
+    }
+
+    setIsLoadingVC(true);
+    try {
+      console.log('🔍 Agent가 보유한 VC 조회 시작...');
+      const allCredentials: CredentialExchangeRecord[] =
+        await agent.credentials.getAll();
+
+      console.log('📋 조회된 VC 개수:', allCredentials.length);
+      console.log('📋 VC 목록:', JSON.stringify(allCredentials));
+
+      setVirtualCredentials(allCredentials as unknown as VirtualCredential[]);
+    } catch (error) {
+    } finally {
+      setIsLoadingVC(false);
+    }
+  };
+
   // 컴포넌트 마운트 시 초기 데이터 로드
   useEffect(() => {
     loadInitialTickets();
@@ -129,6 +167,8 @@ export default function HomeScreen({navigation}: HomeScreenProps) {
         );
       } else if (canRequestVC) {
         console.log('Agent가 준비됨 - VC 요청 가능');
+        // Agent가 준비되면 VC 조회
+        fetchVirtualCredentials();
       } else if (isInitialized) {
         console.log('Agent가 초기화됨 - 연결 설정 필요');
       }

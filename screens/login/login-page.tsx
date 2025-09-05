@@ -5,7 +5,7 @@ import {login} from '../../services/apis/account';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {getUniqueId} from 'react-native-device-info';
 import {getMessaging, getToken} from '@react-native-firebase/messaging';
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -21,6 +21,8 @@ import {AuthStackParamList} from '../../types/navigation';
 import useAuth from '../../hooks/useAuth';
 import {useInitializeAgentForNewUser} from '../../contexts/agent-provider';
 import {getWalletInfo} from '../../services/storage/walletStorage';
+import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+import {BackHandler} from 'react-native';
 
 type LoginScreenProps = {
   navigation: StackNavigationProp<AuthStackParamList, 'Login'>;
@@ -39,6 +41,84 @@ export default function LoginScreen({navigation}: LoginScreenProps) {
     {light: '#FFFFFF', dark: '#151718'},
     'background',
   );
+
+  // 알람 권한 확인 및 요청 (Android만)
+  useEffect(() => {
+    const checkAlarmPermission = async () => {
+      // iOS는 제외하고 Android만 처리
+      if (Platform.OS === 'android') {
+        try {
+          const result = await check(PERMISSIONS.ANDROID.POST_NOTIFICATIONS);
+
+          switch (result) {
+            case RESULTS.UNAVAILABLE:
+              Alert.alert(
+                '알람 권한 오류',
+                '이 기기에서는 알람 권한을 사용할 수 없습니다.',
+                [
+                  {
+                    text: '확인',
+                    onPress: () => BackHandler.exitApp(),
+                  },
+                ],
+              );
+              break;
+            case RESULTS.DENIED:
+              const requestResult = await request(
+                PERMISSIONS.ANDROID.POST_NOTIFICATIONS,
+              );
+              if (requestResult !== RESULTS.GRANTED) {
+                Alert.alert(
+                  '알람 권한 필요',
+                  '앱 사용을 위해 알람 권한이 필요합니다. 권한을 허용해주세요.',
+                  [
+                    {
+                      text: '설정으로 이동',
+                      onPress: () => BackHandler.exitApp(),
+                    },
+                    {
+                      text: '앱 종료',
+                      onPress: () => BackHandler.exitApp(),
+                    },
+                  ],
+                );
+              }
+              break;
+            case RESULTS.BLOCKED:
+              Alert.alert(
+                '알람 권한 차단됨',
+                '설정에서 알람 권한을 허용해주세요.',
+                [
+                  {
+                    text: '앱 종료',
+                    onPress: () => BackHandler.exitApp(),
+                  },
+                ],
+              );
+              break;
+            case RESULTS.LIMITED:
+            case RESULTS.GRANTED:
+              console.log('알람 권한이 허용되었습니다.');
+              break;
+          }
+        } catch (error) {
+          console.error('알람 권한 확인 중 오류:', error);
+          Alert.alert(
+            '권한 확인 오류',
+            '알람 권한을 확인하는 중 오류가 발생했습니다.',
+            [
+              {
+                text: '앱 종료',
+                onPress: () => BackHandler.exitApp(),
+              },
+            ],
+          );
+        }
+      }
+    };
+
+    checkAlarmPermission();
+  }, []);
 
   const validateForm = (): boolean => {
     const newErrors: {email?: string; password?: string} = {};
@@ -113,11 +193,11 @@ export default function LoginScreen({navigation}: LoginScreenProps) {
             );
           }
         } catch (walletError: any) {
-          console.error('Agent 초기화 실패:', walletError);
-          Alert.alert(
-            '알림',
-            'Agent 초기화 중 문제가 발생했습니다. 나중에 다시 시도해주세요.',
-          );
+          // console.error('Agent 초기화 실패:', walletError);
+          // Alert.alert(
+          //   '알림',
+          //   'Agent 초기화 중 문제가 발생했습니다. 나중에 다시 시도해주세요.',
+          // );
           // Agent 초기화 실패해도 로그인 프로세스는 계속 진행
         }
       }

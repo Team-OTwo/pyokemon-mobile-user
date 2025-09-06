@@ -197,55 +197,18 @@ export const initAgent = async (
       async ({payload}) => {
         const {credentialRecord} = payload;
 
-        // VC 위임 완료 시 추가 처리
+        // 상태 변화를 '관찰'하고 로그를 기록하거나 UI를 업데이트합니다.
+        console.log(`🎫 Credential 상태 변경: ${credentialRecord.state}`);
+
+        // ✅ 모든 '행동' 코드는 제거합니다.
+        //    에이전트가 모든 것을 자동으로 처리할 것입니다.
+
         if (credentialRecord.state === CredentialState.Done) {
-          // VC 위임 완료 처리
-          console.log('VC 위임 완료:', credentialRecord.state);
-        }
-
-        switch (credentialRecord.state) {
-          case CredentialState.OfferReceived:
-            // try {
-            //   await agent.credentials.acceptOffer({
-            //     credentialRecordId: credentialRecord.id,
-            //     credentialFormats: {
-            //       jsonld: {
-            //         proofPurpose: 'assertionMethod',
-            //       },
-            //     },
-            //     comment:
-            //       'Credential request with explicit proof purpose handling',
-            //   });
-            // } catch (err) {
-            //   console.error(`Accept offer 실패: ${err}`);
-            // }
-            console.log('VC 위임 완료:', credentialRecord.state);
-            // Holder가 제안을 수락하고 Request를 발송
-            break;
-          case CredentialState.RequestSent:
-            // Request sent 상태 처리
-            break;
-          case CredentialState.CredentialReceived:
-            // try {
-            //   await agent.credentials.acceptCredential({
-            //     credentialRecordId: credentialRecord.id,
-            //   });
-            // } catch (err) {
-            //   console.error(`Accept credential 실패: ${err}`);
-            // }
-            break;
-          case CredentialState.Done:
-            // Credential exchange completed
-            break;
-          case CredentialState.Declined:
-            // Credential declined
-            break;
-          case CredentialState.Abandoned:
-            // Credential exchange abandoned
-            break;
-
-          default:
-          // Other state changes
+          console.log('🎉 VC 발급이 성공적으로 완료되었습니다!');
+          // 여기서 UI를 업데이트하거나, 사용자에게 성공 알림을 보내는 로직을 넣습니다.
+        } else if (credentialRecord.state === CredentialState.Abandoned) {
+          console.error(`🚨 VC 발급 실패: ${credentialRecord.errorMessage}`);
+          // 사용자에게 실패 알림을 보냅니다.
         }
       },
     );
@@ -576,18 +539,17 @@ export const syncCredentialsFromMediator = async (
     // 4. 메시지 픽업 (가장 유력한 방법만 사용)
     console.log('🔄 메시지 픽업 시작...');
     try {
-      await agent.messagePickup.pickupMessages({
-        protocolVersion: 'v2',
-        connectionId: mediators[0].connectionId!,
-        batchSize: DEFAULT_BATCH_SIZE,
-      });
-      // const pickupResult: any =
-      //   await agent.mediationRecipient.initiateMessagePickup(mediators[0]);
-
-      // console.log('📦 메시지 픽업 결과:', {
-      //   status: pickupResult.status,
-      //   messageCount: pickupResult.messages?.length || 0,
+      // await agent.messagePickup.pickupMessages({
+      //   protocolVersion: 'v2',
+      //   connectionId: mediators[0].connectionId!,
+      //   batchSize: DEFAULT_BATCH_SIZE,
       // });
+      const pickupResult: any =
+        await agent.mediationRecipient.initiateMessagePickup(mediators[0]);
+
+      console.log('📦 메시지 픽업 결과:', {
+        messageCount: pickupResult.messages?.length || 0,
+      });
       console.log('✅ V2 프로토콜로 메시지 픽업 완료');
     } catch (error) {
       console.log('⚠️ 메시지 픽업 실패:', error);

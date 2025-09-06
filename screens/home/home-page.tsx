@@ -14,7 +14,7 @@ import {getListTicket} from '../../services/apis/ticket';
 import {Badge} from '../../components/ui/badge';
 import {getNotifications} from '../../services/apis/notification';
 import {useAgentStatus} from '../../contexts/agent-provider';
-import {CredentialExchangeRecord, W3cCredentialRecord} from '@credo-ts/core';
+import {CredentialExchangeRecord} from '@credo-ts/core';
 
 type HomeScreenProps = {
   navigation: StackNavigationProp<MainStackParamList, 'Home'>;

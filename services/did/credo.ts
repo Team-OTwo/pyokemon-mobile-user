@@ -40,6 +40,7 @@ import {
   W3cCredentialRecord,
   ConsoleLogger,
   LogLevel,
+  MessagePickupEventTypes,
 } from '@credo-ts/core';
 import {AskarModule} from '@credo-ts/askar';
 import {agentDependencies} from '@credo-ts/react-native';
@@ -552,229 +553,6 @@ export const saveConnectionInfo = async (
   }
 };
 
-// ============================================================================
-// 크리덴셜 관리
-// ============================================================================
-
-// 중개자로부터 위임받은 credentials 처리
-export const processDelegatedCredentials = async (
-  agent: Agent,
-): Promise<{success: boolean; newCredentials: any[]}> => {
-  console.log('[위임받은 VC 처리] 중개자로부터 위임받은 VC를 확인합니다...');
-
-  try {
-    // 1. Mediator 확인 및 연결 상태 점검
-    const mediators = await agent.mediationRecipient.getMediators();
-    if (mediators.length === 0) {
-      console.warn('⚠️ 활성 Mediator가 없습니다.');
-      return {success: false, newCredentials: []};
-    }
-
-    const mediator = mediators[0];
-    console.log(`✅ 활성 Mediator 확인: ${mediator.id}`);
-
-    // Mediator 연결 상태 확인 및 메시지 픽업 강화
-    try {
-      const mediatorConnection = await agent.connections.findById(
-        mediator.connectionId!,
-      );
-      if (mediatorConnection) {
-        console.log(`📡 Mediator 연결 상태: ${mediatorConnection.state}`);
-        console.log(`📡 Mediator 연결 정보:`, {
-          id: mediatorConnection.id,
-          state: mediatorConnection.state,
-          theirLabel: mediatorConnection.theirLabel,
-        });
-
-        // Mediator 연결이 완료되었어도 메시지 픽업 시도
-        console.log('🔄 Mediator로부터 메시지 픽업 시도...');
-
-        try {
-          // V1 프로토콜로 메시지 픽업
-          // await agent.messagePickup.pickupMessages({
-          //   protocolVersion: 'v1',
-          //   connectionId: mediator.connectionId!,
-          //   batchSize: DEFAULT_BATCH_SIZE,
-          // });
-          // console.log('✅ V1 메시지 픽업 완료');
-
-          // V2 프로토콜로도 시도
-          try {
-            await agent.messagePickup.pickupMessages({
-              protocolVersion: 'v2',
-              connectionId: mediator.connectionId!,
-              batchSize: DEFAULT_BATCH_SIZE,
-            });
-            console.log('✅ V2 메시지 픽업 완료');
-          } catch (v2Error) {
-            console.log(
-              '⚠️ V2 메시지 픽업 실패 (정상적일 수 있음):',
-              v2Error instanceof Error ? v2Error.message : String(v2Error),
-            );
-          }
-
-          // 메시지 처리 대기
-          console.log('⏳ 메시지 처리 대기 중... (5초)');
-          await new Promise(resolve => setTimeout(resolve, 5000));
-        } catch (pickupError) {
-          console.error('❌ 메시지 픽업 실패:', pickupError);
-
-          // Mediation recipient를 통한 메시지 픽업 시도
-          try {
-            console.log('🔄 Mediation recipient를 통한 메시지 픽업 시도...');
-            await agent.mediationRecipient.initiateMessagePickup();
-            console.log('✅ Mediation recipient 메시지 픽업 완료');
-
-            // 추가 대기
-            await new Promise(resolve => setTimeout(resolve, 3000));
-          } catch (mediationError) {
-            console.error(
-              '❌ Mediation recipient 메시지 픽업 실패:',
-              mediationError,
-            );
-          }
-        }
-      } else {
-        console.warn('⚠️ Mediator 연결을 찾을 수 없음');
-      }
-    } catch (connectionError) {
-      console.error('❌ Mediator 연결 상태 확인 실패:', connectionError);
-    }
-
-    // 2. 현재 저장된 credentials 확인 (여러 위치에서 확인)
-    console.log('🔍 저장된 credentials 확인 중...');
-
-    // 2-1. CredentialsModule에서 확인
-    const credentialRecords = await agent.credentials.getAll();
-    console.log(
-      'CredentialsModule에서 발견된 credentials 개수:',
-      credentialRecords.length,
-    );
-
-    // 2-2. W3cCredentialsModule에서 확인
-    const w3cCredentials = await agent.w3cCredentials.getAllCredentialRecords();
-    console.log(
-      'W3cCredentialsModule에서 발견된 credentials 개수:',
-      w3cCredentials.length,
-    );
-
-    const delegatedCredentials = [];
-
-    // 3-1. CredentialsModule에서 위임받은 credential 확인
-    for (const credential of credentialRecords) {
-      try {
-        console.log(
-          `📄 Credential 상태 확인: ${credential.id} - ${credential.state}`,
-        );
-
-        // 처리 가능한 상태인 credential 확인
-        if (
-          credential.state === CredentialState.Done ||
-          credential.state === CredentialState.CredentialReceived ||
-          credential.state === CredentialState.RequestSent
-        ) {
-          console.log(
-            `📄 처리 가능한 상태 credential 발견: ${credential.id} (${credential.state})`,
-          );
-
-          // credential 데이터 가져오기 시도
-          try {
-            const formatData = await agent.credentials.getFormatData(
-              credential.id,
-            );
-            console.log(
-              `📄 Credential ${credential.id} formatData:`,
-              formatData,
-            );
-
-            const jsonLdData = (formatData as any).jsonld;
-
-            if (jsonLdData) {
-              delegatedCredentials.push({
-                id: credential.id,
-                credentialData: jsonLdData,
-                w3cCredentials: jsonLdData,
-              });
-              console.log(
-                `✅ 위임받은 VC 발견 (CredentialsModule): ${credential.id}`,
-              );
-            } else {
-              console.log(
-                `⚠️ Credential ${credential.id}에서 jsonld 데이터를 찾을 수 없음 (상태: ${credential.state})`,
-              );
-
-              // RequestSent 상태인 경우 credential이 아직 도착하지 않았을 수 있음
-              if (credential.state === CredentialState.RequestSent) {
-                console.log(
-                  `⏳ Credential ${credential.id}는 아직 도착하지 않음 (RequestSent 상태)`,
-                );
-              }
-            }
-          } catch (formatError) {
-            console.log(
-              `⚠️ Credential ${credential.id} formatData 가져오기 실패 (상태: ${credential.state}):`,
-              formatError instanceof Error
-                ? formatError.message
-                : String(formatError),
-            );
-
-            // RequestSent 상태인 경우 credential이 아직 도착하지 않았을 수 있음
-            if (credential.state === CredentialState.RequestSent) {
-              console.log(
-                `⏳ Credential ${credential.id}는 아직 도착하지 않음 (RequestSent 상태)`,
-              );
-            }
-          }
-        } else {
-          console.log(
-            `⚠️ Credential ${credential.id} 상태가 처리 불가능: ${credential.state}`,
-          );
-        }
-      } catch (error) {
-        console.error(
-          `❌ Credential ${credential.id} 데이터 추출 실패:`,
-          error,
-        );
-      }
-    }
-
-    // 3-2. W3cCredentialsModule에서 위임받은 credential 확인
-    for (const credential of w3cCredentials) {
-      try {
-        const credentialData = credential.credential;
-        if (credentialData) {
-          delegatedCredentials.push({
-            id: credential.id,
-            credentialData: credentialData,
-            w3cCredentials: credentialData,
-          });
-          console.log(
-            `✅ 위임받은 VC 발견 (W3cCredentialsModule): ${credential.id}`,
-          );
-        }
-      } catch (error) {
-        console.error(
-          `❌ W3C Credential ${credential.id} 데이터 추출 실패:`,
-          error,
-        );
-      }
-    }
-
-    if (delegatedCredentials.length > 0) {
-      console.log(
-        `🎉 총 ${delegatedCredentials.length}개의 위임받은 VC를 발견했습니다!`,
-      );
-      return {success: true, newCredentials: delegatedCredentials};
-    }
-
-    console.log('✅ 위임받은 VC가 없습니다.');
-    return {success: true, newCredentials: []};
-  } catch (error) {
-    console.error('❌ 위임받은 VC 처리 중 오류 발생:', error);
-    return {success: false, newCredentials: []};
-  }
-};
-
 // polling credentials from mediator
 export const syncCredentialsFromMediator = async (
   agent: Agent,
@@ -803,6 +581,13 @@ export const syncCredentialsFromMediator = async (
         connectionId: mediators[0].connectionId!,
         batchSize: DEFAULT_BATCH_SIZE,
       });
+      // const pickupResult: any =
+      //   await agent.mediationRecipient.initiateMessagePickup(mediators[0]);
+
+      // console.log('📦 메시지 픽업 결과:', {
+      //   status: pickupResult.status,
+      //   messageCount: pickupResult.messages?.length || 0,
+      // });
       console.log('✅ V2 프로토콜로 메시지 픽업 완료');
     } catch (error) {
       console.log('⚠️ 메시지 픽업 실패:', error);

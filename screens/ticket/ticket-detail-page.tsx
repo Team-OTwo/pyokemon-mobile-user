@@ -174,30 +174,6 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
       }
 
       const DIDService = await import('../../services/did/did-service');
-      const {processDelegatedCredentials} = await import(
-        '../../services/did/credo'
-      );
-
-      // 1. 위임받은 credentials 확인
-      const delegatedResult = await processDelegatedCredentials(agent);
-
-      if (
-        delegatedResult.success &&
-        delegatedResult.newCredentials.length > 0
-      ) {
-        const credentialData = delegatedResult.newCredentials[0].credentialData;
-        const bookingId =
-          credentialData.credentialSubject?.booking_id ||
-          credentialData.credentialSubject?.bookingId ||
-          credentialData.booking_id ||
-          credentialData.bookingId;
-
-        if (bookingId === ticket?.bookingId) {
-          setCredential(JSON.stringify(credentialData));
-          showSuccessAlert('성공', '위임받은 VC를 성공적으로 사용했습니다.');
-          return;
-        }
-      }
 
       // 2. 새로운 VC 요청 및 폴링
       if (!hasRequestedVC) {

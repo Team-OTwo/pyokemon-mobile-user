@@ -118,7 +118,7 @@ export const initAgent = async (
       autoUpdateStorageOnStartup: true,
       // 두 ACA-Py 모두 연결할 수 있도록 엔드포인트 설정
       // DIDComm 메시지 타입 설정 (ACA-Py와 호환성 보장)
-      didCommMimeType: DidCommMimeType.V1,
+      // didCommMimeType: DidCommMimeType.V1,
       logger: new ConsoleLogger(LogLevel.debug),
       // 자동 수락 설정은 ConnectionsModule에서 설정
     };
@@ -142,7 +142,7 @@ export const initAgent = async (
         }),
         basicMessages: new BasicMessagesModule(),
         proofs: new ProofsModule({
-          autoAcceptProofs: AutoAcceptProof.Always, // 수동으로 처리하여 proof purpose 문제 해결
+          autoAcceptProofs: AutoAcceptProof.ContentApproved, // 수동으로 처리하여 proof purpose 문제 해결
           proofProtocols: [
             new V2ProofProtocol({
               proofFormats: [new AnonCredsProofFormatService()],
@@ -150,20 +150,17 @@ export const initAgent = async (
           ],
         }),
         w3cVc: new W3cCredentialsModule({}),
-            credentials: new CredentialsModule({
-      autoAcceptCredentials: AutoAcceptCredential.ContentApproved,
-      credentialProtocols: [
-        new V2CredentialProtocol({
-          credentialFormats: [
-            new JsonLdCredentialFormatService({
-              proofType: 'Ed25519Signature2018',
-              validateLinkedDomain: false
+        credentials: new CredentialsModule({
+          autoAcceptCredentials: AutoAcceptCredential.Never,
+          credentialProtocols: [
+            new V2CredentialProtocol({
+              credentialFormats: [
+                new JsonLdCredentialFormatService(),
+                new AnonCredsCredentialFormatService(),
+              ],
             }),
-            new AnonCredsCredentialFormatService(),
           ],
         }),
-      ],
-    }),
         messagePickup: new MessagePickupModule<DefaultMessagePickupProtocols>({
           protocols: [
             new V1MessagePickupProtocol(),
@@ -199,27 +196,49 @@ export const initAgent = async (
       CredentialEventTypes.CredentialStateChanged,
       async ({payload}) => {
         const {credentialRecord} = payload;
+        console.log('===================================');
+
+        console.log(payload);
+        console.log('===================================');
 
         // 상태 변화를 '관찰'하고 로그를 기록하거나 UI를 업데이트합니다.
         console.log(`🎫 Credential 상태 변경: ${credentialRecord.state}`);
 
         try {
           if (credentialRecord.state === CredentialState.OfferReceived) {
-            console.log('✉️ Credential 제안을 받았습니다. 자동으로 처리합니다.');
-            
+            console.log(
+              '✉️ Credential 제안을 받았습니다. 자동으로 처리합니다.',
+            );
+            console.log(credentialRecord);
+
             // 자동으로 수락하기 전에 추가 로직을 넣을 수 있습니다
             await agent.credentials.acceptOffer({
               credentialRecordId: credentialRecord.id,
             });
           } else if (credentialRecord.state === CredentialState.RequestSent) {
+            console.log('+++++++++++++++++++++++++++++++++++++');
+            console.log(credentialRecord);
+            await agent.credentials.acceptCredential({
+              credentialRecordId: credentialRecord.id,
+            });
             console.log('📤 Credential 요청을 보냈습니다.');
-          } else if (credentialRecord.state === CredentialState.Done) {
-            console.log('🎉 VC 발급이 성공적으로 완료되었습니다!');
-            // 여기서 UI를 업데이트하거나, 사용자에게 성공 알림을 보내는 로직을 넣습니다.
-          } else if (credentialRecord.state === CredentialState.Abandoned) {
-            console.error(`🚨 VC 발급 실패: ${credentialRecord.errorMessage}`);
-            // 사용자에게 실패 알림을 보냅니다.
+          } else {
+            console.log('===============================================');
+            console.log(credentialRecord);
+            console.log('===============================================');
           }
+          // } else if (credentialRecord.state === CredentialState.Done) {
+          //   console.log('===============================================');
+
+          //   console.log(credentialRecord);
+          //   console.log('===============================================');
+
+          //   console.log('🎉 VC 발급이 성공적으로 완료되었습니다!');
+          //   // 여기서 UI를 업데이트하거나, 사용자에게 성공 알림을 보내는 로직을 넣습니다.
+          // } else if (credentialRecord.state === CredentialState.Abandoned) {
+          //   console.error(`🚨 VC 발급 실패: ${credentialRecord.errorMessage}`);
+          //   // 사용자에게 실패 알림을 보냅니다.
+          // }
         } catch (error) {
           console.error('Credential 처리 중 오류:', error);
         }
@@ -568,9 +587,9 @@ export const syncCredentialsFromMediator = async (
       console.log('⚠️ 메시지 픽업 실패:', error);
     }
 
-          // 5. 메시지 처리 대기 (시간 증가)
-      console.log('⏳ 메시지 처리 대기 중...');
-      await new Promise(resolve => setTimeout(resolve, 5000));
+    // 5. 메시지 처리 대기 (시간 증가)
+    console.log('⏳ 메시지 처리 대기 중...');
+    await new Promise(resolve => setTimeout(resolve, 5000));
 
     // 6. 메시지 처리 후 credential 목록 확인
     const afterCredentials = await agent.credentials.getAll();
@@ -724,4 +743,23 @@ export const generateVenueConnection = async (
       error: error,
     };
   }
+};
+
+export const syncCredentialsFromMediator1 = async (
+  agent: Agent,
+): Promise<void> => {
+  console.log('[VC 동기화 시작] 중개자로부터 새로운 VC를 확인합니다...');
+  const mediators = await agent.mediationRecipient.getMediators();
+  if (mediators.length === 0) {
+    console.warn(':warning: 활성 Mediator가 없습니다.');
+    return;
+  }
+  console.log(`:white_check_mark: 활성 Mediator 확인: ${mediators[0].id}`);
+
+  // 메시지 픽업을 '시작'만 시킵니다.
+  // 결과 처리는 이벤트 핸들러에 맡깁니다.
+  await agent.mediationRecipient.initiateMessagePickup(mediators[0]);
+  console.log(
+    ':package: 메시지 픽업 요청 완료. 에이전트가 백그라운드에서 처리합니다.',
+  );
 };

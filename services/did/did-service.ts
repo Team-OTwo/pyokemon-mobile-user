@@ -1,8 +1,5 @@
 import {Agent} from '@credo-ts/core';
-import {
-  syncCredentialsFromMediator,
-  processDelegatedCredentials,
-} from './credo';
+import {syncCredentialsFromMediator} from './credo';
 
 /**
  * DID 서비스 클래스 (단순화된 도우미 클래스)

@@ -150,17 +150,20 @@ export const initAgent = async (
           ],
         }),
         w3cVc: new W3cCredentialsModule({}),
-        credentials: new CredentialsModule({
-          autoAcceptCredentials: AutoAcceptCredential.Always, // 수동으로 처리하여 proof purpose 문제 해결
-          credentialProtocols: [
-            new V2CredentialProtocol({
-              credentialFormats: [
-                new JsonLdCredentialFormatService(),
-                new AnonCredsCredentialFormatService(),
-              ],
+            credentials: new CredentialsModule({
+      autoAcceptCredentials: AutoAcceptCredential.ContentApproved,
+      credentialProtocols: [
+        new V2CredentialProtocol({
+          credentialFormats: [
+            new JsonLdCredentialFormatService({
+              proofType: 'Ed25519Signature2018',
+              validateLinkedDomain: false
             }),
+            new AnonCredsCredentialFormatService(),
           ],
         }),
+      ],
+    }),
         messagePickup: new MessagePickupModule<DefaultMessagePickupProtocols>({
           protocols: [
             new V1MessagePickupProtocol(),
@@ -200,15 +203,25 @@ export const initAgent = async (
         // 상태 변화를 '관찰'하고 로그를 기록하거나 UI를 업데이트합니다.
         console.log(`🎫 Credential 상태 변경: ${credentialRecord.state}`);
 
-        // ✅ 모든 '행동' 코드는 제거합니다.
-        //    에이전트가 모든 것을 자동으로 처리할 것입니다.
-
-        if (credentialRecord.state === CredentialState.Done) {
-          console.log('🎉 VC 발급이 성공적으로 완료되었습니다!');
-          // 여기서 UI를 업데이트하거나, 사용자에게 성공 알림을 보내는 로직을 넣습니다.
-        } else if (credentialRecord.state === CredentialState.Abandoned) {
-          console.error(`🚨 VC 발급 실패: ${credentialRecord.errorMessage}`);
-          // 사용자에게 실패 알림을 보냅니다.
+        try {
+          if (credentialRecord.state === CredentialState.OfferReceived) {
+            console.log('✉️ Credential 제안을 받았습니다. 자동으로 처리합니다.');
+            
+            // 자동으로 수락하기 전에 추가 로직을 넣을 수 있습니다
+            await agent.credentials.acceptOffer({
+              credentialRecordId: credentialRecord.id,
+            });
+          } else if (credentialRecord.state === CredentialState.RequestSent) {
+            console.log('📤 Credential 요청을 보냈습니다.');
+          } else if (credentialRecord.state === CredentialState.Done) {
+            console.log('🎉 VC 발급이 성공적으로 완료되었습니다!');
+            // 여기서 UI를 업데이트하거나, 사용자에게 성공 알림을 보내는 로직을 넣습니다.
+          } else if (credentialRecord.state === CredentialState.Abandoned) {
+            console.error(`🚨 VC 발급 실패: ${credentialRecord.errorMessage}`);
+            // 사용자에게 실패 알림을 보냅니다.
+          }
+        } catch (error) {
+          console.error('Credential 처리 중 오류:', error);
         }
       },
     );
@@ -555,9 +568,9 @@ export const syncCredentialsFromMediator = async (
       console.log('⚠️ 메시지 픽업 실패:', error);
     }
 
-    // 5. 메시지 처리 대기
-    console.log('⏳ 메시지 처리 대기 중...');
-    await new Promise(resolve => setTimeout(resolve, 3000));
+          // 5. 메시지 처리 대기 (시간 증가)
+      console.log('⏳ 메시지 처리 대기 중...');
+      await new Promise(resolve => setTimeout(resolve, 5000));
 
     // 6. 메시지 처리 후 credential 목록 확인
     const afterCredentials = await agent.credentials.getAll();

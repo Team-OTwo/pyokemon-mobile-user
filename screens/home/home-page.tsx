@@ -1,7 +1,14 @@
 import React from 'react';
 import {useEffect, useState} from 'react';
 import {StackNavigationProp} from '@react-navigation/stack';
-import {SafeAreaView, StatusBar, StyleSheet, View, Alert} from 'react-native';
+import {
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  View,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
 import {ThemedText, ThemedView} from '../../components/common';
 import {Bell, User} from 'lucide-react-native';
@@ -131,7 +138,10 @@ export default function HomeScreen({navigation}: HomeScreenProps) {
         await agent.credentials.getAll();
 
       console.log('📋 조회된 VC 개수:', allCredentials.length);
-      console.log('📋 VC 목록:', JSON.stringify(allCredentials));
+      console.log(
+        '📋 VC 목록:',
+        JSON.stringify(allCredentials.map(cred => cred.state)),
+      );
 
       setVirtualCredentials(allCredentials as unknown as VirtualCredential[]);
     } catch (error) {
@@ -199,6 +209,26 @@ export default function HomeScreen({navigation}: HomeScreenProps) {
     'background',
   );
   const textColor = useThemeColor({light: '#11181C', dark: '#ECEDEE'}, 'text');
+
+  // Agent 초기화 중일 때 로딩 화면 표시
+  if (!isInitialized) {
+    return (
+      <ThemedView style={[styles.container, {backgroundColor}]}>
+        <StatusBar barStyle="default" />
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={textColor} />
+            <ThemedText style={[styles.loadingText, {color: textColor}]}>
+              지갑 정보를 불러오는 중...
+            </ThemedText>
+            <ThemedText style={[styles.loadingSubText, {color: textColor}]}>
+              잠시만 기다려주세요
+            </ThemedText>
+          </View>
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
 
   return (
     <ThemedView style={[styles.container, {backgroundColor}]}>
@@ -291,5 +321,23 @@ const styles = StyleSheet.create({
   },
   bellContainer: {
     position: 'relative',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  loadingSubText: {
+    fontSize: 14,
+    opacity: 0.7,
+    marginTop: 8,
+    textAlign: 'center',
   },
 });

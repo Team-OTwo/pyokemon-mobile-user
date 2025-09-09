@@ -10,14 +10,12 @@ import {
   HttpOutboundTransport,
   InitConfig,
   OutOfBandModule,
-  DidCommMimeType,
   MediationRecipientModule,
   CredentialsModule,
   CredentialState,
   AutoAcceptCredential,
   ProofsModule,
   KeyType,
-  SdJwtVcRecord,
   CredentialExchangeRecord,
   JwsService,
   MessagePickupModule,
@@ -31,16 +29,21 @@ import {
   V1MessagePickupProtocol,
   DefaultMessagePickupProtocols,
   CredentialEventTypes,
-  CredentialStateChangedEvent,
   KeyDidResolver,
   PeerDidResolver,
   KeyDidRegistrar,
   PeerDidRegistrar,
   V2ProofProtocol,
-  W3cCredentialRecord,
   ConsoleLogger,
   LogLevel,
-  MessagePickupEventTypes,
+  Ed25519Signature2020,
+  DidCommMimeType,
+  KeyDidCreateOptions,
+  DidKey,
+  DidCreateResult,
+  DidOperationStateActionBase,
+  CredentialStateChangedEvent,
+  WebDidResolver,
 } from '@credo-ts/core';
 import {AskarModule} from '@credo-ts/askar';
 import {agentDependencies} from '@credo-ts/react-native';
@@ -49,8 +52,12 @@ import {getInvitationUrls} from '../apis/did';
 import {getWalletInfo, saveWalletInfo} from '../storage/walletStorage';
 import {
   AnonCredsCredentialFormatService,
+  AnonCredsModule,
   AnonCredsProofFormatService,
+  LegacyIndyCredentialFormatService,
+  LegacyIndyProofFormatService,
 } from '@credo-ts/anoncreds';
+import {base64ToJson} from '../../utils/format.utils';
 
 // ============================================================================
 // 상수 정의
@@ -118,7 +125,6 @@ export const initAgent = async (
       autoUpdateStorageOnStartup: true,
       // 두 ACA-Py 모두 연결할 수 있도록 엔드포인트 설정
       // DIDComm 메시지 타입 설정 (ACA-Py와 호환성 보장)
-      // didCommMimeType: DidCommMimeType.V1,
       logger: new ConsoleLogger(LogLevel.debug),
       // 자동 수락 설정은 ConnectionsModule에서 설정
     };
@@ -133,8 +139,16 @@ export const initAgent = async (
         }),
         outOfBand: new OutOfBandModule(),
         dids: new DidsModule({
-          registrars: [new KeyDidRegistrar(), new PeerDidRegistrar()],
-          resolvers: [new KeyDidResolver(), new PeerDidResolver()],
+          registrars: [
+            new KeyDidRegistrar(),
+            new PeerDidRegistrar(),
+            new KeyDidRegistrar(),
+          ],
+          resolvers: [
+            new KeyDidResolver(),
+            new PeerDidResolver(),
+            new WebDidResolver(),
+          ],
         }),
         aries: new AskarModule({
           ariesAskar,
@@ -142,10 +156,13 @@ export const initAgent = async (
         }),
         basicMessages: new BasicMessagesModule(),
         proofs: new ProofsModule({
-          autoAcceptProofs: AutoAcceptProof.ContentApproved, // 수동으로 처리하여 proof purpose 문제 해결
+          autoAcceptProofs: AutoAcceptProof.Always, // 수동으로 처리하여 proof purpose 문제 해결
           proofProtocols: [
             new V2ProofProtocol({
-              proofFormats: [new AnonCredsProofFormatService()],
+              proofFormats: [
+                new LegacyIndyProofFormatService(),
+                new AnonCredsProofFormatService(),
+              ],
             }),
           ],
         }),
@@ -157,18 +174,19 @@ export const initAgent = async (
               credentialFormats: [
                 new JsonLdCredentialFormatService(),
                 new AnonCredsCredentialFormatService(),
+                new LegacyIndyCredentialFormatService(),
               ],
             }),
           ],
+        }),
+        mediationRecipient: new MediationRecipientModule({
+          mediatorPickupStrategy: MediatorPickupStrategy.Implicit,
         }),
         messagePickup: new MessagePickupModule<DefaultMessagePickupProtocols>({
           protocols: [
             new V1MessagePickupProtocol(),
             new V2MessagePickupProtocol(),
           ],
-        }),
-        mediationRecipient: new MediationRecipientModule({
-          mediatorPickupStrategy: MediatorPickupStrategy.Implicit,
         }),
       },
     });
@@ -196,51 +214,62 @@ export const initAgent = async (
       CredentialEventTypes.CredentialStateChanged,
       async ({payload}) => {
         const {credentialRecord} = payload;
-        console.log('===================================');
-
-        console.log(payload);
-        console.log('===================================');
 
         // 상태 변화를 '관찰'하고 로그를 기록하거나 UI를 업데이트합니다.
         console.log(`🎫 Credential 상태 변경: ${credentialRecord.state}`);
 
-        try {
-          if (credentialRecord.state === CredentialState.OfferReceived) {
-            console.log(
-              '✉️ Credential 제안을 받았습니다. 자동으로 처리합니다.',
-            );
-            console.log(credentialRecord);
+        // VC 데이터는 아직 없음
+        console.log('threadId:', credentialRecord.threadId);
+        console.log('connectionId:', credentialRecord.connectionId);
 
-            // 자동으로 수락하기 전에 추가 로직을 넣을 수 있습니다
-            await agent.credentials.acceptOffer({
-              credentialRecordId: credentialRecord.id,
-            });
-          } else if (credentialRecord.state === CredentialState.RequestSent) {
-            console.log('+++++++++++++++++++++++++++++++++++++');
-            console.log(credentialRecord);
+        // 각 상태별 로그만 출력 (자동 처리 로직 제거)
+        if (credentialRecord.state === CredentialState.OfferReceived) {
+          console.log('==================================================');
+          console.log('새로운 VC 제안 수신 - 수동으로 처리해야 합니다');
+          console.log('credentialRecord ID:', credentialRecord.id);
+          console.log('==================================================');
+          //
+          const credentialRequest = await agent.credentials.acceptOffer({
+            credentialRecordId: credentialRecord.id,
+            credentialFormats: {
+              jsonld: {
+                options: {
+                  proofType: 'Ed25519Signature2020',
+                  proofPurpose: 'assertionMethod',
+                },
+              },
+            },
+          });
+
+          console.log('credentialRequest: ', credentialRequest);
+        } else if (credentialRecord.state === CredentialState.RequestSent) {
+          console.log('==================================================');
+          console.log('VC 요청 전송됨 - RequestSent 상태');
+          console.log('credentialRecord ID:', credentialRecord.id);
+          console.log('==================================================');
+        } else if (
+          credentialRecord.state === CredentialState.CredentialReceived
+        ) {
+          try {
             await agent.credentials.acceptCredential({
               credentialRecordId: credentialRecord.id,
             });
-            console.log('📤 Credential 요청을 보냈습니다.');
-          } else {
-            console.log('===============================================');
-            console.log(credentialRecord);
-            console.log('===============================================');
+            console.log(`[EVENT] Credential accepted: ${credentialRecord.id}`);
+          } catch (err) {
+            console.error(`[ERROR] Failed to accept: ${err}`);
           }
-          // } else if (credentialRecord.state === CredentialState.Done) {
-          //   console.log('===============================================');
-
-          //   console.log(credentialRecord);
-          //   console.log('===============================================');
-
-          //   console.log('🎉 VC 발급이 성공적으로 완료되었습니다!');
-          //   // 여기서 UI를 업데이트하거나, 사용자에게 성공 알림을 보내는 로직을 넣습니다.
-          // } else if (credentialRecord.state === CredentialState.Abandoned) {
-          //   console.error(`🚨 VC 발급 실패: ${credentialRecord.errorMessage}`);
-          //   // 사용자에게 실패 알림을 보냅니다.
-          // }
-        } catch (error) {
-          console.error('Credential 처리 중 오류:', error);
+          console.log('==================================================');
+          console.log('새로운 VC 수신됨 - CredentialReceived 상태');
+          console.log('credentialRecord ID:', credentialRecord.id);
+          console.log('==================================================');
+        } else if (credentialRecord.state === CredentialState.Done) {
+          console.log('===============================================');
+          console.log('🎉 VC 발급이 성공적으로 완료되었습니다!');
+          console.log('credentialRecord ID:', credentialRecord.id);
+          console.log('===============================================');
+        } else if (credentialRecord.state === CredentialState.Abandoned) {
+          console.error(`🚨 VC 발급 실패: ${credentialRecord.errorMessage}`);
+          console.log('credentialRecord ID:', credentialRecord.id);
         }
       },
     );
@@ -277,7 +306,13 @@ export const generateConnection = async (
   agent: Agent,
   invitationUrl: string,
 ) => {
+  const didResult = await agent.dids.create({
+    method: 'peer',
+  });
+
   const result = await agent.oob.receiveInvitationFromUrl(invitationUrl, {
+    ourDid: didResult.didState.did,
+    autoAcceptInvitation: true,
     autoAcceptConnection: true,
   });
 
@@ -297,6 +332,7 @@ export const generateConnection = async (
     const updatedConnection = await agent.connections.findById(
       connectionRecord.id,
     );
+
     if (updatedConnection) {
       console.log('최종 연결 상태:', {
         id: updatedConnection.id,
@@ -393,7 +429,7 @@ export const generateBatchConnections = async (
         allConnections.push(mediatorConnection);
 
         await new Promise(resolve => setTimeout(resolve, 5000));
-        await agent.mediationRecipient.initiateMessagePickup();
+        // await agent.mediationRecipient.initiateMessagePickup();
         // 연결이 성공하면 잠시 대기 (연결 안정화)
       } else {
         console.log('⚠️ Mediator 연결 실패: 연결 레코드가 없음');
@@ -513,7 +549,7 @@ export const sendAgentPublicDidToUser = async (
     const didResult = await agent.dids.create({
       method: 'key',
       options: {
-        keyType: 'ed25519',
+        keyType: KeyType.Ed25519,
       },
     });
 
@@ -571,16 +607,33 @@ export const syncCredentialsFromMediator = async (
     // 4. 메시지 픽업 (가장 유력한 방법만 사용)
     console.log('🔄 메시지 픽업 시작...');
     try {
-      // await agent.messagePickup.pickupMessages({
-      //   protocolVersion: 'v2',
-      //   connectionId: mediators[0].connectionId!,
-      //   batchSize: DEFAULT_BATCH_SIZE,
-      // });
-      const pickupResult: any =
-        await agent.mediationRecipient.initiateMessagePickup(mediators[0]);
+      const pickupResult: any = await agent.messagePickup.pickupMessages({
+        protocolVersion: 'v2',
+        connectionId: mediators[0].connectionId!,
+        batchSize: DEFAULT_BATCH_SIZE,
+      });
+      // const pickupResult: any =
+      //   await agent.mediationRecipient.initiateMessagePickup(
+      //     mediators[0],
+      //     MediatorPickupStrategy.Implicit,
+      //   );
+
+      if (pickupResult && pickupResult.messages.length > 0) {
+        for (const msg of pickupResult.messages) {
+          try {
+            // Credential 처리
+            await agent.credentials.proposeCredential(msg);
+            console.log('VC 처리 완료:', msg.id);
+          } catch (err) {
+            console.error('VC 처리 실패:', err);
+          }
+        }
+      } else {
+        console.log('새로운 VC 없음');
+      }
 
       console.log('📦 메시지 픽업 결과:', {
-        messageCount: pickupResult.messages?.length || 0,
+        pickupResult,
       });
       console.log('✅ V2 프로토콜로 메시지 픽업 완료');
     } catch (error) {
@@ -743,23 +796,4 @@ export const generateVenueConnection = async (
       error: error,
     };
   }
-};
-
-export const syncCredentialsFromMediator1 = async (
-  agent: Agent,
-): Promise<void> => {
-  console.log('[VC 동기화 시작] 중개자로부터 새로운 VC를 확인합니다...');
-  const mediators = await agent.mediationRecipient.getMediators();
-  if (mediators.length === 0) {
-    console.warn(':warning: 활성 Mediator가 없습니다.');
-    return;
-  }
-  console.log(`:white_check_mark: 활성 Mediator 확인: ${mediators[0].id}`);
-
-  // 메시지 픽업을 '시작'만 시킵니다.
-  // 결과 처리는 이벤트 핸들러에 맡깁니다.
-  await agent.mediationRecipient.initiateMessagePickup(mediators[0]);
-  console.log(
-    ':package: 메시지 픽업 요청 완료. 에이전트가 백그라운드에서 처리합니다.',
-  );
 };

@@ -5,7 +5,11 @@ import React, {
   useContext,
   ReactNode,
 } from 'react';
-import {Agent} from '@credo-ts/core';
+import {
+  Agent,
+  DidCreateResult,
+  DidOperationStateActionBase,
+} from '@credo-ts/core';
 import {initAgent} from '../services/did/credo';
 import {getInvitationUrls} from '../services/apis/did';
 import {
@@ -150,7 +154,6 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({children}) => {
           ...savedWalletInfo,
           mediatorConnectionId: mediatorConnection?.id,
           userConnectionId: userConnection?.id,
-          didPublicKey: didResult.did,
           savedAt: new Date().toISOString(),
         };
         await saveWalletInfo(updatedWalletInfo);

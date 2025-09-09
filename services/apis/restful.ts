@@ -32,7 +32,7 @@ export class ApiError extends Error {
   }
 }
 
-const API_BASE_URL = 'http://192.168.0.89:8087/';
+const API_BASE_URL = 'http://192.168.75.106:8087/';
 const DEFAULT_TIMEOUT = 30000;
 const RETRY_DELAY = 1000;
 
@@ -96,9 +96,9 @@ const createFormData = (data: any): FormData => {
   if (data.assets && Array.isArray(data.assets) && data.assets.length > 0) {
     const file = data.assets[0];
     formData.append('file', {
-      name: file.fileName,
       type: file.type,
       uri: file.uri,
+      name: file.fileName,
     });
   }
 

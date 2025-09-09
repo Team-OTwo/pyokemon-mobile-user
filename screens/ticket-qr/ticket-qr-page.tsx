@@ -145,8 +145,9 @@ export default function TicketQRPage({navigation, route}: TicketQRScreenProps) {
 
         console.log('Agent 연결 결과:', result);
         setAgentConnectionId(result.connectionRecord?.id || null);
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
-        return result;
+        return true;
       } catch (error) {
         console.error('Agent 연결 실패:', error);
         throw error;

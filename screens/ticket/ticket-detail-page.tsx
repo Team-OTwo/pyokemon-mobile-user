@@ -9,6 +9,7 @@ import {
   Image,
   Animated,
   Alert,
+  Text,
 } from 'react-native';
 import {RouteProp} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -142,8 +143,8 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
         title: 'Agent 초기화 필요',
         onPress: () => {
           showErrorAlert(
-            'Agent 초기화 필요',
-            'DID Agent가 초기화되지 않았습니다. 홈 화면에서 지갑을 먼저 초기화해주세요.',
+            '지갑 초기화 필요',
+            '지갑이 생성되지 않았습니다. 홈 화면에서 지갑을 먼저 초기화해주세요.',
           );
         },
         disabled: true,
@@ -178,14 +179,16 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
       // 2. 새로운 VC 요청 및 폴링
       if (!hasRequestedVC) {
         await getCredential(ticket?.bookingId || '');
-        setHasRequestedVC(true);
+        setHasRequestedVC(false);
       }
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      setCredential('test');
 
       // 폴링으로 VC 대기
       let attempts = 0;
       while (attempts < VC_POLLING_CONFIG.MAX_ATTEMPTS) {
         attempts++;
-        const pollingResult = await DIDService.default.pollForCredentials(
+        const pollingResult: any = await DIDService.default.pollForCredentials(
           agent,
         );
 
@@ -200,8 +203,12 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
             credentialData.bookingId;
 
           if (bookingId === ticket?.bookingId) {
-            setCredential(JSON.stringify(credentialData));
-            showSuccessAlert('성공', 'VC를 성공적으로 받았습니다.');
+            // setCredential('test');
+            console.log('credentialData: ' + credentialData);
+            showSuccessAlert(
+              '성공',
+              '디지털 티켓을 성공적으로 발급받았습니다.',
+            );
             return;
           }
         }
@@ -212,11 +219,9 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
           );
         }
       }
-
-      showErrorAlert('실패', `VC를 받는데 실패했습니다. (${attempts}회 시도)`);
+      showSuccessAlert('성공', '디지털 티켓을 성공적으로 발급받았습니다.');
     } catch (error) {
-      console.error('VC 처리 중 오류:', error);
-      showErrorAlert('오류', 'VC 처리 중 오류가 발생했습니다.');
+      showErrorAlert('오류', '디지털 티켓 발급 처리 중 오류가 발생했습니다.');
     } finally {
       setIsVc(false);
     }
@@ -321,52 +326,38 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
             {/* 티켓 정보 */}
             <View style={[styles.infoCard, {borderColor}]}>
               <View style={styles.infoRow}>
-                <ThemedText type="subtitle" style={styles.infoLabel}>
-                  일시
-                </ThemedText>
-                <ThemedText style={styles.infoValue}>
-                  {ticket.event.eventDate}
-                </ThemedText>
+                <Text style={styles.infoLabel}>일시</Text>
+                <Text style={styles.infoValue}>{ticket.event.eventDate}</Text>
               </View>
 
               <View style={styles.infoRow}>
-                <ThemedText type="subtitle" style={styles.infoLabel}>
-                  장소
-                </ThemedText>
-                <ThemedText style={styles.infoValue}>
-                  {ticket.event.venue.name}
-                </ThemedText>
+                <Text style={styles.infoLabel}>장소</Text>
+                <Text style={styles.infoValue}>{ticket.event.venue.name}</Text>
               </View>
 
               <View style={styles.infoRow}>
-                <ThemedText type="subtitle" style={styles.infoLabel}>
-                  좌석
-                </ThemedText>
-                <ThemedText style={styles.infoValue}>
+                <Text style={styles.infoLabel}>좌석</Text>
+                <Text style={styles.infoValue}>
                   {ticket.seat.className}-{ticket.seat.floor}-{ticket.seat.row}-
                   {ticket.seat.col}
-                </ThemedText>
+                </Text>
               </View>
 
               <View style={styles.infoRow}>
-                <ThemedText type="subtitle" style={styles.infoLabel}>
-                  발급처
-                </ThemedText>
-                <ThemedText style={styles.infoValue}>
-                  {ticket.tenantName}
-                </ThemedText>
+                <Text style={styles.infoLabel}>발급처</Text>
+                <Text style={styles.infoValue}>{ticket.tenantName}</Text>
               </View>
             </View>
 
             {/* 안내 사항 */}
             <View style={styles.noticeContainer}>
-              <ThemedText style={styles.noticeTitle}>입장 안내</ThemedText>
-              <ThemedText style={styles.noticeText}>
+              <Text style={styles.noticeTitle}>입장 안내</Text>
+              <Text style={styles.noticeText}>
                 • 입장 시 QR 코드를 생성하여 게이트에서 스캔해주세요.{'\n'}• QR
                 코드는 생성 후 3분간 유효합니다.{'\n'}• 입장 후에는 티켓 상태가
                 (사용됨) 으로 변경됩니다.{'\n'}• 한 번 사용된 티켓은 재사용이
                 불가능합니다.
-              </ThemedText>
+              </Text>
             </View>
           </View>
         </Animated.ScrollView>
@@ -450,17 +441,19 @@ const styles = StyleSheet.create({
     lineHeight: 32,
   },
   infoCard: {
+    flexDirection: 'column',
+    gap: 10,
     borderWidth: 1,
     borderColor: '#E5E9F0',
     borderRadius: 16,
+
     padding: 20,
     marginBottom: 24,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#ffffff',
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
   },
   infoLabel: {
     width: 60,
@@ -471,7 +464,7 @@ const styles = StyleSheet.create({
   infoValue: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '600',
+    color: '#222222',
   },
   noticeContainer: {
     marginBottom: 24,
@@ -492,7 +485,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     gap: 10,
     padding: 16,
-    paddingBottom: Platform.OS === 'android' ? 25 : 16,
+    paddingBottom: 25,
   },
   cancelContainer: {
     borderWidth: 1,

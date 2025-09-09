@@ -82,9 +82,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
-        minSdkVersion 23
-        targetSdkVersion 34
-        multiDexEnabled true
+        // minSdkVersion 23
+        // targetSdkVersion 34
+        // multiDexEnabled true
         missingDimensionStrategy 'react-native-camera', 'general'
     }
     
@@ -124,10 +124,10 @@ dependencies {
     implementation("com.facebook.react:react-android")
 
     implementation "androidx.multidex:multidex:2.0.1"
-    implementation "androidx.core:core:1.9.0"
-    implementation "androidx.appcompat:appcompat:1.6.1"
-    implementation "androidx.activity:activity:1.6.1"
-    implementation "androidx.lifecycle:lifecycle-runtime:2.5.1"
+    // implementation "androidx.core:core:1.9.0"
+    // implementation "androidx.appcompat:appcompat:1.6.1"
+    // implementation "androidx.activity:activity:1.6.1"
+    // implementation "androidx.lifecycle:lifecycle-runtime:2.5.1"
 
     // 특정 버전의 androidx 라이브러리 사용
     implementation("androidx.appcompat:appcompat:${rootProject.ext.androidx_appcompat_version}")
@@ -150,6 +150,8 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    
 }
 
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)

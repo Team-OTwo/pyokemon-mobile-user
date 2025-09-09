@@ -1,8 +1,5 @@
 import {Agent} from '@credo-ts/core';
-import {
-  syncCredentialsFromMediator,
-  syncCredentialsFromMediator1,
-} from './credo';
+import {syncCredentialsFromMediator} from './credo';
 
 /**
  * DID 서비스 클래스 (단순화된 도우미 클래스)
@@ -36,7 +33,7 @@ class DIDService {
       }
 
       // const result = await syncCredentialsFromMediator(agent);
-      await syncCredentialsFromMediator1(agent);
+      await syncCredentialsFromMediator(agent);
     } catch (error) {
       console.error('VC 폴링 실패:', error);
       throw error;

@@ -8,6 +8,7 @@ const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
  */
 const config = {
   resolver: {
+    sourceExts: ['js', 'json', 'ts', 'tsx', 'cjs'],
     alias: {
       ViewPropTypes: 'deprecated-react-native-prop-types',
       'react-native/Libraries/Components/View/ViewPropTypes':

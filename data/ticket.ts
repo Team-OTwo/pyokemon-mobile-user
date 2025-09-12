@@ -1,4 +1,4 @@
-import { Ticket } from '@/types/ticket';
+import {Ticket} from '@/types/ticket';
 
 export const SAMPLE_TICKETS: Ticket[] = [
   {
@@ -10,6 +10,16 @@ export const SAMPLE_TICKETS: Ticket[] = [
     thumbnailUrl:
       'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=200&fit=crop',
   },
+  {
+    bookingId: 2,
+    eventTitle: '손흥민 자선 축구경기',
+    eventDate: '2025.12.22(토) 16:00',
+    venueName: '서울월드컵경기장',
+    tenantName: '대한축구협회',
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=200&fit=crop',
+  },
+
   // {
   //   id: '2',
   //   title: '손흥민 자선 축구경기',

@@ -1,3 +1,4 @@
+import decode from 'base64url';
 /**
  * 포맷팅 관련 유틸리티 함수
  */
@@ -13,6 +14,12 @@
  * formatPhoneNumber('01012345678') // '010-1234-5678'
  * formatPhoneNumber('0101234567') // '010-123-4567'
  */
+
+export function base64ToJson(base64: string): Record<string, any> {
+  const jsonStr = decode(base64);
+  return JSON.parse(jsonStr);
+}
+
 export const formatPhoneNumber = (value: string): string => {
   // 숫자만 추출
   const cleaned = value.replace(/\D/g, '');

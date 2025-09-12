@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react';
-import { Ticket } from '@/types/ticket';
+import {useState, useCallback, useRef} from 'react';
+import {Ticket} from '../types/ticket';
 
 export interface PaginationResponse {
   tickets: Ticket[];
-  next_cursor: string | null;
+  nextCursor: string | null;
   hasMore: boolean;
 }
 
@@ -11,9 +11,7 @@ export interface UseTicketPaginationProps {
   onLoadMore: (cursor?: string, genre?: string) => Promise<PaginationResponse>;
 }
 
-export const useTicketPagination = ({
-  onLoadMore,
-}: UseTicketPaginationProps) => {
+export const useTicketPagination = ({onLoadMore}: UseTicketPaginationProps) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -21,6 +19,7 @@ export const useTicketPagination = ({
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [currentGenre, setCurrentGenre] = useState<string | null>(null);
+  const isLoadingMoreRef = useRef(false);
 
   const loadInitialTickets = useCallback(
     async (genre?: string) => {
@@ -31,7 +30,7 @@ export const useTicketPagination = ({
         const response = await onLoadMore(undefined, genre);
 
         setTickets(response.tickets);
-        setNextCursor(response.next_cursor);
+        setNextCursor(response.nextCursor);
         setHasMore(response.hasMore);
       } catch (error) {
         console.error('초기 티켓 로딩 실패:', error);
@@ -43,22 +42,24 @@ export const useTicketPagination = ({
   );
 
   const loadMoreTickets = useCallback(async () => {
-    if (!hasMore || isLoadingMore || !nextCursor) return;
+    if (!hasMore || isLoadingMoreRef.current || !nextCursor) return;
 
     try {
+      isLoadingMoreRef.current = true;
       setIsLoadingMore(true);
 
       const response = await onLoadMore(nextCursor, currentGenre || undefined);
 
       setTickets(prev => [...prev, ...response.tickets]);
-      setNextCursor(response.next_cursor);
+      setNextCursor(response.nextCursor);
       setHasMore(response.hasMore);
     } catch (error) {
       console.error('추가 티켓 로딩 실패:', error);
     } finally {
       setIsLoadingMore(false);
+      isLoadingMoreRef.current = false;
     }
-  }, [hasMore, isLoadingMore, nextCursor, currentGenre, onLoadMore]);
+  }, [hasMore, nextCursor, currentGenre, onLoadMore]);
 
   const refreshTickets = useCallback(async () => {
     try {

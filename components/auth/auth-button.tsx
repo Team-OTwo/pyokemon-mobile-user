@@ -1,4 +1,4 @@
-import { useThemeColor } from '@/hooks/useThemeColor';
+import {useThemeColor} from '../../hooks/useThemeColor';
 import React from 'react';
 import {
   ActivityIndicator,
@@ -24,34 +24,28 @@ export function AuthButton({
   disabled = false,
   ...props
 }: AuthButtonProps) {
-  const tintColor = useThemeColor(
-    { light: '#75B8FF', dark: '#2E5BFF' },
-    'tint',
-  );
-  const textColor = useThemeColor(
-    { light: '#FFFFFF', dark: '#FFFFFF' },
-    'text',
-  );
+  const tintColor = useThemeColor({light: '#75B8FF', dark: '#2E5BFF'}, 'tint');
+  const textColor = useThemeColor({light: '#FFFFFF', dark: '#FFFFFF'}, 'text');
   const secondaryBgColor = useThemeColor(
-    { light: '#F5F7FA', dark: '#2C3235' },
+    {light: '#F5F7FA', dark: '#2C3235'},
     'background',
   );
   const secondaryTextColor = useThemeColor(
-    { light: '#2E5BFF', dark: '#2E5BFF' },
+    {light: '#2E5BFF', dark: '#2E5BFF'},
     'text',
   );
 
   const buttonStyle = [
     styles.button,
     isPrimary
-      ? { backgroundColor: tintColor }
-      : { backgroundColor: secondaryBgColor },
+      ? {backgroundColor: tintColor}
+      : {backgroundColor: secondaryBgColor},
     disabled && styles.disabledButton,
   ];
 
   const textStyle = [
     styles.text,
-    isPrimary ? { color: textColor } : { color: secondaryTextColor },
+    isPrimary ? {color: textColor} : {color: secondaryTextColor},
     disabled && styles.disabledText,
   ];
 
@@ -61,8 +55,7 @@ export function AuthButton({
       onPress={onPress}
       activeOpacity={0.8}
       disabled={isLoading || disabled}
-      {...props}
-    >
+      {...props}>
       {isLoading ? (
         <ActivityIndicator color={isPrimary ? textColor : tintColor} />
       ) : (

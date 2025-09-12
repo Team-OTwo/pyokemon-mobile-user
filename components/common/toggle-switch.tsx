@@ -1,8 +1,8 @@
 import React from 'react';
-import { StyleSheet, View, TouchableOpacity, Animated } from 'react-native';
-import { ThemedText } from './themed-text';
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { useEffect, useRef } from 'react';
+import {StyleSheet, View, TouchableOpacity, Animated} from 'react-native';
+import {ThemedText} from './themed-text';
+import {useThemeColor} from '../../hooks/useThemeColor';
+import {useEffect, useRef} from 'react';
 
 interface ToggleSwitchProps {
   title: string;
@@ -18,15 +18,12 @@ export default function ToggleSwitch({
   description,
 }: ToggleSwitchProps) {
   const backgroundColor = useThemeColor(
-    { light: '#FFFFFF', dark: '#FFFFFF' },
+    {light: '#FFFFFF', dark: '#FFFFFF'},
     'background',
   );
-  const textColor = useThemeColor(
-    { light: '#000000', dark: '#FFFFFF' },
-    'text',
-  );
+  const textColor = useThemeColor({light: '#000000', dark: '#FFFFFF'}, 'text');
   const secondaryTextColor = useThemeColor(
-    { light: '#8E8E93', dark: '#8E8E93' },
+    {light: '#8E8E93', dark: '#8E8E93'},
     'text',
   );
 
@@ -46,15 +43,13 @@ export default function ToggleSwitch({
   };
 
   return (
-    <View style={[styles.container, { backgroundColor }]}>
+    <View style={[styles.container, {backgroundColor}]}>
       <View style={styles.textContainer}>
-        <ThemedText style={[styles.title, { color: textColor }]}>
+        <ThemedText style={[styles.title, {color: textColor}]}>
           {title}
         </ThemedText>
         {description && (
-          <ThemedText
-            style={[styles.description, { color: secondaryTextColor }]}
-          >
+          <ThemedText style={[styles.description, {color: secondaryTextColor}]}>
             {description}
           </ThemedText>
         )}
@@ -64,12 +59,11 @@ export default function ToggleSwitch({
           style={[
             styles.toggleContainer,
             value && styles.toggleContainerActive,
-          ]}
-        >
+          ]}>
           <Animated.View
             style={[
               styles.toggleThumb,
-              { transform: [{ translateX: thumbPosition }] },
+              {transform: [{translateX: thumbPosition}]},
             ]}
           />
         </View>

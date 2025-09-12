@@ -1,7 +1,7 @@
-import { ThemedText } from '@/components/common';
-import { readNotification } from '@/services/apis/notification';
-import { Notification } from '@/types/notification';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {ThemedText} from '../../../components/common';
+import {readNotification} from '../../../services/apis/notification';
+import {Notification} from '../../../types/notification';
+import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 
 const NotificationItem = ({
   notification,

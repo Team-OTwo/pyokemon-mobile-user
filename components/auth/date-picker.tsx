@@ -1,5 +1,5 @@
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { useState, useEffect } from 'react';
+import {useThemeColor} from '../../hooks/useThemeColor';
+import {useState, useEffect} from 'react';
 import {
   StyleSheet,
   Text,
@@ -49,11 +49,11 @@ export function DatePicker({
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   // 테마 색상
-  const backgroundColor = useThemeColor({ light: '#FFFFFF' }, 'background');
-  const textColor = useThemeColor({ light: '#11181C' }, 'text');
-  const tintColor = useThemeColor({ light: '#6C757D' }, 'tint');
-  const borderColor = useThemeColor({ light: '#E1E3E5' }, 'background');
-  const placeholderColor = useThemeColor({ light: '#6C757D' }, 'text');
+  const backgroundColor = useThemeColor({light: '#FFFFFF'}, 'background');
+  const textColor = useThemeColor({light: '#11181C'}, 'text');
+  const tintColor = useThemeColor({light: '#6C757D'}, 'tint');
+  const borderColor = useThemeColor({light: '#E1E3E5'}, 'background');
+  const placeholderColor = useThemeColor({light: '#6C757D'}, 'text');
   const errorColor = '#FF3B30';
 
   // 초기 값 설정
@@ -203,9 +203,9 @@ export function DatePicker({
   return (
     <View style={styles.container}>
       <View style={styles.labelContainer}>
-        <Text style={[styles.label, { color: textColor }]}>{label}</Text>
+        <Text style={[styles.label, {color: textColor}]}>{label}</Text>
         {error && (
-          <Text style={[styles.errorText, { color: errorColor }]}>{error}</Text>
+          <Text style={[styles.errorText, {color: errorColor}]}>{error}</Text>
         )}
       </View>
 
@@ -213,30 +213,27 @@ export function DatePicker({
         <TouchableOpacity
           style={[
             styles.selectButton,
-            { borderColor: error ? errorColor : borderColor },
+            {borderColor: error ? errorColor : borderColor},
           ]}
-          onPress={() => openSelectModal('year')}
-        >
+          onPress={() => openSelectModal('year')}>
           <Text
             style={[
               styles.selectText,
-              { color: selectedYear ? textColor : placeholderColor },
-            ]}
-          >
+              {color: selectedYear ? textColor : placeholderColor},
+            ]}>
             {selectedYear ? `${selectedYear}년` : '년도'}
           </Text>
-          <Text style={[styles.selectArrow, { color: tintColor }]}>▼</Text>
+          <Text style={[styles.selectArrow, {color: tintColor}]}>▼</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[
             styles.selectButton,
-            { borderColor: error ? errorColor : borderColor },
+            {borderColor: error ? errorColor : borderColor},
             !selectedYear && styles.disabledButton,
           ]}
           onPress={() => selectedYear && openSelectModal('month')}
-          disabled={!selectedYear}
-        >
+          disabled={!selectedYear}>
           <Text
             style={[
               styles.selectText,
@@ -244,24 +241,22 @@ export function DatePicker({
                 color:
                   selectedYear && selectedMonth ? textColor : placeholderColor,
               },
-            ]}
-          >
+            ]}>
             {selectedMonth ? `${selectedMonth}월` : '월'}
           </Text>
-          <Text style={[styles.selectArrow, { color: tintColor }]}>▼</Text>
+          <Text style={[styles.selectArrow, {color: tintColor}]}>▼</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[
             styles.selectButton,
-            { borderColor: error ? errorColor : borderColor },
+            {borderColor: error ? errorColor : borderColor},
             (!selectedYear || !selectedMonth) && styles.disabledButton,
           ]}
           onPress={() =>
             selectedYear && selectedMonth && openSelectModal('day')
           }
-          disabled={!selectedYear || !selectedMonth}
-        >
+          disabled={!selectedYear || !selectedMonth}>
           <Text
             style={[
               styles.selectText,
@@ -271,11 +266,10 @@ export function DatePicker({
                     ? textColor
                     : placeholderColor,
               },
-            ]}
-          >
+            ]}>
             {selectedDay ? `${selectedDay}일` : '일'}
           </Text>
-          <Text style={[styles.selectArrow, { color: tintColor }]}>▼</Text>
+          <Text style={[styles.selectArrow, {color: tintColor}]}>▼</Text>
         </TouchableOpacity>
       </View>
 
@@ -283,19 +277,16 @@ export function DatePicker({
         visible={isModalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setIsModalVisible(false)}
-      >
+        onRequestClose={() => setIsModalVisible(false)}>
         <Pressable
           style={styles.modalOverlay}
-          onPress={() => setIsModalVisible(false)}
-        >
+          onPress={() => setIsModalVisible(false)}>
           <View
-            style={[styles.modalContainer, { backgroundColor }]}
+            style={[styles.modalContainer, {backgroundColor}]}
             onStartShouldSetResponder={() => true}
-            onTouchEnd={e => e.stopPropagation()}
-          >
+            onTouchEnd={e => e.stopPropagation()}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: textColor }]}>
+              <Text style={[styles.modalTitle, {color: textColor}]}>
                 {selectType === 'year'
                   ? '년도 선택'
                   : selectType === 'month'
@@ -303,7 +294,7 @@ export function DatePicker({
                   : '일 선택'}
               </Text>
               <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-                <Text style={[styles.closeButton, { color: tintColor }]}>
+                <Text style={[styles.closeButton, {color: tintColor}]}>
                   닫기
                 </Text>
               </TouchableOpacity>
@@ -312,7 +303,7 @@ export function DatePicker({
             <FlatList
               data={getOptions()}
               keyExtractor={item => item.value}
-              renderItem={({ item }) => (
+              renderItem={({item}) => (
                 <TouchableOpacity
                   style={[
                     styles.optionItem,
@@ -321,15 +312,14 @@ export function DatePicker({
                         item.value === selectedMonth) ||
                       (selectType === 'day' && item.value === selectedDay)) && [
                       styles.selectedOption,
-                      { backgroundColor: `${tintColor}20` },
+                      {backgroundColor: `${tintColor}20`},
                     ],
                   ]}
-                  onPress={() => handleSelectOption(item)}
-                >
+                  onPress={() => handleSelectOption(item)}>
                   <Text
                     style={[
                       styles.optionText,
-                      { color: textColor },
+                      {color: textColor},
                       ((selectType === 'year' && item.value === selectedYear) ||
                         (selectType === 'month' &&
                           item.value === selectedMonth) ||
@@ -338,8 +328,7 @@ export function DatePicker({
                         color: tintColor,
                         fontWeight: '600',
                       },
-                    ]}
-                  >
+                    ]}>
                     {item.label}
                   </Text>
                 </TouchableOpacity>
@@ -412,7 +401,7 @@ const styles = StyleSheet.create({
     padding: 16,
     elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },

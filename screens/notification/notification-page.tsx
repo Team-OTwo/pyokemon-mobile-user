@@ -1,12 +1,12 @@
-import { ThemedText, ThemedView } from '@/components/common';
+import {ThemedText, ThemedView} from '../../components/common';
 import {
   useThemeColor,
   useNotificationPagination,
   useNotification,
-} from '@/hooks';
-import { MainStackParamList } from '@/types/navigation';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useEffect } from 'react';
+} from '../../hooks';
+import {MainStackParamList} from '../../types/navigation';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {useEffect} from 'react';
 import {
   FlatList,
   SafeAreaView,
@@ -15,15 +15,16 @@ import {
   View,
   ActivityIndicator,
 } from 'react-native';
-import NotificationItem from './_components/notification-item';
-import PageHeader from '@/components/ui/header';
+import NotificationItem from '../../screens/notification/_components/notification-item';
+import PageHeader from '../../components/ui/header';
+import Loading from '../../components/ui/loading';
 import {
   getNotifications,
   readNotification,
-} from '@/services/apis/notification';
+} from '../../services/apis/notification';
 
 type NotificationProps = {
-  navigation: NativeStackNavigationProp<MainStackParamList, 'Notification'>;
+  navigation: StackNavigationProp<MainStackParamList, 'Notification'>;
 };
 
 // API 호출 함수
@@ -46,8 +47,8 @@ const fetchNotifications = async (cursor?: number | null) => {
   }
 };
 
-export default function Notification({ navigation }: NotificationProps) {
-  const { setUnreadCount } = useNotification();
+export default function Notification({navigation}: NotificationProps) {
+  const {setUnreadCount} = useNotification();
 
   const {
     notifications,
@@ -90,41 +91,30 @@ export default function Notification({ navigation }: NotificationProps) {
   }, [loadInitialNotifications]);
 
   const backgroundColor = useThemeColor(
-    { light: '#FFFFFF', dark: '#151718' },
+    {light: '#FFFFFF', dark: '#151718'},
     'background',
   );
-  const tintColor = useThemeColor(
-    { light: '#2E5BFF', dark: '#2E5BFF' },
-    'tint',
-  );
-  const textColor = useThemeColor(
-    { light: '#11181C', dark: '#ECEDEE' },
-    'text',
-  );
+  const tintColor = useThemeColor({light: '#2E5BFF', dark: '#2E5BFF'}, 'tint');
+  const textColor = useThemeColor({light: '#11181C', dark: '#ECEDEE'}, 'text');
   const borderColor = useThemeColor(
-    { light: '#E5E9F0', dark: '#2C3235' },
+    {light: '#E5E9F0', dark: '#2C3235'},
     'text',
   );
 
   if (isLoading) {
     return (
-      <ThemedView style={[styles.container, { backgroundColor }]}>
+      <ThemedView style={[styles.container, {backgroundColor}]}>
         <StatusBar barStyle="default" />
         <SafeAreaView style={styles.safeArea}>
           <PageHeader title="알림" onBackPress={() => navigation.goBack()} />
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={tintColor} />
-            <ThemedText style={styles.loadingText}>
-              알림을 불러오는 중...
-            </ThemedText>
-          </View>
+          <Loading message="알림을 불러오는 중..." />
         </SafeAreaView>
       </ThemedView>
     );
   }
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor }]}>
+    <ThemedView style={[styles.container, {backgroundColor}]}>
       <StatusBar barStyle="default" />
       <SafeAreaView style={styles.safeArea}>
         <PageHeader title="알림" onBackPress={() => navigation.goBack()} />
@@ -133,7 +123,7 @@ export default function Notification({ navigation }: NotificationProps) {
             onRefresh={handleRefresh}
             refreshing={refreshing}
             data={notifications}
-            renderItem={({ item }) => (
+            renderItem={({item}) => (
               <NotificationItem
                 notification={item}
                 onPress={() => {

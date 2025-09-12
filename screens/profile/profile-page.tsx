@@ -3,24 +3,24 @@ import {
   ThemedText,
   ThemedView,
   ToggleSwitch,
-} from '@/components/common';
-import PageHeader from '@/components/ui/header';
-import useAuth from '@/hooks/useAuth';
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { deleteUser } from '@/services/apis';
-import { MainStackParamList } from '@/types/navigation';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useState } from 'react';
-import { SafeAreaView, StatusBar, StyleSheet, View } from 'react-native';
+} from '../../components/common';
+import PageHeader from '../../components/ui/header';
+import useAuth from '../../hooks/useAuth';
+import {useThemeColor} from '../../hooks/useThemeColor';
+import {deleteUser} from '../../services/apis';
+import {MainStackParamList} from '../../types/navigation';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {useState} from 'react';
+import {SafeAreaView, StatusBar, StyleSheet, View} from 'react-native';
 
 type ProfileProps = {
-  navigation: NativeStackNavigationProp<MainStackParamList, 'Profile'>;
+  navigation: StackNavigationProp<MainStackParamList, 'Profile'>;
 };
 
 type ModalType = 'logout' | 'deleteAccount' | null;
 
-export default function Profile({ navigation }: ProfileProps) {
-  const { signOut } = useAuth();
+export default function Profile({navigation}: ProfileProps) {
+  const {signOut} = useAuth();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalType, setModalType] = useState<ModalType>(null);
   const [notificationSettings, setNotificationSettings] = useState({
@@ -28,7 +28,7 @@ export default function Profile({ navigation }: ProfileProps) {
   });
 
   const backgroundColor = useThemeColor(
-    { light: '#FFFFFF', dark: '#151718' },
+    {light: '#FFFFFF', dark: '#151718'},
     'background',
   );
 
@@ -86,7 +86,7 @@ export default function Profile({ navigation }: ProfileProps) {
   const modalConfig = getModalConfig();
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor }]}>
+    <ThemedView style={[styles.container, {backgroundColor}]}>
       <ConfirmationModal
         visible={isModalVisible}
         title={modalConfig.title}
@@ -126,14 +126,12 @@ export default function Profile({ navigation }: ProfileProps) {
             <ThemedText style={styles.sectionTitle}>계정 관리</ThemedText>
             <ThemedText
               style={styles.menuItem}
-              onPress={() => showModal('logout')}
-            >
+              onPress={() => showModal('logout')}>
               로그아웃
             </ThemedText>
             <ThemedText
               style={[styles.menuItem, styles.deleteText]}
-              onPress={() => showModal('deleteAccount')}
-            >
+              onPress={() => showModal('deleteAccount')}>
               회원탈퇴
             </ThemedText>
           </View>

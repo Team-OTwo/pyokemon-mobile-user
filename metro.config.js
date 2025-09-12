@@ -1,11 +1,20 @@
-const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
+const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
 
 /**
  * Metro configuration
- * https://reactnative.dev/docs/metro
+ * https://facebook.github.io/metro/docs/configuration
  *
- * @type {import('@react-native/metro-config').MetroConfig}
+ * @type {import('metro-config').MetroConfig}
  */
-const config = {};
+const config = {
+  resolver: {
+    sourceExts: ['js', 'json', 'ts', 'tsx', 'cjs'],
+    alias: {
+      ViewPropTypes: 'deprecated-react-native-prop-types',
+      'react-native/Libraries/Components/View/ViewPropTypes':
+        'deprecated-react-native-prop-types',
+    },
+  },
+};
 
 module.exports = mergeConfig(getDefaultConfig(__dirname), config);

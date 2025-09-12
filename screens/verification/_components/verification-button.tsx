@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { AuthButton } from '@/components/auth';
-import { VerificationStep } from '../types';
+import {View, StyleSheet} from 'react-native';
+import {AuthButton} from '../../../components/auth';
+import {VerificationStep} from '../types';
 
 interface VerificationButtonProps {
   currentStep: number;

@@ -1,9 +1,10 @@
-import { ThemedText } from '@/components/common';
-import { useThemeColor } from '@/hooks';
-import { TicketCard } from '@/screens/home/_components/ticket-card';
-import { Ticket } from '@/types/ticket';
-import React, { useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
+import {ThemedText} from '../../../components/common';
+import {useThemeColor} from '../../../hooks/useThemeColor';
+import {TicketCard} from './ticket-card';
+import {Ticket} from '../../../types/ticket';
+import React, {useState, useRef, useCallback} from 'react';
+import {ActivityIndicator, FlatList, StyleSheet, View} from 'react-native';
+import Loading from '../../../components/ui/loading';
 
 interface TicketListProps {
   tickets: Ticket[];
@@ -27,13 +28,12 @@ export function TicketList({
   refreshing,
 }: TicketListProps) {
   const [refreshKey, setRefreshKey] = useState<number>(0);
+  const flatListRef = useRef<FlatList>(null);
+  const isEndReachedCalled = useRef<boolean>(false);
 
-  const tintColor = useThemeColor(
-    { light: '#75B8FF', dark: '#75B8FF' },
-    'tint',
-  );
+  const tintColor = useThemeColor({light: '#75B8FF', dark: '#75B8FF'}, 'tint');
   const backgroundColor = useThemeColor(
-    { light: '#F5F7FA', dark: '#151718' },
+    {light: '#FFF', dark: '#151718'},
     'background',
   );
 
@@ -42,26 +42,33 @@ export function TicketList({
     setRefreshKey(prevKey => prevKey + 1);
   };
 
-  const handleEndReached = () => {
-    if (hasMore && !isLoadingMore) {
-      onLoadMore?.();
+  // 더 불러오기 호출을 안전하게 처리
+  const handleEndReached = useCallback(() => {
+    if (isEndReachedCalled.current) return;
+
+    if (hasMore && !isLoadingMore && onLoadMore) {
+      isEndReachedCalled.current = true;
+      onLoadMore();
     }
-  };
+  }, [hasMore, isLoadingMore, onLoadMore]);
+
+  // 스크롤 시작 시 endReached 플래그 리셋
+  const handleScrollBeginDrag = useCallback(() => {
+    isEndReachedCalled.current = false;
+  }, []);
+
+  // 스크롤 끝에 도달했을 때 endReached 플래그 리셋
+  const handleMomentumScrollEnd = useCallback(() => {
+    isEndReachedCalled.current = false;
+  }, []);
 
   if (isLoading) {
-    return (
-      <View style={[styles.loadingContainer, { backgroundColor }]}>
-        <ActivityIndicator size="large" color={tintColor} />
-        <ThemedText style={styles.loadingText}>
-          티켓을 불러오는 중...
-        </ThemedText>
-      </View>
-    );
+    return <Loading message="티켓을 불러오는 중..." />;
   }
 
   if (tickets.length === 0) {
     return (
-      <View style={[styles.emptyContainer, { backgroundColor }]}>
+      <View style={[styles.emptyContainer, {backgroundColor}]}>
         <ThemedText style={styles.emptyText}>
           예약된 티켓이 없습니다.
         </ThemedText>
@@ -72,9 +79,10 @@ export function TicketList({
   return (
     <View style={styles.container} key={refreshKey}>
       <FlatList
+        ref={flatListRef}
         data={tickets}
         keyExtractor={item => item.bookingId.toString()}
-        renderItem={({ item }: any) => (
+        renderItem={({item}: any) => (
           <TicketCard
             ticket={item}
             onPress={onTicketPress}
@@ -86,7 +94,12 @@ export function TicketList({
         onRefresh={onRefresh}
         refreshing={refreshing || false}
         onEndReached={handleEndReached}
-        onEndReachedThreshold={0.1}
+        onEndReachedThreshold={0.2}
+        onScrollBeginDrag={handleScrollBeginDrag}
+        onMomentumScrollEnd={handleMomentumScrollEnd}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        windowSize={10}
         ListFooterComponent={
           isLoadingMore ? (
             <View style={styles.loadingMoreContainer}>

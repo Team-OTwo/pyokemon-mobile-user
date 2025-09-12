@@ -1,29 +1,26 @@
-import { AuthButton, AuthInput, DatePicker } from '@/components/auth';
-import { SvgLogo, ThemedText, ThemedView } from '@/components/common';
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { signup } from '@/services/apis/account';
-import { AuthStackParamList } from '@/types/navigation';
-import { validateSignupForm } from '@/utils/auth-validation.utils';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useState } from 'react';
+import {AuthButton, AuthInput, DatePicker} from '../../components/auth';
+import {ThemedText, ThemedView, showErrorAlert} from '../../components/common';
+import {useThemeColor} from '../../hooks/useThemeColor';
+import {signup} from '../../services/apis/account';
+import {AuthStackParamList} from '../../types/navigation';
+import {validateSignupForm} from '../../utils/auth-validation.utils';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {useState} from 'react';
 import {
   Alert,
-  Dimensions,
   KeyboardAvoidingView,
-  Platform,
   SafeAreaView,
   ScrollView,
-  StatusBar,
   StyleSheet,
   TouchableOpacity,
   View,
 } from 'react-native';
 
 type SignupScreenProps = {
-  navigation: NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
+  navigation: StackNavigationProp<AuthStackParamList, 'Signup'>;
 };
 
-export default function SignupPage({ navigation }: SignupScreenProps) {
+export default function SignupPage({navigation}: SignupScreenProps) {
   const [loginId, setLoginId] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [passwordCheck, setPasswordCheck] = useState<string>('');
@@ -40,8 +37,8 @@ export default function SignupPage({ navigation }: SignupScreenProps) {
     birth?: string;
   }>({});
 
-  const tintColor = useThemeColor({ light: '#2E5BFF' }, 'tint');
-  const backgroundColor = useThemeColor({ light: '#FFFFFF' }, 'background');
+  const tintColor = useThemeColor({light: '#2E5BFF'}, 'tint');
+  const backgroundColor = useThemeColor({light: '#FFFFFF'}, 'background');
 
   const validateForm = (): boolean => {
     const formData = {
@@ -68,14 +65,14 @@ export default function SignupPage({ navigation }: SignupScreenProps) {
       // API 요청 수행
       await signup(loginId, password, passwordCheck, name, phone, birth);
 
-      Alert.alert(
+      showErrorAlert(
         '회원가입 성공',
         '회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.',
-        [{ text: '확인', onPress: () => navigation.navigate('Login') }],
+        () => navigation.navigate('Login'),
       );
     } catch (error: any) {
       console.error('회원가입 오류:', error);
-      Alert.alert(
+      showErrorAlert(
         '회원가입 실패',
         error.message || '회원가입 중 오류가 발생했습니다.',
       );
@@ -85,18 +82,16 @@ export default function SignupPage({ navigation }: SignupScreenProps) {
   };
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor }]}>
+    <ThemedView style={[styles.container, {backgroundColor}]}>
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
           style={styles.keyboardAvoid}
-          keyboardVerticalOffset={20}
-        >
+          keyboardVerticalOffset={20}>
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
-            alwaysBounceVertical={false}
-          >
+            alwaysBounceVertical={false}>
             <View style={styles.contentContainer}>
               <View style={styles.header}>
                 <ThemedText style={styles.title}>Pyokemon</ThemedText>
@@ -161,11 +156,8 @@ export default function SignupPage({ navigation }: SignupScreenProps) {
                     이미 계정이 있으신가요?
                   </ThemedText>
                   <TouchableOpacity
-                    onPress={() => navigation.navigate('Login')}
-                  >
-                    <ThemedText
-                      style={[styles.loginLink, { color: tintColor }]}
-                    >
+                    onPress={() => navigation.navigate('Login')}>
+                    <ThemedText style={[styles.loginLink, {color: tintColor}]}>
                       로그인
                     </ThemedText>
                   </TouchableOpacity>

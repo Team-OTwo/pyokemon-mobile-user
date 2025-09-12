@@ -1,6 +1,6 @@
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { formatDate, formatPhoneNumber } from '@/utils/format.utils';
-import { useState } from 'react';
+import {useThemeColor} from '../../hooks/useThemeColor';
+import {formatDate, formatPhoneNumber} from '../../utils/format.utils';
+import {useState} from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Eye, EyeOff } from 'lucide-react-native';
+import {Eye, EyeOff} from 'lucide-react-native';
 
 type InputType = 'default' | 'phone' | 'date';
 
@@ -46,12 +46,9 @@ export function AuthInput({
 }: AuthInputProps) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-  const textColor = useThemeColor(
-    { light: '#11181C', dark: '#ECEDEE' },
-    'text',
-  );
+  const textColor = useThemeColor({light: '#11181C', dark: '#ECEDEE'}, 'text');
   const borderColor = useThemeColor(
-    { light: '#E1E3E5', dark: '#404040' },
+    {light: '#E1E3E5', dark: '#404040'},
     'background',
   );
   const errorColor = '#FF3B30';
@@ -95,17 +92,16 @@ export function AuthInput({
       <View
         style={[
           styles.inputContainer,
-          { borderColor: error ? errorColor : borderColor },
-        ]}
-      >
+          {borderColor: error ? errorColor : borderColor},
+        ]}>
         <TextInput
-          style={[styles.input, { color: textColor }]}
+          style={[styles.input, {color: textColor}]}
           value={value}
           editable={!disabled}
           onChangeText={text => handleTextChange(text.trim())}
           placeholder={placeholder}
           placeholderTextColor={useThemeColor(
-            { light: '#6C757D', dark: '#ADB5BD' },
+            {light: '#6C757D', dark: '#ADB5BD'},
             'text',
           )}
           secureTextEntry={secureTextEntry && !isPasswordVisible}
@@ -116,13 +112,12 @@ export function AuthInput({
         {secureTextEntry && (
           <TouchableOpacity
             onPress={() => setIsPasswordVisible(!isPasswordVisible)}
-            activeOpacity={0.7}
-          >
+            activeOpacity={0.7}>
             {isPasswordVisible ? (
               <EyeOff
                 size={20}
                 color={useThemeColor(
-                  { light: '#6C757D', dark: '#ADB5BD' },
+                  {light: '#6C757D', dark: '#ADB5BD'},
                   'text',
                 )}
               />
@@ -130,7 +125,7 @@ export function AuthInput({
               <Eye
                 size={20}
                 color={useThemeColor(
-                  { light: '#6C757D', dark: '#ADB5BD' },
+                  {light: '#6C757D', dark: '#ADB5BD'},
                   'text',
                 )}
               />
@@ -139,7 +134,7 @@ export function AuthInput({
         )}
       </View>
       {error && (
-        <Text style={[styles.errorText, { color: errorColor }]}>{error}</Text>
+        <Text style={[styles.errorText, {color: errorColor}]}>{error}</Text>
       )}
     </View>
   );

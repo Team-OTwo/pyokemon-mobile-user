@@ -1,4 +1,3 @@
-import { getUniqueId } from 'react-native-device-info';
 import restful from './restful';
 
 // 앱 로그인
@@ -19,10 +18,9 @@ export const login = async (
 };
 
 export const logout = async () => {
-  const deviceNumber = await getUniqueId();
   const response = await restful(
     'POST',
-    `account/api/logout?deviceNumber=${deviceNumber}`,
+    `account/api/logout`,
     {},
     {
       isAuth: true,
@@ -102,22 +100,54 @@ export const verifyUser = async (accessToken: string) => {
   throw new Error(response.message || '사용자 인증에 실패했습니다');
 };
 
-export const deleteUserDevice = async (accessToken: string) => {
-  const response = await restful(
-    'DELETE',
-    `account/api/users/devices`,
-    undefined,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    },
-  );
+export const verifyDevice = async ({
+  accountId,
+  name,
+  phoneNumber,
+  birth,
+  deviceNumber,
+  fcmToken,
+  osType,
+}: {
+  accountId: number;
+  name: string;
+  phoneNumber: string;
+  birth: string;
+  deviceNumber: string;
+  fcmToken: string;
+  osType: string;
+}) => {
+  const response = await restful('POST', 'account/api/users/app/verify', {
+    accountId,
+    name,
+    phoneNumber,
+    birth,
+    deviceNumber,
+    fcmToken,
+    osType,
+  });
   if (response) {
     return response;
   }
-  throw new Error(response.message || '기기삭제에 실패했습니다');
+  throw new Error(response.message || '기기 인증에 실패했습니다');
 };
+
+// export const deleteUserDevice = async (accessToken: string) => {
+//   const response = await restful(
+//     'DELETE',
+//     `account/api/users/devices`,
+//     undefined,
+//     {
+//       headers: {
+//         Authorization: `Bearer ${accessToken}`,
+//       },
+//     },
+//   );
+//   if (response) {
+//     return response;
+//   }
+//   throw new Error(response.message || '기기삭제에 실패했습니다');
+// };
 
 //회원탈퇴
 export const deleteUser = async () => {

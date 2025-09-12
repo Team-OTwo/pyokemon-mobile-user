@@ -1,8 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
+import {useState, useCallback, useEffect} from 'react';
 import {
   Notification,
   NotificationPaginationResponse,
-} from '@/types/notification';
+} from '../types/notification';
 
 export interface UseNotificationPaginationProps {
   onLoadMore: (
@@ -80,7 +80,7 @@ export const useNotificationPagination = ({
     setNotifications(prev =>
       prev.map(notification =>
         notification.notificationId === notificationId
-          ? { ...notification, isChecked: true }
+          ? {...notification, isChecked: true}
           : notification,
       ),
     );

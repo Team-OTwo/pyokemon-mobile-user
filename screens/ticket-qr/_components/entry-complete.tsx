@@ -1,15 +1,16 @@
-import { AuthButton } from '@/components/auth';
-import { ThemedText } from '@/components/common';
-import type { TicketDetail } from '@/types/ticket';
+import React from 'react';
+import {AuthButton} from '../../../components/auth';
+import {ThemedText} from '../../../components/common';
+import type {TicketDetail} from '../../../types/ticket';
 
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CheckCircle } from 'lucide-react-native';
-import { SafeAreaView, StyleSheet, View } from 'react-native';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {CheckCircle} from 'lucide-react-native';
+import {SafeAreaView, StyleSheet, View} from 'react-native';
 
 interface EntryCompleteProps {
   ticket: TicketDetail;
   onReset: () => void;
-  navigation: NativeStackNavigationProp<any>;
+  navigation: StackNavigationProp<any>;
 }
 
 export default function EntryComplete({
@@ -50,8 +51,8 @@ export default function EntryComplete({
         <View style={styles.ticketInfoRow}>
           <ThemedText style={styles.ticketInfoLabel}>좌석:</ThemedText>
           <ThemedText style={styles.ticketInfoValue}>
-            {ticket.seat.className}-{ticket.seat.floor}-{ticket.seat.row}-
-            {ticket.seat.col}
+            {ticket.seat.className} {ticket.seat.floor}층 {ticket.seat.row}열{' '}
+            {ticket.seat.col}번
           </ThemedText>
         </View>
       </View>
@@ -73,7 +74,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: 24,
   },
   successIcon: {
     marginBottom: 24,
@@ -84,33 +85,44 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     textAlign: 'center',
     color: '#4CAF50',
+    lineHeight: 32,
+    paddingHorizontal: 16,
   },
   ticketInfoContainer: {
     width: '100%',
-    padding: 20,
+    padding: 24,
     borderRadius: 12,
     backgroundColor: 'rgba(0, 0, 0, 0.05)',
     marginBottom: 32,
+    maxWidth: 400,
   },
   ticketInfoTitle: {
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 16,
     textAlign: 'center',
+    lineHeight: 24,
   },
   ticketInfoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 12,
+    alignItems: 'flex-start',
   },
   ticketInfoLabel: {
     fontSize: 14,
     fontWeight: '500',
     opacity: 0.7,
+    flex: 0,
+    minWidth: 50,
+    marginRight: 12,
   },
   ticketInfoValue: {
     fontSize: 14,
     fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
+    flexWrap: 'wrap',
   },
   buttonContainer: {
     width: '100%',

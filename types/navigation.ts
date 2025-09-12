@@ -1,10 +1,10 @@
 // src/types/navigation.ts
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type {StackScreenProps} from '@react-navigation/stack';
 import {
   MessageType,
   RequestType,
   DeviceAction,
-} from '@/screens/verification/types';
+} from '../screens/verification/types';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -17,6 +17,7 @@ export type AuthStackParamList = {
     deviceNumber: string;
     fcmToken: string;
     osType: string;
+    accountId?: number;
     accessToken: string;
     refreshToken: string;
   };
@@ -27,11 +28,11 @@ export type MainStackParamList = {
   Splash: undefined;
   Profile: undefined;
   Notification: undefined;
-  TicketDetail: { ticketId: string };
-  TicketQR: { ticketId: string };
+  TicketDetail: {bookingId: string};
+  TicketQR: {bookingId: string; credential: string};
 };
 
-export type ProfileScreenProps = NativeStackScreenProps<
+export type ProfileScreenProps = StackScreenProps<
   MainStackParamList,
   'Profile'
 >;

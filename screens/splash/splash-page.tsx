@@ -1,6 +1,6 @@
-import { SvgLogo, ThemedText } from '@/components/common';
-import { useThemeColor } from '@/hooks/useThemeColor';
-import React, { useEffect, useState, useRef } from 'react';
+import {ThemedText} from '../../components/common';
+import {useThemeColor} from '../../hooks/useThemeColor';
+import React, {useEffect, useState, useRef} from 'react';
 import {
   Animated,
   Dimensions,
@@ -15,7 +15,7 @@ interface SplashScreenProps {
   onFinish: () => void;
 }
 
-export default function SplashPage({ onFinish }: SplashScreenProps) {
+export default function SplashPage({onFinish}: SplashScreenProps) {
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const logoScale = useRef(new Animated.Value(0.3)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
@@ -26,16 +26,13 @@ export default function SplashPage({ onFinish }: SplashScreenProps) {
   const fullText = 'Pyokemon';
 
   const backgroundColor = useThemeColor(
-    { light: '#FFFFFF', dark: '#151718' },
+    {light: '#FFFFFF', dark: '#151718'},
     'background',
   );
-  const textColor = useThemeColor(
-    { light: '#11181C', dark: '#ECEDEE' },
-    'text',
-  );
+  const textColor = useThemeColor({light: '#11181C', dark: '#ECEDEE'}, 'text');
 
   // 화면 크기에 따른 로고 크기 조정
-  const { width, height } = Dimensions.get('window');
+  const {width, height} = Dimensions.get('window');
   const logoWidth = Math.min(width, height) * 0.6;
   const logoHeight = logoWidth * 0.465;
 
@@ -122,9 +119,9 @@ export default function SplashPage({ onFinish }: SplashScreenProps) {
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor }]}>
+    <View style={[styles.container, {backgroundColor}]}>
       <Animated.View
-        style={[styles.backgroundGradient, { opacity: backgroundOpacity }]}
+        style={[styles.backgroundGradient, {opacity: backgroundOpacity}]}
       />
       <SafeAreaView style={styles.safeContainer}>
         <View style={styles.contentContainer}>
@@ -133,10 +130,9 @@ export default function SplashPage({ onFinish }: SplashScreenProps) {
               styles.logoContainer,
               {
                 opacity: logoOpacity,
-                transform: [{ scale: logoScale }],
+                transform: [{scale: logoScale}],
               },
-            ]}
-          >
+            ]}>
             <View style={[styles.logo]}>
               <ThemedText style={styles.logoTitle}>{displayText}</ThemedText>
             </View>

@@ -1,32 +1,34 @@
 // import { AuthContext } from '@/';
-import React, { createContext, useEffect, useMemo, useState } from 'react';
-import type { AuthContextType } from '@/types/auth';
-import SplashScreen from '@/screens/splash/splash-page';
+import React, {
+  createContext,
+  useEffect,
+  useMemo,
+  useState,
+  useContext,
+} from 'react';
+import type {AuthContextType} from '../types/auth';
+import SplashScreen from '../screens/splash/splash-page';
 import {
   setTokens,
   removeTokens,
   getTokens,
-} from '@/services/storage/securStorage';
-import { logout } from '@/services/apis';
+} from '../services/storage/secureStorage';
+import {logout} from '../services/apis';
 export const AuthContext = createContext<AuthContextType | undefined>({
-  userToken: null,
+  user: null,
   signIn: async () => {},
   signOut: async () => {},
 });
 
-export default function AuthProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthProvider({children}: {children: React.ReactNode}) {
   const [isLoading, setIsLoading] = useState(true);
-  const [userToken, setUserToken] = useState<string | null>(null);
+  const [user, setUser] = useState<string | null>(null);
 
   useEffect(() => {
     const checkLoginStatus = async () => {
       const token = await getTokens();
       if (token) {
-        setUserToken(token.accessToken);
+        setUser(token.accessToken);
       }
     };
     checkLoginStatus();
@@ -34,9 +36,13 @@ export default function AuthProvider({
 
   const authActions = useMemo(
     () => ({
-      signIn: async (accessToken: string, refreshToken: string) => {
+      signIn: async (
+        accessToken: string,
+        refreshToken: string,
+        accountId: string,
+      ) => {
         await setTokens(accessToken, refreshToken);
-        setUserToken(accessToken);
+        setUser(accountId);
       },
       signOut: async () => {
         try {
@@ -45,11 +51,11 @@ export default function AuthProvider({
           console.error(error);
         } finally {
           await removeTokens();
-          setUserToken(null);
+          setUser(null);
         }
       },
     }),
-    [],
+    [user],
   );
 
   if (isLoading) {
@@ -57,7 +63,7 @@ export default function AuthProvider({
   }
 
   return (
-    <AuthContext.Provider value={{ userToken, ...authActions }}>
+    <AuthContext.Provider value={{...authActions, user}}>
       {children}
     </AuthContext.Provider>
   );

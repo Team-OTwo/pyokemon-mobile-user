@@ -1,13 +1,14 @@
-import { ThemedText } from '@/components/common';
-import { ChevronLeft } from 'lucide-react-native';
-import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import React from 'react';
+import {ThemedText} from '../../components/common';
+import {ChevronLeft} from 'lucide-react-native';
+import {StyleSheet, TouchableOpacity, View} from 'react-native';
 
 interface PageHeaderProps {
   title: string;
   onBackPress: () => void;
 }
 
-export default function PageHeader({ title, onBackPress }: PageHeaderProps) {
+export default function PageHeader({title, onBackPress}: PageHeaderProps) {
   return (
     <View style={styles.header}>
       <TouchableOpacity onPress={onBackPress} style={styles.backButton}>
@@ -21,7 +22,6 @@ export default function PageHeader({ title, onBackPress }: PageHeaderProps) {
 
 const styles = StyleSheet.create({
   header: {
-    // marginTop: Platform.OS === 'ios' ? 0 : 30,
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 12,

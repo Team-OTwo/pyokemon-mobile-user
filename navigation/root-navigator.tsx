@@ -1,8 +1,8 @@
-import useAuth from '@/hooks/useAuth';
-import AuthStack from './auth-stack.tsx';
-import MainStack from './main-stack.tsx';
+import {useAuth} from '../hooks';
+import AuthStack from './auth-stack';
+import MainStack from './main-stack';
 
 export default function RootNavigator() {
-  const { userToken } = useAuth();
-  return userToken ? <MainStack /> : <AuthStack />;
+  const {user} = useAuth();
+  return user ? <MainStack /> : <AuthStack />;
 }

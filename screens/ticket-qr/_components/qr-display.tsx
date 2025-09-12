@@ -1,7 +1,8 @@
-import { ThemedText } from '@/components/common';
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import React from 'react';
+import {ThemedText} from '../../../components/common';
+import {useThemeColor} from '../../../hooks/useThemeColor';
+import {useEffect, useState} from 'react';
+import {ActivityIndicator, StyleSheet, View} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 interface QRDisplayProps {
@@ -26,10 +27,7 @@ export default function QRDisplay({
   initialTime = 180, // 3분 = 180초
 }: QRDisplayProps) {
   const [timeLeft, setTimeLeft] = useState(initialTime);
-  const tintColor = useThemeColor(
-    { light: '#2E5BFF', dark: '#2E5BFF' },
-    'tint',
-  );
+  const tintColor = useThemeColor({light: '#2E5BFF', dark: '#2E5BFF'}, 'tint');
 
   // 타이머 로직
   useEffect(() => {
@@ -71,8 +69,7 @@ export default function QRDisplay({
         <View style={styles.timerContainer}>
           <ThemedText style={styles.timerLabel}>유효 시간</ThemedText>
           <ThemedText
-            style={[styles.timer, timeLeft < 30 && styles.timerWarning]}
-          >
+            style={[styles.timer, timeLeft < 30 && styles.timerWarning]}>
             {formatTime(timeLeft)}
           </ThemedText>
         </View>
@@ -116,7 +113,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,

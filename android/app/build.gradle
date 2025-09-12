@@ -1,12 +1,6 @@
-
-plugins {
-    id "com.android.application"
-    id "org.jetbrains.kotlin.android"
-    id "com.google.gms.google-services"
-    id "com.facebook.react"
-}
-// apply plugin: "com.facebook.react"
-
+apply plugin: "com.android.application"
+apply plugin: "com.facebook.react"
+apply plugin: "com.google.gms.google-services"
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -14,14 +8,14 @@ plugins {
  */
 react {
     /* Folders */
-    //   The root of your project, i.e. where "package.json" lives. Default is '../..'
-    // root = file("../../")
-    //   The folder where the react-native NPM package is. Default is ../../node_modules/react-native
-    // reactNativeDir = file("../../node_modules/react-native")
-    //   The folder where the react-native Codegen package is. Default is ../../node_modules/@react-native/codegen
-    // codegenDir = file("../../node_modules/@react-native/codegen")
-    //   The cli.js file which is the React Native CLI entrypoint. Default is ../../node_modules/react-native/cli.js
-    // cliFile = file("../../node_modules/react-native/cli.js")
+    //   The root of your project, i.e. where "package.json" lives. Default is '..'
+    // root = file("../")
+    //   The folder where the react-native NPM package is. Default is ../node_modules/react-native
+    // reactNativeDir = file("../node_modules/react-native")
+    //   The folder where the react-native Codegen package is. Default is ../node_modules/@react-native/codegen
+    // codegenDir = file("../node_modules/@react-native/codegen")
+    //   The cli.js file which is the React Native CLI entrypoint. Default is ../node_modules/react-native/cli.js
+    // cliFile = file("../node_modules/react-native/cli.js")
 
     /* Variants */
     //   The list of variants to that are debuggable. For those we're going to
@@ -55,9 +49,6 @@ react {
     //
     //   The list of flags to pass to the Hermes compiler. By default is "-O", "-output-source-map"
     // hermesFlags = ["-O", "-output-source-map"]
-
-    /* Autolinking */
-    autolinkLibrariesWithApp()
 }
 
 /**
@@ -69,31 +60,39 @@ def enableProguardInReleaseBuilds = false
  * The preferred build flavor of JavaScriptCore (JSC)
  *
  * For example, to use the international variant, you can use:
- * `def jscFlavor = io.github.react-native-community:jsc-android-intl:2026004.+`
+ * `def jscFlavor = 'org.webkit:android-jsc-intl:+'`
  *
  * The international variant includes ICU i18n library and necessary data
  * allowing to use e.g. `Date.toLocaleString` and `String.localeCompare` that
  * give correct results when using with locales other than en-US. Note that
  * this variant is about 6MiB larger per architecture than default.
  */
-def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
+def jscFlavor = 'org.webkit:android-jsc:+'
 
 android {
     ndkVersion rootProject.ext.ndkVersion
-    buildToolsVersion rootProject.ext.buildToolsVersion
-    compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.pyokemon"
+    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdkVersion rootProject.ext.compileSdkVersion
+
+
     defaultConfig {
         applicationId "com.pyokemon"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        // minSdkVersion 23
+        // targetSdkVersion 34
+        // multiDexEnabled true
         missingDimensionStrategy 'react-native-camera', 'general'
-        missingDimensionStrategy 'react-native-camera', 'mlkit'	
-    multiDexEnabled true
     }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -117,15 +116,42 @@ android {
 }
 
 dependencies {
+    // Firebase 의존성 추가
+    implementation platform('com.google.firebase:firebase-bom:33.0.0')
+    implementation 'com.google.firebase:firebase-messaging'
+    
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-    implementation('com.google.firebase:firebase-bom:34.1.0')
-    implementation 'com.google.firebase:firebase-messaging'
-    // implementation 'com.google.firebase:firebase-core'
 
+    implementation "androidx.multidex:multidex:2.0.1"
+    // implementation "androidx.core:core:1.9.0"
+    // implementation "androidx.appcompat:appcompat:1.6.1"
+    // implementation "androidx.activity:activity:1.6.1"
+    // implementation "androidx.lifecycle:lifecycle-runtime:2.5.1"
+
+    // 특정 버전의 androidx 라이브러리 사용
+    implementation("androidx.appcompat:appcompat:${rootProject.ext.androidx_appcompat_version}")
+    implementation("androidx.core:core:${rootProject.ext.androidx_core_version}")
+    implementation("androidx.core:core-ktx:${rootProject.ext.androidx_core_version}")
+    implementation("androidx.activity:activity:${rootProject.ext.androidx_activity_version}")
+    implementation("androidx.activity:activity-ktx:${rootProject.ext.androidx_activity_version}")
+    implementation("androidx.lifecycle:lifecycle-runtime:${rootProject.ext.androidx_lifecycle_version}")
+    implementation("androidx.lifecycle:lifecycle-viewmodel:${rootProject.ext.androidx_lifecycle_version}")
+    implementation("androidx.lifecycle:lifecycle-livedata:${rootProject.ext.androidx_lifecycle_version}")
+
+    debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}")
+    debugImplementation("com.facebook.flipper:flipper-network-plugin:${FLIPPER_VERSION}") {
+        exclude group:'com.squareup.okhttp3', module:'okhttp'
+    }
+
+    debugImplementation("com.facebook.flipper:flipper-fresco-plugin:${FLIPPER_VERSION}")
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
     }
+
+    
 }
+
+apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)

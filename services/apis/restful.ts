@@ -32,7 +32,7 @@ export class ApiError extends Error {
   }
 }
 
-const API_BASE_URL = 'http://192.168.75.106:8087/';
+const API_BASE_URL = 'http://192.168.75.25:8087/';
 const DEFAULT_TIMEOUT = 30000;
 const RETRY_DELAY = 1000;
 

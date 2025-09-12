@@ -177,15 +177,13 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
       const DIDService = await import('../../services/did/did-service');
 
       // 2. 새로운 VC 요청 및 폴링
-      if (!hasRequestedVC) {
-        await getCredential(ticket?.bookingId || '');
-        setHasRequestedVC(false);
-      }
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      setCredential('test');
+      await getCredential(ticket?.bookingId || '');
+      setHasRequestedVC(false);
 
-      // 폴링으로 VC 대기
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
       let attempts = 0;
+
       while (attempts < VC_POLLING_CONFIG.MAX_ATTEMPTS) {
         attempts++;
         const pollingResult: any = await DIDService.default.pollForCredentials(
@@ -203,7 +201,6 @@ export default function TicketDetail({navigation, route}: TicketDetailProps) {
             credentialData.bookingId;
 
           if (bookingId === ticket?.bookingId) {
-            // setCredential('test');
             console.log('credentialData: ' + credentialData);
             showSuccessAlert(
               '성공',

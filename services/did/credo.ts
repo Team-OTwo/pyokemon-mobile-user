@@ -1,3 +1,7 @@
+import '@hyperledger/aries-askar-react-native';
+import 'react-native-get-random-values';
+import 'react-native-quick-crypto'; // crypto 폴리필
+
 import {
   Agent,
   AgentEventTypes,
@@ -36,14 +40,10 @@ import {
   V2ProofProtocol,
   ConsoleLogger,
   LogLevel,
-  Ed25519Signature2020,
-  DidCommMimeType,
-  KeyDidCreateOptions,
-  DidKey,
-  DidCreateResult,
-  DidOperationStateActionBase,
   CredentialStateChangedEvent,
   WebDidResolver,
+  MediatorModule,
+  ProofRepository,
 } from '@credo-ts/core';
 import {AskarModule} from '@credo-ts/askar';
 import {agentDependencies} from '@credo-ts/react-native';
@@ -52,12 +52,11 @@ import {getInvitationUrls} from '../apis/did';
 import {getWalletInfo, saveWalletInfo} from '../storage/walletStorage';
 import {
   AnonCredsCredentialFormatService,
-  AnonCredsModule,
   AnonCredsProofFormatService,
   LegacyIndyCredentialFormatService,
   LegacyIndyProofFormatService,
 } from '@credo-ts/anoncreds';
-import {base64ToJson} from '../../utils/format.utils';
+import {MessageForwardingStrategy} from '@credo-ts/core/build/modules/routing/MessageForwardingStrategy';
 
 // ============================================================================
 // 상수 정의
@@ -122,10 +121,10 @@ export const initAgent = async (
         id: finalWalletId,
         key: finalWalletKey,
       },
-      autoUpdateStorageOnStartup: true,
+      // autoUpdateStorageOnStartup: true,
       // 두 ACA-Py 모두 연결할 수 있도록 엔드포인트 설정
       // DIDComm 메시지 타입 설정 (ACA-Py와 호환성 보장)
-      logger: new ConsoleLogger(LogLevel.debug),
+      logger: new ConsoleLogger(LogLevel.trace),
       // 자동 수락 설정은 ConnectionsModule에서 설정
     };
 
@@ -181,6 +180,7 @@ export const initAgent = async (
         }),
         mediationRecipient: new MediationRecipientModule({
           mediatorPickupStrategy: MediatorPickupStrategy.Implicit,
+          mediatorPollingInterval: 1000,
         }),
         messagePickup: new MessagePickupModule<DefaultMessagePickupProtocols>({
           protocols: [
@@ -210,70 +210,6 @@ export const initAgent = async (
 
     // 이벤트 바인딩 (생략 가능: 필요하면 여기서 추가)
 
-    agent.events.on<CredentialStateChangedEvent>(
-      CredentialEventTypes.CredentialStateChanged,
-      async ({payload}) => {
-        const {credentialRecord} = payload;
-
-        // 상태 변화를 '관찰'하고 로그를 기록하거나 UI를 업데이트합니다.
-        console.log(`🎫 Credential 상태 변경: ${credentialRecord.state}`);
-
-        // VC 데이터는 아직 없음
-        console.log('threadId:', credentialRecord.threadId);
-        console.log('connectionId:', credentialRecord.connectionId);
-
-        // 각 상태별 로그만 출력 (자동 처리 로직 제거)
-        if (credentialRecord.state === CredentialState.OfferReceived) {
-          console.log('==================================================');
-          console.log('새로운 VC 제안 수신 - 수동으로 처리해야 합니다');
-          console.log('credentialRecord ID:', credentialRecord.id);
-          console.log('==================================================');
-          //
-          const credentialRequest = await agent.credentials.acceptOffer({
-            credentialRecordId: credentialRecord.id,
-            credentialFormats: {
-              jsonld: {
-                options: {
-                  proofType: 'Ed25519Signature2020',
-                  proofPurpose: 'assertionMethod',
-                },
-              },
-            },
-          });
-
-          console.log('credentialRequest: ', credentialRequest);
-        } else if (credentialRecord.state === CredentialState.RequestSent) {
-          console.log('==================================================');
-          console.log('VC 요청 전송됨 - RequestSent 상태');
-          console.log('credentialRecord ID:', credentialRecord.id);
-          console.log('==================================================');
-        } else if (
-          credentialRecord.state === CredentialState.CredentialReceived
-        ) {
-          try {
-            await agent.credentials.acceptCredential({
-              credentialRecordId: credentialRecord.id,
-            });
-            console.log(`[EVENT] Credential accepted: ${credentialRecord.id}`);
-          } catch (err) {
-            console.error(`[ERROR] Failed to accept: ${err}`);
-          }
-          console.log('==================================================');
-          console.log('새로운 VC 수신됨 - CredentialReceived 상태');
-          console.log('credentialRecord ID:', credentialRecord.id);
-          console.log('==================================================');
-        } else if (credentialRecord.state === CredentialState.Done) {
-          console.log('===============================================');
-          console.log('🎉 VC 발급이 성공적으로 완료되었습니다!');
-          console.log('credentialRecord ID:', credentialRecord.id);
-          console.log('===============================================');
-        } else if (credentialRecord.state === CredentialState.Abandoned) {
-          console.error(`🚨 VC 발급 실패: ${credentialRecord.errorMessage}`);
-          console.log('credentialRecord ID:', credentialRecord.id);
-        }
-      },
-    );
-
     agent.events.on<ConnectionStateChangedEvent>(
       ConnectionEventTypes.ConnectionStateChanged,
       event => {
@@ -286,6 +222,53 @@ export const initAgent = async (
     );
 
     await agent.initialize();
+
+    agent.events.on<CredentialStateChangedEvent>(
+      CredentialEventTypes.CredentialStateChanged,
+      async ({payload}) => {
+        const {credentialRecord} = payload;
+
+        // 상태 변화를 '관찰'하고 로그를 기록하거나 UI를 업데이트합니다.
+        console.log(`🎫 Credential 상태 변경: ${credentialRecord.state}`);
+
+        // 각 상태별 로그만 출력 (자동 처리 로직 제거)
+        if (credentialRecord.state === CredentialState.OfferReceived) {
+          console.log('새로운 VC 제안 수신 - 수동으로 처리해야 합니다');
+
+          try {
+            const credentialRequest = await agent.credentials.acceptOffer({
+              credentialRecordId: credentialRecord.id,
+              credentialFormats: {
+                jsonld: {
+                  proof: {
+                    proofType: 'Ed25519Signature2020',
+                    proofPurpose: 'assertionMethod', // 'assertionMethod'로 지정
+                  },
+                },
+              },
+            });
+            console.log(
+              'VC 요청이 성공적으로 전송되었습니다:',
+              credentialRequest,
+            );
+          } catch (error) {
+            console.error('acceptOffer 처리 중 오류 발생:', error);
+          }
+        } else if (credentialRecord.state === CredentialState.RequestSent) {
+          console.log('credentialRecord ID:', credentialRecord.id);
+        } else if (
+          credentialRecord.state === CredentialState.CredentialReceived
+        ) {
+          console.log('credentialRecord ID:', credentialRecord.id);
+        } else if (credentialRecord.state === CredentialState.Done) {
+          console.log('🎉 VC 발급이 성공적으로 완료되었습니다!');
+          console.log('credentialRecord ID:', credentialRecord.id);
+        } else if (credentialRecord.state === CredentialState.Abandoned) {
+          console.error(`🚨 VC 발급 실패: ${credentialRecord.errorMessage}`);
+          console.log('credentialRecord ID:', credentialRecord.id);
+        }
+      },
+    );
 
     return agent;
   } catch (error) {
@@ -607,16 +590,16 @@ export const syncCredentialsFromMediator = async (
     // 4. 메시지 픽업 (가장 유력한 방법만 사용)
     console.log('🔄 메시지 픽업 시작...');
     try {
-      const pickupResult: any = await agent.messagePickup.pickupMessages({
-        protocolVersion: 'v2',
-        connectionId: mediators[0].connectionId!,
-        batchSize: DEFAULT_BATCH_SIZE,
-      });
-      // const pickupResult: any =
-      //   await agent.mediationRecipient.initiateMessagePickup(
-      //     mediators[0],
-      //     MediatorPickupStrategy.Implicit,
-      //   );
+      // const pickupResult: any = await agent.messagePickup.pickupMessages({
+      //   protocolVersion: 'v2',
+      //   connectionId: mediators[0].connectionId!,
+      //   batchSize: DEFAULT_BATCH_SIZE,
+      // });
+      const pickupResult: any =
+        await agent.mediationRecipient.initiateMessagePickup(
+          mediators[0],
+          MediatorPickupStrategy.Implicit,
+        );
 
       if (pickupResult && pickupResult.messages.length > 0) {
         for (const msg of pickupResult.messages) {

@@ -10,10 +10,10 @@
     "test": "jest"
   },
   "dependencies": {
-    "@credo-ts/anoncreds": "^0.5.15",
-    "@credo-ts/askar": "^0.5.15",
-    "@credo-ts/core": "^0.5.15",
-    "@credo-ts/react-native": "^0.5.15",
+    "@credo-ts/anoncreds": "^0.5.17",
+    "@credo-ts/askar": "^0.5.17",
+    "@credo-ts/core": "^0.5.17",
+    "@credo-ts/react-native": "^0.5.17",
     "@hyperledger/aries-askar-react-native": "^0.2.1",
     "@react-native-async-storage/async-storage": "^1.24.0",
     "@react-native-firebase/app": "^22.2.0",
